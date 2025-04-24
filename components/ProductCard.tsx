@@ -1,17 +1,37 @@
-// components/ProductCard.tsx
 import React from 'react';
 import {View, Text, Image, StyleSheet, TouchableOpacity} from 'react-native';
 import Icon from './icon';
 
-const ProductCard = ({title, designer, price, image}: any) => {
+const ProductCard = ({
+  title,
+  designer,
+  price,
+  image,
+  isFavorite,
+  onPressFavorite,
+  onPressCart,
+}: any) => {
   return (
     <View style={styles.card}>
       <View style={styles.imageWrapper}>
         <Image source={image} style={styles.productImage} resizeMode="cover" />
-        <TouchableOpacity style={styles.heartIcon}>
-          <Icon name="hearto" type="ant" size={16} color="#777" />
+
+        {/* Favorite (heart) icon */}
+        <TouchableOpacity style={styles.heartIcon} onPress={onPressFavorite}>
+          <Icon
+            name="hearto"
+            type="ant"
+            size={16}
+            color={isFavorite ? 'red' : '#777'}
+          />
+        </TouchableOpacity>
+
+        {/* New cart icon */}
+        <TouchableOpacity style={styles.cartIcon} onPress={onPressCart}>
+          <Icon name="shoppingcart" type="ant" size={16} color="#333" />
         </TouchableOpacity>
       </View>
+
       <View style={styles.infoContainer}>
         <Text style={styles.title} numberOfLines={1}>
           {title}
@@ -47,6 +67,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 10,
+    backgroundColor: '#fff',
+    padding: 4,
+    borderRadius: 20,
+    elevation: 2,
+  },
+  cartIcon: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
     backgroundColor: '#fff',
     padding: 4,
     borderRadius: 20,

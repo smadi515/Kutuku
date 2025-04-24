@@ -8,7 +8,7 @@ import {
   FlatList,
   Image,
 } from 'react-native';
-import BottomSheet from '@gorhom/bottom-sheet';
+import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 import Icon from '../components/icon';
 
 const SearchScreen = ({navigation}: any) => {
@@ -21,7 +21,7 @@ const SearchScreen = ({navigation}: any) => {
   ]);
 
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['60%'], []);
+  const snapPoints = useMemo(() => [450], []);
 
   const openFilterSheet = () => {
     console.log('BottomSheet ref:', bottomSheetRef.current);
@@ -98,11 +98,7 @@ const SearchScreen = ({navigation}: any) => {
             value={searchText}
             onChangeText={text => setSearchText(text)}
           />
-          <TouchableOpacity
-            onPress={() => {
-              console.log('Filter pressed');
-              openFilterSheet;
-            }}>
+          <TouchableOpacity onPress={openFilterSheet}>
             <Icon type="ant" name="filter" size={20} />
           </TouchableOpacity>
         </View>
@@ -170,8 +166,12 @@ const SearchScreen = ({navigation}: any) => {
       />
 
       {/* Bottom Sheet for Filters */}
-      <BottomSheet ref={bottomSheetRef} index={-1} snapPoints={snapPoints}>
-        <View style={{padding: 20}}>
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose>
+        <BottomSheetView style={{padding: 20, flex: 1}}>
           <Text style={styles.sectionTitle}>Filter Products</Text>
 
           {/* Price Filter */}
@@ -213,7 +213,7 @@ const SearchScreen = ({navigation}: any) => {
               Apply Filter
             </Text>
           </TouchableOpacity>
-        </View>
+        </BottomSheetView>
       </BottomSheet>
     </View>
   );

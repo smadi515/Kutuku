@@ -144,7 +144,9 @@ const HomeScreen = ({navigation}: any) => {
         {/* New Arrivals Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>New Arrivals 🔥</Text>
-          <Text style={styles.seeAll}>See All</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('StoreScreen')}>
+            <Text style={styles.seeAll}>See All</Text>
+          </TouchableOpacity>
         </View>
 
         {activeTab === 'Home' ? (
