@@ -12,6 +12,7 @@ import {
 import Icon from '../components/icon';
 import ProductCard from '../components/ProductCard';
 import CategoryTab from './CategoryTab';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const products = [
   {
@@ -60,8 +61,41 @@ const products = [
 ];
 
 const HomeScreen = ({navigation}: any) => {
-  const [activeTab, setActiveTab] = useState('Home');
+  const [favorites, setFavorites] = useState<string[]>([]);
 
+  const [activeTab, setActiveTab] = useState('Home');
+  const handleAddToCart = async (product: any) => {
+    try {
+      const existingCart = await AsyncStorage.getItem('cart');
+      let cart = existingCart ? JSON.parse(existingCart) : [];
+      const index = cart.findIndex((item: any) => item.id === product.id);
+
+      if (index >= 0) {
+        cart[index].quantity += 1;
+      } else {
+        cart.push({...product, quantity: 1});
+      }
+
+      await AsyncStorage.setItem('cart', JSON.stringify(cart));
+      navigation.navigate('CartScreen');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
+  };
+  const toggleFavorite = async (productId: string) => {
+    try {
+      let updatedFavorites: string[];
+      if (favorites.includes(productId)) {
+        updatedFavorites = favorites.filter(id => id !== productId);
+      } else {
+        updatedFavorites = [...favorites, productId];
+      }
+      setFavorites(updatedFavorites);
+      await AsyncStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+    } catch (error) {
+      console.error('Error updating favorites:', error);
+    }
+  };
   return (
     <View style={styles.container}>
       <ScrollView>
@@ -155,7 +189,24 @@ const HomeScreen = ({navigation}: any) => {
             numColumns={2}
             keyExtractor={item => item.id}
             columnWrapperStyle={{justifyContent: 'space-between'}}
-            renderItem={({item}) => <ProductCard {...item} />}
+            renderItem={({item}) => (
+              <ProductCard
+                title="Product Title"
+                designer="Designer Name"
+                price={199}
+                image={require('../assets/bag.png')}
+                isFavorite={favorites.includes(item.id)}
+                onPressFavorite={() => toggleFavorite(item.id)}
+                onPressCart={() => handleAddToCart(item)}
+                colors={[
+                  {color: '#ff0000', image: require('../assets/bag.png')},
+                  {
+                    color: '#0000FF',
+                    image: require('../assets/speaker.png'),
+                  }, // <-- added blue color
+                ]} // <-- you must pass this!
+              />
+            )}
             scrollEnabled={false}
           />
         ) : (

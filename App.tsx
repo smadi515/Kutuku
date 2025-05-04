@@ -16,22 +16,55 @@ import SearchScreen from './components/SearchScreen';
 import CartScreen from './screens/CartScreen';
 import PaymentScreen from './screens/PaymentScreen';
 import NotificationScreen from './screens/NotificationScreen';
+import ProductsDetails from './screens/ProductsDetails';
+import {ImageSourcePropType} from 'react-native';
+import SettingsScreen from './screens/SettingsScreen';
+import ChangePassword from './screens/ChangePassword';
+import LegalPolicies from './screens/LegalPolicies';
+import EditProfile from './screens/EditProfile.screen';
+import SecurityScreen from './screens/SecurityScreen';
+import NotificationSetting from './screens/NotificationSetting';
+import LanguageScreen from './screens/LanguageScreen';
+import HelpSupport from './screens/HelpSupport';
+type ColorOption = {
+  color: string;
+  image: ImageSourcePropType; // More specific type for image
+};
 I18nManager.allowRTL(false); // Disables RTL layout support
 I18nManager.forceRTL(false);
 export type RootStackParamList = {
+  SecurityScreen: undefined;
   Splash: undefined;
+  HelpSupport: undefined;
+  LanguageScreen: undefined;
   Login: undefined;
+  LegalPolicies: undefined;
   Onboarding: undefined;
   Home: undefined;
   MyOrders: undefined;
+  EditProfile: undefined;
   Favorites: undefined;
   Profile: undefined;
   CreateAcount: undefined;
   SearchScreen: undefined;
   CartScreen: undefined;
+  SettingsScreen: undefined;
+  ChangePassword: undefined;
+  NotificationSetting: undefined;
   StoreScreen: undefined;
   NotificationScreen: undefined;
-
+  ProductsDetails: {
+    title: string;
+    designer: string;
+    price: number;
+    image: ImageSourcePropType;
+    isFavorite: boolean;
+    colors: ColorOption[];
+    rating: number;
+    reviewCount: number;
+    stock: string;
+    description: string;
+  };
   PaymentScreen: {
     selectedItems: CartItem[];
     subtotal: number;
@@ -53,8 +86,22 @@ const App = () => {
           <Stack.Screen name="CreateAcount" component={CreateAcountScreen} />
           <Stack.Screen name="Onboarding" component={OnboardingFlow} />
           <Stack.Screen name="Home" component={TabNavigationScreen} />
+          <Stack.Screen name="ChangePassword" component={ChangePassword} />
           <Stack.Screen name="MyOrders" component={MyOrders} />
+          <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+          <Stack.Screen name="HelpSupport" component={HelpSupport} />
+
+          <Stack.Screen name="SecurityScreen" component={SecurityScreen} />
+          <Stack.Screen
+            name="NotificationSetting"
+            component={NotificationSetting}
+          />
+
           <Stack.Screen name="StoreScreen" component={StoreScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfile} />
+          <Stack.Screen name="LegalPolicies" component={LegalPolicies} />
+          <Stack.Screen name="ProductsDetails" component={ProductsDetails} />
+          <Stack.Screen name="LanguageScreen" component={LanguageScreen} />
 
           <Stack.Screen
             name="NotificationScreen"

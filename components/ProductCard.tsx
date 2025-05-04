@@ -1,6 +1,31 @@
 import React from 'react';
 import {View, Text, Image, StyleSheet, TouchableOpacity} from 'react-native';
 import Icon from './icon';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import type {RootStackParamList} from '../App';
+import {ImageSourcePropType} from 'react-native';
+
+type ProductDetailsScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  'ProductsDetails'
+>;
+
+type ColorOption = {
+  color: string;
+  image: ImageSourcePropType;
+};
+
+type ProductCardProps = {
+  title: string;
+  designer: string;
+  price: number;
+  image: ImageSourcePropType;
+  isFavorite: boolean;
+  onPressFavorite: () => void;
+  onPressCart: () => void;
+  colors?: ColorOption[];
+};
 
 const ProductCard = ({
   title,
@@ -10,13 +35,30 @@ const ProductCard = ({
   isFavorite,
   onPressFavorite,
   onPressCart,
-}: any) => {
+  colors,
+}: ProductCardProps) => {
+  const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
+
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      onPress={() => {
+        navigation.navigate('ProductsDetails', {
+          title,
+          designer,
+          price: 195,
+          image,
+          isFavorite,
+          colors: colors || [],
+          rating: 4.8,
+          reviewCount: 320,
+          stock: 'Available in stock',
+          description:
+            'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
+        });
+      }}
+      style={styles.card}>
       <View style={styles.imageWrapper}>
         <Image source={image} style={styles.productImage} resizeMode="cover" />
-
-        {/* Favorite (heart) icon */}
         <TouchableOpacity style={styles.heartIcon} onPress={onPressFavorite}>
           <Icon
             name="hearto"
@@ -25,8 +67,6 @@ const ProductCard = ({
             color={isFavorite ? 'red' : '#777'}
           />
         </TouchableOpacity>
-
-        {/* New cart icon */}
         <TouchableOpacity style={styles.cartIcon} onPress={onPressCart}>
           <Icon name="shoppingcart" type="ant" size={16} color="#333" />
         </TouchableOpacity>
@@ -41,7 +81,7 @@ const ProductCard = ({
         </Text>
         <Text style={styles.productPrice}>{price}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -52,7 +92,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
-    elevation: 1,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   imageWrapper: {
     position: 'relative',

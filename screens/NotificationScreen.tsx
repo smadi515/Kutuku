@@ -9,7 +9,9 @@ import {
 } from 'react-native';
 import Header from '../components/Header';
 import Icon from '../components/icon';
-
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {RootStackParamList} from '../App';
 const notifications = [
   {
     id: '1',
@@ -51,6 +53,9 @@ const notifications = [
 ];
 
 const NotificationScreen = () => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const renderItem = ({item}: any) => (
     <View style={styles.notificationCard}>
       {item.avatar ? (
@@ -91,7 +96,7 @@ const NotificationScreen = () => {
           {
             name: 'settings-outline',
             type: 'Ionicons',
-            onPress: () => {}, // add navigation to settings if needed
+            onPress: () => navigation.navigate('SettingsScreen'), // add navigation to settings if needed
           },
         ]}
       />

@@ -16,7 +16,10 @@ import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../App';
 import CustomInput from '../components/CustomInput';
-
+type ColorOption = {
+  color: string; // color code or name
+  image: any; // the image associated with this color option
+};
 type CartItem = {
   id: string;
   title: string;
@@ -24,6 +27,7 @@ type CartItem = {
   quantity: number;
   selected: boolean;
   image: any;
+  selectedColor?: ColorOption; // Add selectedColor here
 };
 const SHIPPING_COST = 6;
 const CartScreen = () => {
@@ -142,7 +146,9 @@ const CartScreen = () => {
 
       <FlatList
         data={cartItems}
-        keyExtractor={item => item.id}
+        keyExtractor={item =>
+          `${item.id}-${item.selectedColor?.color || 'default'}`
+        } // Unique key
         renderItem={renderItem}
         ListEmptyComponent={
           <Text style={styles.empty}>Your cart is empty!</Text>
