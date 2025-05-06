@@ -125,6 +125,7 @@ const HomeScreen = ({navigation}: any) => {
               type="ionicon"
               size={22}
               color="#333"
+              onPress={() => navigation.navigate('ChatScreen')}
             />
           </View>
         </View>

@@ -1,14 +1,32 @@
-import {View, Text, StyleSheet, ScrollView} from 'react-native';
-import React from 'react';
+import {View, Text, StyleSheet, ScrollView, Alert} from 'react-native';
+import React, {useState} from 'react';
 
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import Icon from '../components/icon';
+import {login} from '../lib/api'; // adjust path if needed
 
 const CreateAccountScreen = ({navigation}: any) => {
-  const handleNext = () => {
-    navigation.navigate('Home');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    try {
+      const response = await login(email, password);
+      console.log('Login response:', response);
+
+      if (response?.token) {
+        // Save token if needed (AsyncStorage, context, etc.)
+        navigation.navigate('Home');
+      } else {
+        Alert.alert('Login Failed', response.message || 'Invalid credentials');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    }
   };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Login Account</Text>
@@ -19,6 +37,8 @@ const CreateAccountScreen = ({navigation}: any) => {
         placeholder="Enter your email or phone number"
         iconType="feather"
         iconName="mail"
+        value={email}
+        onChangeText={setEmail}
       />
 
       <CustomInput
@@ -27,23 +47,18 @@ const CreateAccountScreen = ({navigation}: any) => {
         secureTextEntry
         iconType="feather"
         iconName="lock"
+        value={password}
+        onChangeText={setPassword}
       />
 
       <CustomButton
         text="Forgot Password?"
-        onPress={() => {
-          navigation.navigate('Home');
-        }}
+        onPress={() => navigation.navigate('ForgotPassword')}
         type="TERTIARY"
       />
 
       <View style={{width: '100%', alignItems: 'center'}}>
-        <CustomButton
-          text="Sign In"
-          onPress={() => {
-            handleNext;
-          }}
-        />
+        <CustomButton text="Sign In" onPress={handleLogin} />
       </View>
 
       <Text style={styles.orText}>Or using other method</Text>

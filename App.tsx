@@ -26,6 +26,8 @@ import SecurityScreen from './screens/SecurityScreen';
 import NotificationSetting from './screens/NotificationSetting';
 import LanguageScreen from './screens/LanguageScreen';
 import HelpSupport from './screens/HelpSupport';
+import AddressScreen from './screens/AddressScreen';
+import OTPScreen from './screens/OTPScreen';
 type ColorOption = {
   color: string;
   image: ImageSourcePropType; // More specific type for image
@@ -33,6 +35,7 @@ type ColorOption = {
 I18nManager.allowRTL(false); // Disables RTL layout support
 I18nManager.forceRTL(false);
 export type RootStackParamList = {
+  OTPScreen: undefined;
   SecurityScreen: undefined;
   Splash: undefined;
   HelpSupport: undefined;
@@ -41,7 +44,6 @@ export type RootStackParamList = {
   LegalPolicies: undefined;
   Onboarding: undefined;
   Home: undefined;
-  MyOrders: undefined;
   EditProfile: undefined;
   Favorites: undefined;
   Profile: undefined;
@@ -68,7 +70,23 @@ export type RootStackParamList = {
   PaymentScreen: {
     selectedItems: CartItem[];
     subtotal: number;
+    address?: string;
     total: number;
+  };
+  AddressScreen: {
+    selectedItems: CartItem[];
+    subtotal: number;
+    total: number;
+    address?: string;
+  };
+  MyOrders: {
+    newOrder?: {
+      items: any[];
+      address: string;
+      paymentMethod: string;
+      total: number;
+      status: string;
+    };
   };
 };
 
@@ -83,6 +101,8 @@ const App = () => {
           screenOptions={{headerShown: false}}>
           <Stack.Screen name="Splash" component={SplashScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="OTPScreen" component={OTPScreen} />
+
           <Stack.Screen name="CreateAcount" component={CreateAcountScreen} />
           <Stack.Screen name="Onboarding" component={OnboardingFlow} />
           <Stack.Screen name="Home" component={TabNavigationScreen} />
@@ -90,6 +110,7 @@ const App = () => {
           <Stack.Screen name="MyOrders" component={MyOrders} />
           <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
           <Stack.Screen name="HelpSupport" component={HelpSupport} />
+          <Stack.Screen name="AddressScreen" component={AddressScreen} />
 
           <Stack.Screen name="SecurityScreen" component={SecurityScreen} />
           <Stack.Screen

@@ -1,18 +1,28 @@
 import React from 'react';
-import {Text, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+} from 'react-native';
 import Icon from './icon'; // your custom icon.js
+
 type ButtonType = 'PRIMARY' | 'ICON_ROW' | 'TERTIARY';
 
 type Props = {
-  text?: String;
+  text?: string;
   onPress?: () => void;
   type?: ButtonType;
-  icon?: String;
-  iconType?: String;
+  icon?: string;
+  iconType?: string;
   iconColor?: 'white';
-  iconSize?: 20;
+  iconSize?: number;
   showRightArrow?: boolean;
+  disabled?: boolean;
+  loading?: boolean;
 };
+
 const CustomButton: React.FC<Props> = ({
   text,
   onPress,
@@ -22,33 +32,46 @@ const CustomButton: React.FC<Props> = ({
   iconColor,
   iconSize,
   showRightArrow,
+  disabled = false,
+  loading = false,
 }) => {
   const isIconRow = type === 'ICON_ROW';
+  const isDisabled = disabled || loading;
 
   return (
     <TouchableOpacity
-      onPress={onPress}
-      style={[styles.container, type && styles[`container_${type}`]]}>
+      onPress={!isDisabled ? onPress : undefined}
+      style={[
+        styles.container,
+        type && styles[`container_${type}`],
+        isDisabled && styles.disabled,
+      ]}
+      disabled={isDisabled}>
       <View style={[styles.content, isIconRow && styles.content_iconRow]}>
-        {icon && (
-          <Icon
-            name={icon}
-            type={iconType}
-            color={isIconRow ? 'black' : iconColor}
-            size={iconSize}
-            style={[styles.icon, isIconRow && styles.iconLeft]}
-          />
-        )}
-        <Text style={[styles.text, styles[`text_${type}`]]}>{text}</Text>
-
-        {isIconRow && showRightArrow !== false && (
-          <Icon
-            name="arrow-right"
-            type="feather"
-            color="gray"
-            size={20}
-            style={styles.iconRight}
-          />
+        {loading ? (
+          <ActivityIndicator color={type === 'PRIMARY' ? '#fff' : 'gray'} />
+        ) : (
+          <>
+            {icon && (
+              <Icon
+                name={icon}
+                type={iconType}
+                color={isIconRow ? 'black' : iconColor}
+                size={iconSize}
+                style={[styles.icon, isIconRow && styles.iconLeft]}
+              />
+            )}
+            <Text style={[styles.text, styles[`text_${type}`]]}>{text}</Text>
+            {isIconRow && showRightArrow !== false && (
+              <Icon
+                name="arrow-right"
+                type="feather"
+                color="gray"
+                size={20}
+                style={styles.iconRight}
+              />
+            )}
+          </>
         )}
       </View>
     </TouchableOpacity>
@@ -74,7 +97,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'purple',
   },
   container_ICON_ROW: {
-    backgroundColor: '#e0e0e0', // gray background
+    backgroundColor: '#e0e0e0',
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderRadius: 12,
@@ -113,6 +136,9 @@ const styles = StyleSheet.create({
   },
   iconRight: {
     marginLeft: 10,
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });
 

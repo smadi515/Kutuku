@@ -1,14 +1,47 @@
-import {View, Text, StyleSheet, ScrollView} from 'react-native';
-import React from 'react';
+import {View, Text, StyleSheet, ScrollView, Alert} from 'react-native';
+import React, {useState} from 'react';
 
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import Icon from '../components/icon';
+import {register} from '../lib/api';
 
 const CreateAccountScreen = ({navigation}: any) => {
-  const handleNext = () => {
-    navigation.navigate('CreateAcount');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [phoneNumber, sePhoneNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRegister = async () => {
+    setIsLoading(true); // Show loading
+
+    try {
+      // Simulate a 5-second wait
+      setTimeout(async () => {
+        const response = await register(email, password, username, phoneNumber);
+        console.log('Register response:', response);
+
+        if (
+          response?.success ||
+          response?.user ||
+          response?.email ||
+          response?.phoneNumber
+        ) {
+          navigation.navigate('OTPScreen', {email});
+        } else {
+          Alert.alert('Error', response.message || 'Registration failed');
+        }
+
+        setIsLoading(false); // Hide loading after response
+      }, 5000); // 5000ms = 5 seconds
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+      setIsLoading(false); // Make sure to reset loading on error
+    }
   };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Create Account</Text>
@@ -21,13 +54,17 @@ const CreateAccountScreen = ({navigation}: any) => {
         placeholder="Create your username"
         iconType="feather"
         iconName="user"
+        value={username}
+        onChangeText={setUsername}
       />
 
       <CustomInput
-        label="Email or Phone Number"
-        placeholder="Enter your email or phone number"
+        label="Email "
+        placeholder="Enter your email"
         iconType="feather"
         iconName="mail"
+        value={email}
+        onChangeText={setEmail}
       />
 
       <CustomInput
@@ -36,13 +73,23 @@ const CreateAccountScreen = ({navigation}: any) => {
         secureTextEntry
         iconType="feather"
         iconName="lock"
+        value={password}
+        onChangeText={setPassword}
       />
+      <CustomInput
+        label="Phone Number"
+        placeholder="Enter Phone Number"
+        iconType="feather"
+        iconName="lock"
+        value={phoneNumber}
+        onChangeText={sePhoneNumber}
+      />
+
       <View style={{width: '100%', alignItems: 'center'}}>
         <CustomButton
-          text="Create Account"
-          onPress={() => {
-            handleNext;
-          }}
+          text={isLoading ? 'Creating Account...' : 'Create Account'}
+          onPress={handleRegister}
+          disabled={isLoading}
         />
       </View>
 
