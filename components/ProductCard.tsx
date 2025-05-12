@@ -4,7 +4,6 @@ import Icon from './icon';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import type {RootStackParamList} from '../App';
-import {ImageSourcePropType} from 'react-native';
 
 type ProductDetailsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -13,55 +12,54 @@ type ProductDetailsScreenNavigationProp = StackNavigationProp<
 
 type ColorOption = {
   color: string;
-  image: ImageSourcePropType;
+  image: string;
 };
 
 type ProductCardProps = {
+  product_id: number;
   title: string;
   designer: string;
   price: number;
-  image: ImageSourcePropType;
+  image: string;
+  description: string;
+  stock: boolean;
   isFavorite: boolean;
   onPressFavorite: () => void;
   onPressCart: () => void;
   colors?: ColorOption[];
 };
 
-const ProductCard = ({
+const ProductCard: React.FC<ProductCardProps> = ({
+  product_id,
   title,
   designer,
   price,
   image,
+  description,
+  stock,
   isFavorite,
   onPressFavorite,
   onPressCart,
-  colors,
-}: ProductCardProps) => {
+}) => {
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
 
   return (
     <TouchableOpacity
+      activeOpacity={0.8}
       onPress={() => {
-        navigation.navigate('ProductsDetails', {
-          title,
-          designer,
-          price: 195,
-          image,
-          isFavorite,
-          colors: colors || [],
-          rating: 4.8,
-          reviewCount: 320,
-          stock: 'Available in stock',
-          description:
-            'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-        });
+        navigation.navigate('ProductsDetails', {product_id});
       }}
       style={styles.card}>
       <View style={styles.imageWrapper}>
-        <Image source={image} style={styles.productImage} resizeMode="cover" />
+        <Image
+          source={{uri: image}}
+          style={styles.productImage}
+          resizeMode="cover"
+        />
+
         <TouchableOpacity style={styles.heartIcon} onPress={onPressFavorite}>
           <Icon
-            name="hearto"
+            name={isFavorite ? 'heart' : 'hearto'}
             type="ant"
             size={16}
             color={isFavorite ? 'red' : '#777'}
@@ -79,13 +77,33 @@ const ProductCard = ({
         <Text style={styles.designer} numberOfLines={1}>
           {designer}
         </Text>
-        <Text style={styles.productPrice}>{price}</Text>
+        {/* 👇 Add description */}
+        <Text style={styles.description} numberOfLines={2}>
+          {description || 'No description available'}
+        </Text>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            marginTop: 4,
+          }}>
+          <Text style={styles.productPrice}>${price.toFixed(2)}</Text>
+          <Text>|</Text>
+          <Text>{stock ? 'Available in stock' : 'Out of stock'}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
+  description: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+
   card: {
     width: '48%',
     backgroundColor: '#fff',

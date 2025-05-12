@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -6,91 +6,86 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../App';
 import Icon from '../components/icon';
-import {ImageSourcePropType} from 'react-native';
 import Header from '../components/Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-type ColorOption = {
-  color: string;
-  image: ImageSourcePropType;
-};
 
 const ProductsDetails = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'ProductsDetails'>>();
+  const {product_id} = route.params;
 
-  const {
-    title,
-    price,
-    colors = [
-      {color: '#B76E79', image: require('../assets/jacket.png')},
-      {color: '#000', image: require('../assets/jeans.png')},
-      {color: '#00C2CB', image: require('../assets/jacket.png')},
-      {color: '#00FF7F', image: require('../assets/jacket.png')},
-    ],
-    rating,
-    reviewCount,
-    stock,
-    description,
-  } = route.params;
-
-  const [selectedColor, setSelectedColor] = useState<ColorOption>(
-    (colors?.length > 0
-      ? colors
-      : [{color: '#fff', image: require('../assets/jeans.png')}])[0],
-  );
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    console.log('Fetching product details for ID:', product_id);
+    fetch(`http://192.168.100.13:3250/api/products/${product_id}`)
+      .then(res => res.json())
+      .then(data => {
+        console.log('Product data:', data);
+        setProduct(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching product details:', err);
+        setLoading(false);
+      });
+  }, [product_id]);
 
   const increaseQuantity = () => setQuantity(prev => prev + 1);
   const decreaseQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+
   const handleAddToCart = async () => {
-    // Construct the product object
-    const product = {
-      title, // The title of the product
-      price, // The price of the product
-      selectedColor, // The selected color
-      quantity, // The quantity selected
-      image: selectedColor.image, // Ensure the image is passed from selectedColor
-    };
+    const storedCart = await AsyncStorage.getItem('cart');
+    let cart = storedCart ? JSON.parse(storedCart) : [];
 
-    console.log('Product added to cart:', product); // Debugging: Log the product to see its structure
+    const existingItemIndex = cart.findIndex(
+      (cartItem: any) => cartItem.id === product.product_id.toString(),
+    );
 
-    try {
-      const existingCart = await AsyncStorage.getItem('cart');
-      let cart = existingCart ? JSON.parse(existingCart) : [];
+    const productTitle = product?.description?.name || 'Unnamed Product';
+    const productImage =
+      product?.images?.[0]?.single_image || 'https://via.placeholder.com/150';
 
-      // Check if the product already exists in the cart
-      const index = cart.findIndex(
-        (item: any) =>
-          item.title === product.title &&
-          item.selectedColor.color === product.selectedColor.color,
-      );
-
-      if (index >= 0) {
-        // If product already exists, update the quantity
-        cart[index].quantity += quantity;
-      } else {
-        // Otherwise, add the product to the cart
-        cart.push(product);
-      }
-
-      await AsyncStorage.setItem('cart', JSON.stringify(cart));
-      navigation.navigate('CartScreen'); // Navigate to Cart screen
-    } catch (error) {
-      console.error('Error adding to cart:', error);
+    if (existingItemIndex !== -1) {
+      cart[existingItemIndex].quantity += quantity;
+    } else {
+      cart.push({
+        id: product.product_id.toString(),
+        title: productTitle,
+        price: product.price,
+        quantity,
+        selected: true,
+        image: {uri: productImage},
+      });
     }
+
+    await AsyncStorage.setItem('cart', JSON.stringify(cart));
+    navigation.navigate('CartScreen');
   };
+
+  if (loading) {
+    return (
+      <ActivityIndicator size="large" color="purple" style={{marginTop: 40}} />
+    );
+  }
+
+  if (!product) {
+    return <Text style={{padding: 20}}>Product not found</Text>;
+  }
 
   return (
     <ScrollView style={styles.container}>
       <Header
-        title="Store"
+        title="Product Details"
         showBack={true}
         showImage={false}
         rightIcons={[
@@ -101,17 +96,25 @@ const ProductsDetails = () => {
           },
         ]}
       />
-      {/* Product Image */}
-      <Image
-        source={selectedColor.image}
-        style={styles.productImage}
-        resizeMode="cover"
-      />
+
+      {/* Image Slider */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.imageScroll}>
+        {product.images?.map((image: any, index: number) => (
+          <Image
+            key={index}
+            source={{uri: image.single_image}}
+            style={styles.productImage}
+            resizeMode="cover"
+          />
+        ))}
+      </ScrollView>
 
       <View style={styles.detailsContainer}>
-        {/* Title and Quantity */}
         <View style={styles.titleRow}>
-          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.title}>{product.description?.name}</Text>
           <View style={styles.quantityContainer}>
             <TouchableOpacity onPress={decreaseQuantity}>
               <Icon name="minus" type="ant" size={16} color="#333" />
@@ -123,47 +126,19 @@ const ProductsDetails = () => {
           </View>
         </View>
 
-        {/* Rating and Stock */}
-        <View style={styles.ratingRow}>
-          <Text style={styles.ratingText}>
-            ⭐ {rating} ({reviewCount} Reviews)
-          </Text>
-          <Text style={styles.stockText}>{stock}</Text>
-        </View>
+        <Text style={styles.priceText}>${product.price?.toFixed(2)}</Text>
+        <Text style={styles.stockText}>
+          {product.stock ? 'In Stock' : 'Out of Stock'}
+        </Text>
 
-        {/* Color Selection */}
-        <Text style={styles.sectionTitle}>Color</Text>
-        <View style={styles.colorRow}>
-          {(colors && colors.length > 0 ? colors : []).map(colorItem => (
-            <TouchableOpacity
-              key={colorItem.color} // Use colorItem.color as the key
-              style={[
-                styles.colorCircle,
-                {
-                  backgroundColor: colorItem.color,
-                  borderWidth: selectedColor.color === colorItem.color ? 2 : 0,
-                  borderColor: '#333',
-                },
-              ]}
-              onPress={() => setSelectedColor(colorItem)}
-            />
-          ))}
-        </View>
-
-        {/* Description */}
         <Text style={styles.sectionTitle}>Description</Text>
-        <Text style={styles.descriptionText}>{description}</Text>
+        <Text style={styles.descriptionText}>
+          {product.description?.description || 'No description available.'}
+        </Text>
 
-        {/* Price and Add to Cart */}
-        <View style={styles.footerRow}>
-          <Text style={styles.priceText}>
-            ${(typeof price === 'number' ? price : 0).toFixed(2)}
-          </Text>
-          <TouchableOpacity style={styles.addButton} onPress={handleAddToCart}>
-            <Icon name="shoppingcart" type="ant" size={18} color="#fff" />
-            <Text style={styles.addButtonText}>Add to Cart</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.cartButton} onPress={handleAddToCart}>
+          <Text style={styles.cartButtonText}>Add to Cart</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -171,66 +146,40 @@ const ProductsDetails = () => {
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#fff'},
-  productImage: {width: '100%', height: 300},
-  detailsContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -30,
-    padding: 20,
+  imageScroll: {
+    marginBottom: 20,
+    paddingHorizontal: 10,
   },
+  productImage: {width: 300, height: 300, marginRight: 10},
+  detailsContainer: {padding: 16},
   titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  title: {fontSize: 20, fontWeight: 'bold', color: '#333', flex: 1},
+  title: {fontSize: 22, fontWeight: 'bold', flex: 1, flexWrap: 'wrap'},
   quantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#eee',
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    gap: 10,
   },
   quantityText: {marginHorizontal: 10, fontSize: 16},
-  ratingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 10,
-  },
-  ratingText: {color: '#888', fontSize: 14},
-  stockText: {color: 'green', fontSize: 14},
-  sectionTitle: {
-    marginTop: 20,
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  colorRow: {flexDirection: 'row', marginVertical: 10},
-  colorCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginRight: 12,
-  },
-  descriptionText: {color: '#666', fontSize: 14, marginTop: 8},
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  priceText: {fontSize: 20, color: 'black', marginVertical: 10},
+  stockText: {color: '#888', marginBottom: 10},
+  sectionTitle: {fontSize: 18, fontWeight: 'bold', marginTop: 20},
+  descriptionText: {fontSize: 14, color: '#444', marginTop: 8},
+  cartButton: {
+    backgroundColor: 'purple',
+    padding: 12,
+    borderRadius: 10,
     alignItems: 'center',
     marginTop: 30,
   },
-  priceText: {fontSize: 24, fontWeight: 'bold', color: '#333'},
-  addButton: {
-    backgroundColor: '#6C63FF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 30,
+  cartButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
-  addButtonText: {color: '#fff', marginLeft: 8, fontWeight: 'bold'},
 });
 
 export default ProductsDetails;

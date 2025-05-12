@@ -19,6 +19,7 @@ export const login = async (email: string, password: string) => {
   };
   const urlWithParams = buildUrlWithQueryParams(apiUrl, params);
   console.log('URL with parameters:', urlWithParams); // Debugging line
+
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -26,8 +27,9 @@ export const login = async (email: string, password: string) => {
     },
     body: JSON.stringify({email, password}),
   });
+
   const res = await response.json();
-  return res;
+  return res; // تأكد أن البيانات تحتوي على full_name
 };
 
 export const register = async (
@@ -74,4 +76,104 @@ export const verifyOtp = async (email: string, otp: string) => {
 
   const res = await response.json();
   return res;
+};
+export const getProducts = async (categoryId?: number, brandId?: number) => {
+  try {
+    let query = [];
+    if (categoryId) query.push(`categoryId=${categoryId}`);
+    if (brandId) query.push(`brandId=${brandId}`);
+
+    const queryString = query.length > 0 ? `?${query.join('&')}` : '';
+    const response = await fetch(
+      `http://192.168.100.13:3250/api/products${queryString}`,
+    );
+    const json = await response.json();
+    return json.data;
+  } catch (error) {
+    console.error('getProducts error:', error);
+    throw error;
+  }
+};
+
+export const getParentCategories = async () => {
+  try {
+    const response = await fetch(
+      'http://192.168.100.13:3250/api/categories?parentId=null',
+    );
+    const json = await response.json();
+
+    const categories = json.data;
+
+    return categories.map((cat: any) => ({
+      id: cat.id,
+      name: cat.description?.name || 'No name',
+      image: cat.description?.image || '', // Fallback if image is missing
+    }));
+  } catch (error) {
+    console.error('getParentCategories error:', error);
+    return [];
+  }
+};
+
+export const getSubcategories = async (parentId: number) => {
+  try {
+    const response = await fetch(
+      `http://192.168.100.13:3250/api/categories?parentId=${parentId}`,
+    );
+    const json = await response.json();
+
+    return json.data.map((cat: any) => ({
+      id: cat.id,
+      name: cat.description?.name || 'No name',
+      image: cat.description?.image || '',
+    }));
+  } catch (error) {
+    console.error('getSubcategories error:', error);
+    return [];
+  }
+};
+
+export const getBrands = async () => {
+  try {
+    const response = await fetch('http://192.168.100.13:3250/api/brands');
+    const json = await response.json();
+
+    return json.data.map((brand: any) => ({
+      id: brand.id,
+      name: brand.name || 'Unnamed Brand',
+      image: brand.image || '',
+    }));
+  } catch (error) {
+    console.error('getBrands error:', error);
+    return [];
+  }
+};
+
+export const getProductById = async (productId: number) => {
+  try {
+    const response = await fetch(
+      `http://192.168.100.13:3250/api/products/${productId}`,
+    );
+    const json = await response.json();
+    return json;
+  } catch (error) {
+    console.error('getProductById error:', error);
+    throw error;
+  }
+};
+
+export const getProductDetails = async (productId: number | string) => {
+  try {
+    const response = await fetch(
+      `http://192.168.100.13:3250/api/products/${productId}`,
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to fetch product details: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching product details:', error);
+    throw error;
+  }
 };

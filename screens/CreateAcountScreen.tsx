@@ -1,5 +1,6 @@
 import {View, Text, StyleSheet, ScrollView, Alert} from 'react-native';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // ✅ استيراد AsyncStorage
 
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
@@ -12,12 +13,18 @@ const CreateAccountScreen = ({navigation}: any) => {
   const [password, setPassword] = useState('');
   const [phoneNumber, sePhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    const clearStorage = async () => {
+      await AsyncStorage.clear();
+      console.log('✅ AsyncStorage cleared');
+    };
 
+    clearStorage();
+  }, []);
   const handleRegister = async () => {
     setIsLoading(true); // Show loading
 
     try {
-      // Simulate a 5-second wait
       setTimeout(async () => {
         const response = await register(email, password, username, phoneNumber);
         console.log('Register response:', response);
@@ -28,17 +35,20 @@ const CreateAccountScreen = ({navigation}: any) => {
           response?.email ||
           response?.phoneNumber
         ) {
+          // ✅ حفظ الاسم الكامل
+          await AsyncStorage.setItem('userFullName', username);
+
           navigation.navigate('OTPScreen', {email});
         } else {
           Alert.alert('Error', response.message || 'Registration failed');
         }
 
         setIsLoading(false); // Hide loading after response
-      }, 5000); // 5000ms = 5 seconds
+      }, 5000);
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
-      setIsLoading(false); // Make sure to reset loading on error
+      setIsLoading(false);
     }
   };
 

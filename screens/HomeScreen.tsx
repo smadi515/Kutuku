@@ -1,90 +1,161 @@
-// Home.tsx
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
   Text,
   Image,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from '../components/icon';
 import ProductCard from '../components/ProductCard';
 import CategoryTab from './CategoryTab';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getProducts} from '../lib/api';
+import BrandTab from './BrandTab';
 
-const products = [
-  {
-    id: '1',
-    image: require('../assets/Maskgroup4.png'),
-    title: 'The Mirac Jiz',
-    designer: 'Lisa Robber',
-    price: '195.00',
-  },
-  {
-    id: '2',
-    image: require('../assets/Maskgroup4.png'),
-    title: 'Meriza Kiles',
-    designer: 'Lisa Robber',
-    price: '143.45',
-  },
-  {
-    id: '3',
-    image: require('../assets/Maskgroup4.png'),
-    title: 'Meriza Kiles',
-    designer: 'Lisa Robber',
-    price: '143.45',
-  },
-  {
-    id: '4',
-    image: require('../assets/Maskgroup4.png'),
-    title: 'Meriza Kiles',
-    designer: 'Lisa Robber',
-    price: '143.45',
-  },
-  {
-    id: '5',
-    image: require('../assets/Maskgroup4.png'),
-    title: 'Meriza Kiles',
-    designer: 'Lisa Robber',
-    price: '143.45',
-  },
-  {
-    id: '6',
-    image: require('../assets/Maskgroup4.png'),
-    title: 'Meriza Kiles',
-    designer: 'Lisa Robber',
-    price: '143.45',
-  },
-  // Add more products if needed
-];
+type ProductDescription = {
+  name?: string;
+  description?: string;
+  short_description?: string;
+};
+
+type ProductImage = {
+  is_main: boolean;
+  listing_image: string;
+};
+
+type Product = {
+  product_id: number;
+  name: string;
+  short_description: string;
+  description: string;
+  price: number;
+  stock_availability: boolean;
+  images?: ProductImage[];
+  image?: string;
+  description_data?: ProductDescription;
+};
 
 const HomeScreen = ({navigation}: any) => {
+  const [quantity, setQuantity] = useState(1);
+  const [firstName, setFirstName] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
-
   const [activeTab, setActiveTab] = useState('Home');
-  const handleAddToCart = async (product: any) => {
-    try {
-      const existingCart = await AsyncStorage.getItem('cart');
-      let cart = existingCart ? JSON.parse(existingCart) : [];
-      const index = cart.findIndex((item: any) => item.id === product.id);
+  const [loading, setLoading] = useState(true);
+  console.log(setQuantity);
 
-      if (index >= 0) {
-        cart[index].quantity += 1;
-      } else {
-        cart.push({...product, quantity: 1});
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const result = await getProducts();
+
+        const transformed = result.map((product: Product) => {
+          const mainImage =
+            product.images?.find((img: ProductImage) => img.is_main) ||
+            product.images?.[0];
+          let desc: ProductDescription = {};
+          if (
+            typeof product.description === 'object' &&
+            product.description !== null
+          ) {
+            desc = product.description;
+          }
+
+          return {
+            ...product,
+            image: mainImage?.listing_image || '',
+            name: desc.name || 'No name',
+            description: desc.description || '',
+            short_description: desc.short_description || '',
+          };
+        });
+
+        setProducts(transformed);
+      } catch (error) {
+        console.error('Failed to load products:', error);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      await AsyncStorage.setItem('cart', JSON.stringify(cart));
-      navigation.navigate('CartScreen');
-    } catch (error) {
-      console.error('Error adding to cart:', error);
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const fullName = await AsyncStorage.getItem('userFullName');
+        if (fullName) {
+          console.log('✅ Full name from storage:', fullName);
+          setFirstName(fullName.split(' ')[0]);
+        } else {
+          console.log('⚠️ No full name found in AsyncStorage');
+        }
+      } catch (error) {
+        console.error('Error reading full name:', error);
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const storedFavorites = await AsyncStorage.getItem('favorites');
+        if (storedFavorites) {
+          setFavorites(JSON.parse(storedFavorites));
+        }
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+      }
+    };
+
+    loadFavorites();
+  }, []);
+
+  if (loading) {
+    return (
+      <ActivityIndicator size="large" color="purple" style={{marginTop: 20}} />
+    );
+  }
+
+  const handleAddToCart = async (item: any) => {
+    const storedCart = await AsyncStorage.getItem('cart');
+    let cart = storedCart ? JSON.parse(storedCart) : [];
+
+    const newItemId = item.product_id.toString();
+
+    const existingItemIndex = cart.findIndex(
+      (cartItem: any) => cartItem.id === newItemId,
+    );
+
+    if (existingItemIndex !== -1) {
+      cart[existingItemIndex].quantity += quantity;
+    } else {
+      const newItem = {
+        id: newItemId,
+        title: item.name,
+        price: item.price,
+        quantity,
+        selected: true,
+        image: item.image
+          ? {uri: item.image}
+          : {uri: 'https://via.placeholder.com/150'},
+      };
+      cart.push(newItem);
     }
+
+    await AsyncStorage.setItem('cart', JSON.stringify(cart));
+    navigation.navigate('CartScreen');
   };
+
   const toggleFavorite = async (productId: string) => {
     try {
-      let updatedFavorites: string[];
+      let updatedFavorites: string[] = [];
       if (favorites.includes(productId)) {
         updatedFavorites = favorites.filter(id => id !== productId);
       } else {
@@ -96,124 +167,111 @@ const HomeScreen = ({navigation}: any) => {
       console.error('Error updating favorites:', error);
     }
   };
+
   return (
     <View style={styles.container}>
-      <ScrollView>
-        {/* Top Bar */}
-        <View style={styles.topBar}>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Image
-              source={require('../assets/Maskgroup4.png')}
-              style={styles.avatar}
-            />
-            <View style={{marginLeft: 10}}>
-              <Text style={styles.greeting}>Hi, Jonathan</Text>
-              <Text style={styles.subText}>Let’s go shopping</Text>
-            </View>
-          </View>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Icon
-              name="search1"
-              type="ant"
-              size={22}
-              color="#333"
-              style={{marginRight: 15}}
-              onPress={() => navigation.navigate('SearchScreen')}
-            />
-            <Icon
-              name="notifications-outline"
-              type="ionicon"
-              size={22}
-              color="#333"
-              onPress={() => navigation.navigate('ChatScreen')}
-            />
-          </View>
-        </View>
-
-        {/* Tabs */}
-
-        <View style={styles.tabSwitch}>
-          <TouchableOpacity onPress={() => setActiveTab('Home')}>
-            <Text
-              style={
-                activeTab === 'Home' ? styles.activeTab : styles.inactiveTab
-              }>
-              Home
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setActiveTab('category')}>
-            <Text
-              style={
-                activeTab === 'category' ? styles.activeTab : styles.inactiveTab
-              }>
-              Category
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Promo Banner */}
-        {activeTab === 'Home' && (
-          <View style={{marginTop: 20}}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{paddingLeft: 16}}>
-              <Image
-                source={require('../assets/Maskgroup4.png')}
-                style={styles.bannerImage}
-                resizeMode="cover"
-              />
-              <Image
-                source={require('../assets/Maskgroup4.png')}
-                style={styles.bannerImage}
-                resizeMode="cover"
-              />
-              <Image
-                source={require('../assets/Maskgroup4.png')}
-                style={styles.bannerImage}
-                resizeMode="cover"
-              />
-            </ScrollView>
-          </View>
-        )}
-        {/* New Arrivals Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>New Arrivals 🔥</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('StoreScreen')}>
-            <Text style={styles.seeAll}>See All</Text>
-          </TouchableOpacity>
-        </View>
-
-        {activeTab === 'Home' ? (
-          <FlatList
-            data={products}
-            numColumns={2}
-            keyExtractor={item => item.id}
-            columnWrapperStyle={{justifyContent: 'space-between'}}
-            renderItem={({item}) => (
-              <ProductCard
-                title="Product Title"
-                designer="Designer Name"
-                price={199}
-                image={require('../assets/bag.png')}
-                isFavorite={favorites.includes(item.id)}
-                onPressFavorite={() => toggleFavorite(item.id)}
-                onPressCart={() => handleAddToCart(item)}
-                colors={[
-                  {color: '#ff0000', image: require('../assets/bag.png')},
-                  {
-                    color: '#0000FF',
-                    image: require('../assets/speaker.png'),
-                  }, // <-- added blue color
-                ]} // <-- you must pass this!
-              />
-            )}
-            scrollEnabled={false}
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Image
+            source={require('../assets/Maskgroup4.png')}
+            style={styles.avatar}
           />
-        ) : (
-          <CategoryTab />
-        )}
-      </ScrollView>
+          <View style={{marginLeft: 10}}>
+            <Text>hi,{firstName || 'Guest'}</Text>
+            <Text style={styles.subText}>Let’s go shopping</Text>
+          </View>
+        </View>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Icon
+            name="search1"
+            type="ant"
+            size={22}
+            color="#333"
+            style={{marginRight: 15}}
+            onPress={() => navigation.navigate('SearchScreen')}
+          />
+          <Icon
+            name="notifications-outline"
+            type="ionicon"
+            size={22}
+            color="#333"
+            onPress={() => navigation.navigate('NotificationScreen')}
+          />
+        </View>
+      </View>
+
+      {/* Tabs */}
+      <View style={styles.tabSwitch}>
+        <TouchableOpacity onPress={() => setActiveTab('Home')}>
+          <Text
+            style={
+              activeTab === 'Home' ? styles.activeTab : styles.inactiveTab
+            }>
+            Home
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setActiveTab('category')}>
+          <Text
+            style={
+              activeTab === 'category' ? styles.activeTab : styles.inactiveTab
+            }>
+            Category
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setActiveTab('brands')}>
+          <Text
+            style={
+              activeTab === 'brands' ? styles.activeTab : styles.inactiveTab
+            }>
+            Brands
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Product Grid or Categories */}
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color="purple"
+          style={{marginTop: 20}}
+        />
+      ) : activeTab === 'Home' ? (
+        <FlatList
+          data={products}
+          keyExtractor={item => item.product_id.toString()}
+          numColumns={2}
+          ListHeaderComponent={
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>New Arrivals</Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('StoreScreen')}>
+                <Text style={styles.seeAll}>See All</Text>
+              </TouchableOpacity>
+            </View>
+          }
+          renderItem={({item}) => (
+            <ProductCard
+              title={item.name}
+              designer={item.short_description}
+              price={item.price}
+              image={item.image ?? ''}
+              isFavorite={favorites.includes(item.product_id.toString())}
+              onPressFavorite={() => toggleFavorite(item.product_id.toString())}
+              onPressCart={() => handleAddToCart(item)}
+              stock={item.stock_availability}
+              description={item.description}
+              product_id={item.product_id}
+            />
+          )}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={{paddingHorizontal: 8}}
+        />
+      ) : activeTab === 'category' ? (
+        <CategoryTab />
+      ) : (
+        <BrandTab />
+      )}
     </View>
   );
 };
@@ -232,6 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   greeting: {
+    color: 'red',
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -252,7 +311,7 @@ const styles = StyleSheet.create({
     marginRight: 20,
     fontWeight: 'bold',
     borderBottomWidth: 2,
-    borderColor: '#00BCD4',
+    borderColor: 'purple',
     paddingBottom: 4,
     color: '#000',
   },
@@ -260,21 +319,6 @@ const styles = StyleSheet.create({
     marginRight: 20,
     color: '#888',
     paddingBottom: 4,
-  },
-  bannerImage: {
-    width: 280,
-    height: 120,
-    borderRadius: 12,
-    marginRight: 12,
-  },
-  bannerText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  bannerSub: {
-    marginTop: 6,
-    fontSize: 12,
-    color: '#666',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -289,7 +333,12 @@ const styles = StyleSheet.create({
   },
   seeAll: {
     fontSize: 12,
-    color: '#00BCD4',
+    color: 'purple',
+  },
+  row: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    marginBottom: 16,
   },
 });
 

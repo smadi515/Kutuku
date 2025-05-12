@@ -16,10 +16,12 @@ import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../App';
 import CustomInput from '../components/CustomInput';
+
 type ColorOption = {
-  color: string; // color code or name
-  image: any; // the image associated with this color option
+  color: string;
+  image: any;
 };
+
 type CartItem = {
   id: string;
   title: string;
@@ -27,14 +29,15 @@ type CartItem = {
   quantity: number;
   selected: boolean;
   image: any;
-  selectedColor?: ColorOption; // Add selectedColor here
+  selectedColor?: ColorOption;
 };
+
 const SHIPPING_COST = 6;
+
 const CartScreen = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => [450], []);
-
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -48,30 +51,36 @@ const CartScreen = () => {
     setCartItems(items);
   };
 
-  const updateCart = async (updatedCart: any[]) => {
+  const updateCart = async (updatedCart: CartItem[]) => {
     setCartItems(updatedCart);
     await AsyncStorage.setItem('cart', JSON.stringify(updatedCart));
   };
 
-  const increaseQty = (id: string) => {
+  const increaseQty = (id: string, color?: string) => {
     const updated = cartItems.map(item =>
-      item.id === id ? {...item, quantity: item.quantity + 1} : item,
+      item.id === id && item.selectedColor?.color === color
+        ? {...item, quantity: item.quantity + 1}
+        : item,
     );
     updateCart(updated);
   };
 
-  const decreaseQty = (id: string) => {
+  const decreaseQty = (id: string, color?: string) => {
     const updated = cartItems
       .map(item =>
-        item.id === id ? {...item, quantity: item.quantity - 1} : item,
+        item.id === id && item.selectedColor?.color === color
+          ? {...item, quantity: item.quantity - 1}
+          : item,
       )
       .filter(item => item.quantity > 0);
     updateCart(updated);
   };
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = (id: string, color?: string) => {
     const updated = cartItems.map(item =>
-      item.id === id ? {...item, selected: !item.selected} : item,
+      item.id === id && item.selectedColor?.color === color
+        ? {...item, selected: !item.selected}
+        : item,
     );
     updateCart(updated);
   };
@@ -79,6 +88,7 @@ const CartScreen = () => {
   const openSummary = () => {
     bottomSheetRef.current?.snapToIndex(0);
   };
+
   const selectedItems = cartItems.filter(item => item.selected);
   const subtotal = selectedItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -90,32 +100,35 @@ const CartScreen = () => {
     navigation.navigate('PaymentScreen', {selectedItems, subtotal, total});
   };
 
-  const renderItem = ({item}: any) => (
+  const renderItem = ({item}: {item: CartItem}) => (
     <View style={styles.itemContainer}>
       <TouchableOpacity
         style={styles.checkbox}
-        onPress={() => toggleSelect(item.id)}>
+        onPress={() => toggleSelect(item.id, item.selectedColor?.color)}>
         <View
           style={[
             styles.checkCircle,
-            item.selected && {backgroundColor: '#000'},
+            item.selected && {backgroundColor: 'purple'},
           ]}
         />
       </TouchableOpacity>
       <Image source={item.image} style={styles.image} />
       <View style={{flex: 1, marginHorizontal: 10}}>
         <Text style={styles.title}>{item.title}</Text>
-
+        {item.selectedColor?.color && (
+          <Text style={{fontSize: 12, color: '#555'}}>
+            Color: {item.selectedColor.color}
+          </Text>
+        )}
         <View style={styles.qtyRow}>
           <TouchableOpacity
-            onPress={() => decreaseQty(item.id)}
+            onPress={() => decreaseQty(item.id, item.selectedColor?.color)}
             style={styles.qtyBtn}>
             <Text style={styles.qtyText}>-</Text>
           </TouchableOpacity>
-
           <Text style={styles.qtyNum}>{item.quantity}</Text>
           <TouchableOpacity
-            onPress={() => increaseQty(item.id)}
+            onPress={() => increaseQty(item.id, item.selectedColor?.color)}
             style={styles.qtyBtn}>
             <Text style={styles.qtyText}>+</Text>
           </TouchableOpacity>
@@ -148,17 +161,19 @@ const CartScreen = () => {
         data={cartItems}
         keyExtractor={item =>
           `${item.id}-${item.selectedColor?.color || 'default'}`
-        } // Unique key
+        }
         renderItem={renderItem}
         ListEmptyComponent={
           <Text style={styles.empty}>Your cart is empty!</Text>
         }
       />
+
       {cartItems.length > 0 && (
         <Pressable style={styles.summaryBtn} onPress={openSummary}>
           <Text style={styles.summaryText}>View Summary</Text>
         </Pressable>
       )}
+
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
@@ -219,11 +234,11 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: 'purple',
     borderRadius: 10,
   },
   summaryBtn: {
-    backgroundColor: '#000',
+    backgroundColor: 'purple',
     padding: 12,
     alignItems: 'center',
     margin: 10,
@@ -234,7 +249,7 @@ const styles = StyleSheet.create({
   sheetTitle: {fontWeight: 'bold', fontSize: 16, marginBottom: 10},
   total: {marginTop: 10, fontWeight: 'bold'},
   checkoutBtn: {
-    backgroundColor: '#000',
+    backgroundColor: 'purple',
     marginTop: 20,
     padding: 12,
     borderRadius: 10,

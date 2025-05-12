@@ -17,7 +17,6 @@ import CartScreen from './screens/CartScreen';
 import PaymentScreen from './screens/PaymentScreen';
 import NotificationScreen from './screens/NotificationScreen';
 import ProductsDetails from './screens/ProductsDetails';
-import {ImageSourcePropType} from 'react-native';
 import SettingsScreen from './screens/SettingsScreen';
 import ChangePassword from './screens/ChangePassword';
 import LegalPolicies from './screens/LegalPolicies';
@@ -28,10 +27,7 @@ import LanguageScreen from './screens/LanguageScreen';
 import HelpSupport from './screens/HelpSupport';
 import AddressScreen from './screens/AddressScreen';
 import OTPScreen from './screens/OTPScreen';
-type ColorOption = {
-  color: string;
-  image: ImageSourcePropType; // More specific type for image
-};
+
 I18nManager.allowRTL(false); // Disables RTL layout support
 I18nManager.forceRTL(false);
 export type RootStackParamList = {
@@ -53,28 +49,17 @@ export type RootStackParamList = {
   SettingsScreen: undefined;
   ChangePassword: undefined;
   NotificationSetting: undefined;
-  StoreScreen: undefined;
+  StoreScreen: {categoryId?: number; brandId?: number};
   NotificationScreen: undefined;
   ProductsDetails: {
-    title: string;
-    designer: string;
-    price: number;
-    image: ImageSourcePropType;
-    isFavorite: boolean;
-    colors: ColorOption[];
-    rating: number;
-    reviewCount: number;
-    stock: string;
-    description: string;
+    product_id: number;
   };
   PaymentScreen: {
-    selectedItems: CartItem[];
     subtotal: number;
     address?: string;
     total: number;
   };
   AddressScreen: {
-    selectedItems: CartItem[];
     subtotal: number;
     total: number;
     address?: string;
@@ -102,7 +87,6 @@ const App = () => {
           <Stack.Screen name="Splash" component={SplashScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="OTPScreen" component={OTPScreen} />
-
           <Stack.Screen name="CreateAcount" component={CreateAcountScreen} />
           <Stack.Screen name="Onboarding" component={OnboardingFlow} />
           <Stack.Screen name="Home" component={TabNavigationScreen} />
