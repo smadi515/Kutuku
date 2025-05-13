@@ -12,7 +12,7 @@ import MyOrders from './screens/MyOrders';
 import Favorites from './screens/Favorites';
 import Profile from './screens/Profile';
 import TabNavigationScreen from './screens/TabNavigationScreen';
-import SearchScreen from './components/SearchScreen';
+import SearchScreen from './screens/SearchScreen';
 import CartScreen from './screens/CartScreen';
 import PaymentScreen from './screens/PaymentScreen';
 import NotificationScreen from './screens/NotificationScreen';
@@ -30,6 +30,14 @@ import OTPScreen from './screens/OTPScreen';
 
 I18nManager.allowRTL(false); // Disables RTL layout support
 I18nManager.forceRTL(false);
+export type CartItem = {
+  id: string;
+  title: string;
+  price: number;
+  quantity: number;
+  selected: boolean;
+  image: any;
+};
 export type RootStackParamList = {
   OTPScreen: undefined;
   SecurityScreen: undefined;
@@ -54,12 +62,15 @@ export type RootStackParamList = {
   ProductsDetails: {
     product_id: number;
   };
+
   PaymentScreen: {
+    selectedItems: CartItem[];
     subtotal: number;
     address?: string;
     total: number;
   };
   AddressScreen: {
+    selectedItems: CartItem[];
     subtotal: number;
     total: number;
     address?: string;

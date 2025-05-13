@@ -161,19 +161,3 @@ export const getProductById = async (productId: number) => {
     throw error;
   }
 };
-
-export const getProductDetails = async (productId: number | string) => {
-  try {
-    const response = await fetch(
-      `http://192.168.100.13:3250/api/products/${productId}`,
-    );
-    if (!response.ok) {
-      throw new Error(`Failed to fetch product details: ${response.status}`);
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching product details:', error);
-    throw error;
-  }
-};

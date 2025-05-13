@@ -52,7 +52,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       style={styles.card}>
       <View style={styles.imageWrapper}>
         <Image
-          source={{uri: image}}
+          source={{uri: image || 'https://via.placeholder.com/150'}}
           style={styles.productImage}
           resizeMode="cover"
         />

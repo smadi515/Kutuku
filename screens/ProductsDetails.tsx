@@ -136,6 +136,23 @@ const ProductsDetails = () => {
           {product.description?.description || 'No description available.'}
         </Text>
 
+        {/* Attributes Section */}
+        {product.attributes && product.attributes.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Attributes</Text>
+            {product.attributes.map((attr: any, index: number) => (
+              <View key={index} style={styles.attributeRow}>
+                <Text style={styles.attributeLabel}>
+                  {attr.attribute?.attribute_name || 'Attribute'}:
+                </Text>
+                <Text style={styles.attributeValue}>
+                  {attr.option?.option_text || 'N/A'}
+                </Text>
+              </View>
+            ))}
+          </>
+        )}
+
         <TouchableOpacity style={styles.cartButton} onPress={handleAddToCart}>
           <Text style={styles.cartButtonText}>Add to Cart</Text>
         </TouchableOpacity>
@@ -168,6 +185,19 @@ const styles = StyleSheet.create({
   stockText: {color: '#888', marginBottom: 10},
   sectionTitle: {fontSize: 18, fontWeight: 'bold', marginTop: 20},
   descriptionText: {fontSize: 14, color: '#444', marginTop: 8},
+  attributeRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  attributeLabel: {
+    fontWeight: 'bold',
+    color: '#333',
+    marginRight: 6,
+  },
+  attributeValue: {
+    color: '#555',
+    flexShrink: 1,
+  },
   cartButton: {
     backgroundColor: 'purple',
     padding: 12,
