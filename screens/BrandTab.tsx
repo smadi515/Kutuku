@@ -56,7 +56,7 @@ const BrandTab = () => {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#00BCD4" />
+        <ActivityIndicator size="large" color="purple" />
       </View>
     );
   }

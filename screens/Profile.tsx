@@ -11,8 +11,13 @@ import CustomInput from '../components/CustomInput';
 import ImagePickerComponent from '../components/ImagePickerComponent';
 import Icon from '../components/icon';
 import Header from '../components/Header';
-
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {RootStackParamList} from '../App';
 const Profile = () => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const [image, setImage] = useState<any>(null);
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -33,14 +38,13 @@ const Profile = () => {
   return (
     <View style={{flex: 1, backgroundColor: '#fff', padding: 16}}>
       <Header
-        showBack={true}
-        showImage={false}
         title="Profile"
+        showImage={false}
         rightIcons={[
           {
-            name: 'info',
-            type: 'AntDesign',
-            onPress: () => {},
+            name: 'settings-outline',
+            type: 'Ionicons',
+            onPress: () => navigation.navigate('SettingsScreen'), // add navigation to settings if needed
           },
         ]}
       />

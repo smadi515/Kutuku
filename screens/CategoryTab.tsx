@@ -63,7 +63,7 @@ const CategoryTab = () => {
 
   if (loading) {
     return (
-      <ActivityIndicator size="large" color="#00BCD4" style={{marginTop: 20}} />
+      <ActivityIndicator size="large" color="purple" style={{marginTop: 20}} />
     );
   }
 

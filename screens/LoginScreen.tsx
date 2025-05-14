@@ -1,5 +1,5 @@
 import {View, Text, StyleSheet, ScrollView, Alert} from 'react-native';
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import CustomInput from '../components/CustomInput';
@@ -7,30 +7,30 @@ import CustomButton from '../components/CustomButton';
 import Icon from '../components/icon';
 import {
   login,
-  requestResetPassword,
-  resetPassword,
-  verifyOtp,
+  // requestResetPassword,
+  // resetPassword,
+  // verifyOtp,
 } from '../lib/api';
-import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+// import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 
 const CreateAccountScreen = ({navigation}: any) => {
   const [email, setEmail] = useState(__DEV__ ? 'senan.smadi515@gmail.com' : '');
   const [password, setPassword] = useState(__DEV__ ? '12345678' : '');
-  const [resetStep, setResetStep] = useState<'email' | 'otp' | 'password'>(
-    'email',
-  );
-  const [resetEmail, setResetEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  // const [resetStep, setResetStep] = useState<'email' | 'otp' | 'password'>(
+  //   'email',
+  // );
+  // const [resetEmail, setResetEmail] = useState('');
+  // const [otp, setOtp] = useState('');
+  // const [newPassword, setNewPassword] = useState('');
+  // const [confirmPassword, setConfirmPassword] = useState('');
 
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => [450], []);
+  // const bottomSheetRef = useRef<BottomSheet>(null);
+  // const snapPoints = useMemo(() => [450], []);
 
-  const openSummary = () => {
-    setResetStep('email');
-    bottomSheetRef.current?.snapToIndex(0);
-  };
+  // const openSummary = () => {
+  //   setResetStep('email');
+  //   bottomSheetRef.current?.snapToIndex(0);
+  // };
 
   const handleLogin = async () => {
     try {
@@ -38,55 +38,64 @@ const CreateAccountScreen = ({navigation}: any) => {
       console.log('Login response:', response);
 
       if (response?.token) {
+        const token = response.token;
         const fullName = response?.user?.full_name;
+
+        // ✅ Save token to AsyncStorage
+        await AsyncStorage.setItem('token', token);
+        console.log('✅ Token saved:', token);
+
+        // ✅ Save full name if available
         if (fullName) {
           await AsyncStorage.setItem('userFullName', fullName);
           console.log('✅ Full name saved:', fullName);
         }
+
+        // ✅ Navigate to Home
         navigation.navigate('Home');
       } else {
         Alert.alert('Login Failed', response.message || 'Invalid credentials');
       }
     } catch (error) {
-      console.error(error);
+      console.error('Login error:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
     }
   };
 
-  const handleResetStep = async () => {
-    try {
-      if (resetStep === 'email') {
-        const res = await requestResetPassword(resetEmail);
-        if (res?.success) {
-          setResetStep('otp');
-        } else {
-          Alert.alert('Error', res.message || 'Failed to send reset email.');
-        }
-      } else if (resetStep === 'otp') {
-        const res = await verifyOtp(resetEmail, otp);
-        if (res?.success) {
-          setResetStep('password');
-        } else {
-          Alert.alert('Error', res.message || 'Invalid OTP.');
-        }
-      } else if (resetStep === 'password') {
-        if (newPassword !== confirmPassword) {
-          Alert.alert('Error', 'Passwords do not match.');
-          return;
-        }
-        const res = await resetPassword(resetEmail, otp, newPassword);
-        if (res?.success) {
-          Alert.alert('Success', 'Password has been reset.');
-          bottomSheetRef.current?.close();
-        } else {
-          Alert.alert('Error', res.message || 'Failed to reset password.');
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Something went wrong.');
-    }
-  };
+  // const handleResetStep = async () => {
+  //   try {
+  //     if (resetStep === 'email') {
+  //       const res = await requestResetPassword(resetEmail);
+  //       if (res?.success) {
+  //         setResetStep('otp');
+  //       } else {
+  //         Alert.alert('Error', res.message || 'Failed to send reset email.');
+  //       }
+  //     } else if (resetStep === 'otp') {
+  //       const res = await verifyOtp(resetEmail, otp);
+  //       if (res?.success) {
+  //         setResetStep('password');
+  //       } else {
+  //         Alert.alert('Error', res.message || 'Invalid OTP.');
+  //       }
+  //     } else if (resetStep === 'password') {
+  //       if (newPassword !== confirmPassword) {
+  //         Alert.alert('Error', 'Passwords do not match.');
+  //         return;
+  //       }
+  //       const res = await resetPassword(resetEmail, otp, newPassword);
+  //       if (res?.success) {
+  //         Alert.alert('Success', 'Password has been reset.');
+  //         bottomSheetRef.current?.close();
+  //       } else {
+  //         Alert.alert('Error', res.message || 'Failed to reset password.');
+  //       }
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     Alert.alert('Error', 'Something went wrong.');
+  //   }
+  // };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -112,11 +121,7 @@ const CreateAccountScreen = ({navigation}: any) => {
         onChangeText={setPassword}
       />
 
-      <CustomButton
-        text="Forgot Password?"
-        onPress={openSummary}
-        type="TERTIARY"
-      />
+      <CustomButton text="Forgot Password?" type="TERTIARY" />
 
       <View style={{width: '100%', alignItems: 'center'}}>
         <CustomButton text="Sign In" onPress={handleLogin} />
@@ -133,7 +138,7 @@ const CreateAccountScreen = ({navigation}: any) => {
         <Icon type="fa" name="facebook" size={18} />
         <Text style={styles.altBtnText}>Sign in with Facebook</Text>
       </View>
-
+      {/* 
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
@@ -191,7 +196,7 @@ const CreateAccountScreen = ({navigation}: any) => {
             </>
           )}
         </BottomSheetView>
-      </BottomSheet>
+      </BottomSheet> */}
     </ScrollView>
   );
 };

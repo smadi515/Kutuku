@@ -63,7 +63,7 @@ const PaymentScreen = () => {
         <TouchableOpacity onPress={openAddressScreen}>
           <View style={styles.mapPreview}>
             <Text style={styles.mapText}>
-              {currentAddress || 'Select address on map'}
+              {currentAddress || 'Select address '}
             </Text>
           </View>
         </TouchableOpacity>
@@ -89,7 +89,11 @@ const PaymentScreen = () => {
           <Text style={styles.confirmText}>Confirm Payment</Text>
         </TouchableOpacity>
       </ScrollView>
-      <BottomSheet ref={bottomSheetReff} index={-1} snapPoints={snapPoints}>
+      <BottomSheet
+        ref={bottomSheetReff}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose>
         <BottomSheetView
           style={{
             alignItems: 'center',
@@ -123,21 +127,14 @@ const PaymentScreen = () => {
           />
         </BottomSheetView>
       </BottomSheet>
-      <BottomSheet ref={bottomSheetRef} index={-1} snapPoints={snapPoints}>
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose>
         <BottomSheetView style={{padding: 20}}>
           <TouchableOpacity onPress={() => confirmPaymentMethod('PayPal')}>
-            <Text style={styles.option}>PayPal</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => confirmPaymentMethod('Visa')}>
-            <Text style={styles.option}>Visa</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => confirmPaymentMethod('MasterCard')}>
-            <Text style={styles.option}>MasterCard</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => confirmPaymentMethod('Custom')}>
-            <Text style={[styles.option, {color: 'blue'}]}>
-              Create Payment Method
-            </Text>
+            <Text style={styles.option}>Cash</Text>
           </TouchableOpacity>
         </BottomSheetView>
       </BottomSheet>

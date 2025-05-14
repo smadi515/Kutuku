@@ -161,3 +161,27 @@ export const getProductById = async (productId: number) => {
     throw error;
   }
 };
+export const createAddress = async (addressData: any, token: string) => {
+  const apiUrl = 'http://192.168.100.13:3250/api/addresses';
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // Include token in the header
+      },
+      body: JSON.stringify(addressData),
+    });
+
+    const res = await response.json();
+    if (!response.ok) {
+      throw new Error(res.message || 'Failed to create address');
+    }
+
+    return res;
+  } catch (error) {
+    console.error('Error creating address:', error);
+    throw error;
+  }
+};
