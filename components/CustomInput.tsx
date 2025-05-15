@@ -9,7 +9,7 @@ interface CustomInputProps {
   iconName?: string;
   secureTextEntry?: boolean;
   onChangeText?: (text: string) => void;
-  value: string;
+  value?: string;
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad'; // or just `string`
 }
 

@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../App'; // Adjust path as needed
+import {RootStackParamList} from '../App'; // Adjust path if needed
 
 type SplashScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -18,10 +18,12 @@ const SplashScreen: React.FC<SplashScreenProps> = ({navigation}) => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const user = await AsyncStorage.getItem('user');
+        const userData = await AsyncStorage.getItem('user');
         const onboardingSeen = await AsyncStorage.getItem('onboardingSeen');
 
-        if (user) {
+        const user = userData ? JSON.parse(userData) : null;
+
+        if (user && user.id) {
           navigation.replace('Home');
         } else if (onboardingSeen) {
           navigation.replace('Login');

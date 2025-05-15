@@ -1,13 +1,16 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {ActivityIndicator, View, I18nManager} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Screens
 import StoreScreen from './screens/StoreScreen';
 import SplashScreen from './screens/SplashScreen';
 import LoginScreen from './screens/LoginScreen';
 import OnboardingFlow from './screens/OnboardingFlow';
 import CreateAcountScreen from './screens/CreateAcountScreen';
-import {I18nManager} from 'react-native';
 import MyOrders from './screens/MyOrders';
 import Favorites from './screens/Favorites';
 import Profile from './screens/Profile';
@@ -28,53 +31,33 @@ import HelpSupport from './screens/HelpSupport';
 import AddressScreen from './screens/AddressScreen';
 import OTPScreen from './screens/OTPScreen';
 
-I18nManager.allowRTL(false); // Disables RTL layout support
+// Prevent RTL layout
+I18nManager.allowRTL(false);
 I18nManager.forceRTL(false);
+
+// Cart item type used across app
 export type CartItem = {
-  id: string;
-  title: string;
-  price: number;
-  quantity: number;
-  selected: boolean;
-  image: any;
+  id: string; // Product ID
+  title: string; // Product name
+  price: number; // Unit price
+  quantity: number; // Quantity selected
+  selected: boolean; // For UI selection states
+  image: string; // Product image URL
 };
+
+// Navigation type definitions
 export type RootStackParamList = {
-  OTPScreen: undefined;
-  SecurityScreen: undefined;
   Splash: undefined;
-  HelpSupport: undefined;
-  LanguageScreen: undefined;
   Login: undefined;
-  LegalPolicies: undefined;
+  OTPScreen: undefined;
+  CreateAcount: undefined;
   Onboarding: undefined;
   Home: undefined;
   EditProfile: undefined;
   Favorites: undefined;
   Profile: undefined;
-  CreateAcount: undefined;
-  SearchScreen: undefined;
-  CartScreen: undefined;
-  SettingsScreen: undefined;
-  ChangePassword: undefined;
-  NotificationSetting: undefined;
   StoreScreen: {categoryId?: number; brandId?: number};
-  NotificationScreen: undefined;
-  ProductsDetails: {
-    product_id: number;
-  };
-
-  PaymentScreen: {
-    selectedItems: CartItem[];
-    subtotal: number;
-    address?: string;
-    total: number;
-  };
-  AddressScreen: {
-    selectedItems: CartItem[];
-    subtotal: number;
-    total: number;
-    address?: string;
-  };
+  ChangePassword: undefined;
   MyOrders: {
     newOrder?: {
       items: any[];
@@ -84,16 +67,58 @@ export type RootStackParamList = {
       status: string;
     };
   };
+  SettingsScreen: undefined;
+  HelpSupport: undefined;
+  AddressScreen: {
+    selectedItems: CartItem[];
+    subtotal: number;
+    total: number;
+    address?: string;
+  };
+  SecurityScreen: undefined;
+  NotificationSetting: undefined;
+  NotificationScreen: undefined;
+  ProductsDetails: {product_id: number};
+  LegalPolicies: undefined;
+  LanguageScreen: undefined;
+  CartScreen: undefined;
+  PaymentScreen: {
+    selectedItems: CartItem[];
+    subtotal: number;
+    total: number;
+    address?: string;
+  };
+  SearchScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App = () => {
+  const [initialRoute, setInitialRoute] = useState<
+    keyof RootStackParamList | null
+  >(null);
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem('token');
+      setInitialRoute(token ? 'Home' : 'Login');
+    };
+    checkLoginStatus();
+  }, []);
+
+  if (!initialRoute) {
+    return (
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="Splash"
+          initialRouteName={initialRoute}
           screenOptions={{headerShown: false}}>
           <Stack.Screen name="Splash" component={SplashScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -101,37 +126,30 @@ const App = () => {
           <Stack.Screen name="CreateAcount" component={CreateAcountScreen} />
           <Stack.Screen name="Onboarding" component={OnboardingFlow} />
           <Stack.Screen name="Home" component={TabNavigationScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfile} />
+          <Stack.Screen name="Favorites" component={Favorites} />
+          <Stack.Screen name="Profile" component={Profile} />
+          <Stack.Screen name="StoreScreen" component={StoreScreen} />
           <Stack.Screen name="ChangePassword" component={ChangePassword} />
           <Stack.Screen name="MyOrders" component={MyOrders} />
           <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
           <Stack.Screen name="HelpSupport" component={HelpSupport} />
           <Stack.Screen name="AddressScreen" component={AddressScreen} />
-
           <Stack.Screen name="SecurityScreen" component={SecurityScreen} />
           <Stack.Screen
             name="NotificationSetting"
             component={NotificationSetting}
           />
-
-          <Stack.Screen name="StoreScreen" component={StoreScreen} />
-          <Stack.Screen name="EditProfile" component={EditProfile} />
-          <Stack.Screen name="LegalPolicies" component={LegalPolicies} />
-          <Stack.Screen name="ProductsDetails" component={ProductsDetails} />
-          <Stack.Screen name="LanguageScreen" component={LanguageScreen} />
-
           <Stack.Screen
             name="NotificationScreen"
             component={NotificationScreen}
           />
-          <Stack.Screen name="Favorites" component={Favorites} />
-          <Stack.Screen
-            name="CartScreen"
-            component={CartScreen}
-            options={{headerShown: false}}
-          />
+          <Stack.Screen name="ProductsDetails" component={ProductsDetails} />
+          <Stack.Screen name="LegalPolicies" component={LegalPolicies} />
+          <Stack.Screen name="LanguageScreen" component={LanguageScreen} />
+          <Stack.Screen name="CartScreen" component={CartScreen} />
           <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
           <Stack.Screen name="SearchScreen" component={SearchScreen} />
-          <Stack.Screen name="Profile" component={Profile} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>

@@ -1,24 +1,8 @@
-export default function buildUrlWithQueryParams(
-  apiUrl: string,
-  queryParams: any,
-) {
-  if (!queryParams) return '';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-  const queryString = Object.keys(queryParams)
-    .map(key => `${key}=${queryParams[key] == null ? '' : queryParams[key]}`)
-    .join('&');
-
-  return `${apiUrl}?${queryString}`;
-}
-
+// ================= AUTH =================
 export const login = async (email: string, password: string) => {
   const apiUrl = 'http://192.168.100.13:3250/api/auth/login';
-  const params = {
-    email,
-    password,
-  };
-  const urlWithParams = buildUrlWithQueryParams(apiUrl, params);
-  console.log('URL with parameters:', urlWithParams); // Debugging line
 
   const response = await fetch(apiUrl, {
     method: 'POST',
@@ -29,7 +13,7 @@ export const login = async (email: string, password: string) => {
   });
 
   const res = await response.json();
-  return res; // تأكد أن البيانات تحتوي على full_name
+  return res;
 };
 
 export const register = async (
@@ -63,8 +47,7 @@ export const register = async (
 };
 
 export const verifyOtp = async (email: string, otp: string) => {
-  const apiUrl = 'http://192.168.100.13:3250/api/auth/verify-otp'; // adjust endpoint if needed
-  console.log('Sending OTP verification payload:', {email, otp}); // ✅ Add this line
+  const apiUrl = 'http://192.168.100.13:3250/api/auth/verify-otp';
 
   const response = await fetch(apiUrl, {
     method: 'POST',
@@ -77,6 +60,8 @@ export const verifyOtp = async (email: string, otp: string) => {
   const res = await response.json();
   return res;
 };
+
+// ================= PRODUCTS =================
 export const getProducts = async (categoryId?: number, brandId?: number) => {
   try {
     let query = [];
@@ -95,6 +80,20 @@ export const getProducts = async (categoryId?: number, brandId?: number) => {
   }
 };
 
+export const getProductById = async (productId: number) => {
+  try {
+    const response = await fetch(
+      `http://192.168.100.13:3250/api/products/${productId}`,
+    );
+    const json = await response.json();
+    return json;
+  } catch (error) {
+    console.error('getProductById error:', error);
+    throw error;
+  }
+};
+
+// ================= CATEGORIES =================
 export const getParentCategories = async () => {
   try {
     const response = await fetch(
@@ -102,12 +101,10 @@ export const getParentCategories = async () => {
     );
     const json = await response.json();
 
-    const categories = json.data;
-
-    return categories.map((cat: any) => ({
+    return json.data.map((cat: any) => ({
       id: cat.id,
       name: cat.description?.name || 'No name',
-      image: cat.description?.image || '', // Fallback if image is missing
+      image: cat.description?.image || '',
     }));
   } catch (error) {
     console.error('getParentCategories error:', error);
@@ -133,6 +130,7 @@ export const getSubcategories = async (parentId: number) => {
   }
 };
 
+// ================= BRANDS =================
 export const getBrands = async () => {
   try {
     const response = await fetch('http://192.168.100.13:3250/api/brands');
@@ -149,18 +147,7 @@ export const getBrands = async () => {
   }
 };
 
-export const getProductById = async (productId: number) => {
-  try {
-    const response = await fetch(
-      `http://192.168.100.13:3250/api/products/${productId}`,
-    );
-    const json = await response.json();
-    return json;
-  } catch (error) {
-    console.error('getProductById error:', error);
-    throw error;
-  }
-};
+// ================= ADDRESS =================
 export const createAddress = async (addressData: any, token: string) => {
   const apiUrl = 'http://192.168.100.13:3250/api/addresses';
 
@@ -169,7 +156,7 @@ export const createAddress = async (addressData: any, token: string) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // Include token in the header
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(addressData),
     });
@@ -185,3 +172,210 @@ export const createAddress = async (addressData: any, token: string) => {
     throw error;
   }
 };
+
+// ================= CART =================
+export const getCustomerCart = async (token: string) => {
+  try {
+    const response = await fetch(
+      'http://192.168.100.13:3250/api/carts/customer',
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    let cart = null;
+
+    if (response.ok) {
+      cart = await response.json();
+    }
+
+    if (!cart) {
+      const createResponse = await fetch(
+        'http://192.168.100.13:3250/api/carts',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      if (!createResponse.ok) {
+        throw new Error('Failed to create cart');
+      }
+
+      cart = await createResponse.json();
+    }
+
+    if (cart?._id) {
+      await AsyncStorage.setItem('cartId', cart._id);
+      console.log('Cart ID stored:', cart._id);
+    }
+
+    return cart;
+  } catch (error) {
+    console.error('getCustomerCart error:', error);
+    return null;
+  }
+};
+
+export const createCart = async (token: string) => {
+  try {
+    const response = await fetch('http://192.168.100.13:3250/api/carts', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create cart');
+    }
+
+    const data = await response.json();
+
+    console.log('Cart created successfully:', data); // <-- This logs the created cart info
+
+    return data;
+  } catch (error) {
+    console.error('createCart error:', error);
+    return null;
+  }
+};
+
+export const addItemToCart = async (
+  token: string,
+  cartId: string,
+  productId: string | number,
+  quantity: number,
+) => {
+  try {
+    const response = await fetch(
+      `http://192.168.100.13:3250/api/carts/${cartId}/items`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          product_id: Number(productId),
+          qty: quantity,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        `Failed to add item to cart: ${JSON.stringify(errorData)}`,
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('addItemToCart error:', error);
+    return null;
+  }
+};
+
+export const getCartItems = async (token: string) => {
+  try {
+    const response = await fetch(
+      'http://192.168.100.13:3250/api/carts/customer',
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch cart items');
+    }
+
+    const cart = await response.json();
+    return cart;
+  } catch (error) {
+    console.error('getCartItems error:', error);
+    return null;
+  }
+};
+export const deleteCartItem = async (
+  token: string,
+  cart_id: number,
+  cart_item_id: number,
+) => {
+  try {
+    const response = await fetch(
+      `http://192.168.100.13:3250/api/carts/${cart_id}/items/${cart_item_id}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('🔴 Backend error on delete:', errorData);
+      throw new Error('Failed to delete cart item');
+    }
+
+    return true; // Successfully deleted
+  } catch (error) {
+    console.error('🔥 deleteCartItem failed:', error);
+    throw error;
+  }
+};
+export const updateCartItemQuantity = async (
+  token: string,
+  cart_item_id: number,
+  cart_id: number,
+  quantity: number,
+) => {
+  try {
+    const response = await fetch(
+      `http://192.168.100.13:3250/api/carts/${cart_id}/items/${cart_item_id}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({qty: quantity}),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('🔴 Backend error:', errorData);
+      throw new Error('Failed to update cart item quantity');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('🔥 updateCartItemQuantity failed:', error);
+    throw error;
+  }
+};
+// ================= HELPER =================
+export default function buildUrlWithQueryParams(
+  apiUrl: string,
+  queryParams: any,
+) {
+  if (!queryParams) return '';
+
+  const queryString = Object.keys(queryParams)
+    .map(key => `${key}=${queryParams[key] == null ? '' : queryParams[key]}`)
+    .join('&');
+
+  return `${apiUrl}?${queryString}`;
+}

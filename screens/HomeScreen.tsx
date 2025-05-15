@@ -12,7 +12,12 @@ import Icon from '../components/icon';
 import ProductCard from '../components/ProductCard';
 import CategoryTab from './CategoryTab';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {getProducts} from '../lib/api';
+import {
+  getProducts,
+  getCustomerCart,
+  createCart,
+  addItemToCart,
+} from '../lib/api';
 import BrandTab from './BrandTab';
 
 type ProductDescription = {
@@ -40,18 +45,17 @@ type Product = {
 
 const HomeScreen = ({navigation}: any) => {
   const [quantity, setQuantity] = useState(1);
+  console.log(setQuantity);
   const [firstName, setFirstName] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('Home');
   const [loading, setLoading] = useState(true);
-  console.log(setQuantity);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const result = await getProducts();
-
         const transformed = result.map((product: Product) => {
           const mainImage =
             product.images?.find((img: ProductImage) => img.is_main) ||
@@ -89,10 +93,7 @@ const HomeScreen = ({navigation}: any) => {
       try {
         const fullName = await AsyncStorage.getItem('userFullName');
         if (fullName) {
-          console.log('✅ Full name from storage:', fullName);
           setFirstName(fullName.split(' ')[0]);
-        } else {
-          console.log('⚠️ No full name found in AsyncStorage');
         }
       } catch (error) {
         console.error('Error reading full name:', error);
@@ -117,40 +118,54 @@ const HomeScreen = ({navigation}: any) => {
     loadFavorites();
   }, []);
 
-  if (loading) {
-    return (
-      <ActivityIndicator size="large" color="purple" style={{marginTop: 20}} />
-    );
-  }
+  const handleAddToCart = async (item: Product) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.warn('User not logged in');
+        return;
+      }
 
-  const handleAddToCart = async (item: any) => {
-    const storedCart = await AsyncStorage.getItem('cart');
-    let cart = storedCart ? JSON.parse(storedCart) : [];
+      // 1. Ensure customer cart exists
+      let cart = await getCustomerCart(token);
+      if (!cart || !cart.cart_id) {
+        cart = await createCart(token);
+      }
 
-    const newItemId = item.product_id.toString();
+      if (!cart || !cart.cart_id) {
+        console.error('Failed to get or create cart');
+        return;
+      }
 
-    const existingItemIndex = cart.findIndex(
-      (cartItem: any) => cartItem.id === newItemId,
-    );
+      // 2. Send to backend
+      await addItemToCart(
+        token,
+        cart.cart_id,
+        item.product_id.toString(),
+        quantity,
+      );
 
-    if (existingItemIndex !== -1) {
-      cart[existingItemIndex].quantity += quantity;
-    } else {
+      // 3. Add to local AsyncStorage cart
+      const storedCart = await AsyncStorage.getItem('cart');
+      const parsedCart = storedCart ? JSON.parse(storedCart) : [];
+
       const newItem = {
-        id: newItemId,
+        id: item.product_id.toString(),
         title: item.name,
         price: item.price,
-        quantity,
+        quantity: quantity,
         selected: true,
-        image: item.image
-          ? {uri: item.image}
-          : {uri: 'https://via.placeholder.com/150'},
+        image: {uri: item.image},
       };
-      cart.push(newItem);
-    }
 
-    await AsyncStorage.setItem('cart', JSON.stringify(cart));
-    navigation.navigate('CartScreen');
+      const updatedCart = [...parsedCart, newItem];
+      await AsyncStorage.setItem('cart', JSON.stringify(updatedCart));
+
+      // 4. Navigate to CartScreen (no need to pass item now)
+      navigation.navigate('CartScreen');
+    } catch (error) {
+      console.error('Error in handleAddToCart:', error);
+    }
   };
 
   const toggleFavorite = async (productId: string) => {
@@ -168,6 +183,12 @@ const HomeScreen = ({navigation}: any) => {
     }
   };
 
+  if (loading) {
+    return (
+      <ActivityIndicator size="large" color="purple" style={{marginTop: 20}} />
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Top Bar */}
@@ -178,7 +199,7 @@ const HomeScreen = ({navigation}: any) => {
             style={styles.avatar}
           />
           <View style={{marginLeft: 10}}>
-            <Text>hi,{firstName || 'Guest'}</Text>
+            <Text>hi, {firstName || 'Guest'}</Text>
             <Text style={styles.subText}>Let’s go shopping</Text>
           </View>
         </View>
@@ -230,13 +251,7 @@ const HomeScreen = ({navigation}: any) => {
       </View>
 
       {/* Product Grid or Categories */}
-      {loading ? (
-        <ActivityIndicator
-          size="large"
-          color="purple"
-          style={{marginTop: 20}}
-        />
-      ) : activeTab === 'Home' ? (
+      {activeTab === 'Home' ? (
         <FlatList
           data={products}
           keyExtractor={item => item.product_id.toString()}
@@ -288,11 +303,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-  },
-  greeting: {
-    color: 'red',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
   subText: {
     fontSize: 12,

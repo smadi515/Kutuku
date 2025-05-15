@@ -104,12 +104,6 @@ const PaymentScreen = () => {
             style={{height: 120, width: 120, borderRadius: 60}}
           />
           <Text style={{color: 'black', fontSize: 20}}>Order Successfully</Text>
-          <Text style={{color: 'gray'}}>
-            senan nidal mohammed al smadi its big problem
-          </Text>
-          <Text style={{color: 'gray'}}>
-            senan nidal mohammed al smadi its big problem
-          </Text>
 
           <CustomButton
             text="Order Tracking"
@@ -133,7 +127,7 @@ const PaymentScreen = () => {
         snapPoints={snapPoints}
         enablePanDownToClose>
         <BottomSheetView style={{padding: 20}}>
-          <TouchableOpacity onPress={() => confirmPaymentMethod('PayPal')}>
+          <TouchableOpacity onPress={() => confirmPaymentMethod('Cash')}>
             <Text style={styles.option}>Cash</Text>
           </TouchableOpacity>
         </BottomSheetView>

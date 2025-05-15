@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   confirmBtn: {
-    backgroundColor: '#000',
+    backgroundColor: 'purple',
     padding: 12,
     borderRadius: 10,
     alignItems: 'center',

@@ -5,54 +5,32 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import Icon from '../components/icon';
-import {
-  login,
-  // requestResetPassword,
-  // resetPassword,
-  // verifyOtp,
-} from '../lib/api';
-// import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import {login} from '../lib/api';
 
 const CreateAccountScreen = ({navigation}: any) => {
   const [email, setEmail] = useState(__DEV__ ? 'senan.smadi515@gmail.com' : '');
   const [password, setPassword] = useState(__DEV__ ? '12345678' : '');
-  // const [resetStep, setResetStep] = useState<'email' | 'otp' | 'password'>(
-  //   'email',
-  // );
-  // const [resetEmail, setResetEmail] = useState('');
-  // const [otp, setOtp] = useState('');
-  // const [newPassword, setNewPassword] = useState('');
-  // const [confirmPassword, setConfirmPassword] = useState('');
-
-  // const bottomSheetRef = useRef<BottomSheet>(null);
-  // const snapPoints = useMemo(() => [450], []);
-
-  // const openSummary = () => {
-  //   setResetStep('email');
-  //   bottomSheetRef.current?.snapToIndex(0);
-  // };
 
   const handleLogin = async () => {
     try {
       const response = await login(email, password);
       console.log('Login response:', response);
 
-      if (response?.token) {
+      if (response?.token && response?.user) {
         const token = response.token;
-        const fullName = response?.user?.full_name;
+        const user = response.user;
 
-        // ✅ Save token to AsyncStorage
+        // ✅ Save token and user to AsyncStorage
         await AsyncStorage.setItem('token', token);
-        console.log('✅ Token saved:', token);
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+        console.log('✅ Token and user saved to storage');
 
-        // ✅ Save full name if available
-        if (fullName) {
-          await AsyncStorage.setItem('userFullName', fullName);
-          console.log('✅ Full name saved:', fullName);
+        if (user?.full_name) {
+          await AsyncStorage.setItem('userFullName', user.full_name);
         }
 
         // ✅ Navigate to Home
-        navigation.navigate('Home');
+        navigation.replace('Home');
       } else {
         Alert.alert('Login Failed', response.message || 'Invalid credentials');
       }
@@ -62,41 +40,6 @@ const CreateAccountScreen = ({navigation}: any) => {
     }
   };
 
-  // const handleResetStep = async () => {
-  //   try {
-  //     if (resetStep === 'email') {
-  //       const res = await requestResetPassword(resetEmail);
-  //       if (res?.success) {
-  //         setResetStep('otp');
-  //       } else {
-  //         Alert.alert('Error', res.message || 'Failed to send reset email.');
-  //       }
-  //     } else if (resetStep === 'otp') {
-  //       const res = await verifyOtp(resetEmail, otp);
-  //       if (res?.success) {
-  //         setResetStep('password');
-  //       } else {
-  //         Alert.alert('Error', res.message || 'Invalid OTP.');
-  //       }
-  //     } else if (resetStep === 'password') {
-  //       if (newPassword !== confirmPassword) {
-  //         Alert.alert('Error', 'Passwords do not match.');
-  //         return;
-  //       }
-  //       const res = await resetPassword(resetEmail, otp, newPassword);
-  //       if (res?.success) {
-  //         Alert.alert('Success', 'Password has been reset.');
-  //         bottomSheetRef.current?.close();
-  //       } else {
-  //         Alert.alert('Error', res.message || 'Failed to reset password.');
-  //       }
-  //     }
-  //   } catch (err) {
-  //     console.error(err);
-  //     Alert.alert('Error', 'Something went wrong.');
-  //   }
-  // };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Login Account</Text>
@@ -104,7 +47,7 @@ const CreateAccountScreen = ({navigation}: any) => {
 
       <CustomInput
         label="Email"
-        placeholder="Enter your email "
+        placeholder="Enter your email"
         iconType="feather"
         iconName="mail"
         value={email}
@@ -138,65 +81,6 @@ const CreateAccountScreen = ({navigation}: any) => {
         <Icon type="fa" name="facebook" size={18} />
         <Text style={styles.altBtnText}>Sign in with Facebook</Text>
       </View>
-      {/* 
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={-1}
-        snapPoints={snapPoints}
-        enablePanDownToClose>
-        <BottomSheetView style={{padding: 20, flex: 1}}>
-          {resetStep === 'email' && (
-            <>
-              <Text style={{fontWeight: 'bold', marginBottom: 10}}>
-                Enter your email
-              </Text>
-              <CustomInput
-                label="Email"
-                placeholder="Enter your email"
-                value={resetEmail}
-                onChangeText={setResetEmail}
-              />
-              <CustomButton text="Send Code" onPress={handleResetStep} />
-            </>
-          )}
-          {resetStep === 'otp' && (
-            <>
-              <Text style={{fontWeight: 'bold', marginBottom: 10}}>
-                Enter verification code
-              </Text>
-              <CustomInput
-                label="OTP"
-                placeholder="Enter code"
-                value={otp}
-                onChangeText={setOtp}
-              />
-              <CustomButton text="Verify Code" onPress={handleResetStep} />
-            </>
-          )}
-          {resetStep === 'password' && (
-            <>
-              <Text style={{fontWeight: 'bold', marginBottom: 10}}>
-                Set new password
-              </Text>
-              <CustomInput
-                label="New Password"
-                placeholder="Enter new password"
-                secureTextEntry
-                value={newPassword}
-                onChangeText={setNewPassword}
-              />
-              <CustomInput
-                label="Confirm Password"
-                placeholder="Confirm password"
-                secureTextEntry
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-              />
-              <CustomButton text="Reset Password" onPress={handleResetStep} />
-            </>
-          )}
-        </BottomSheetView>
-      </BottomSheet> */}
     </ScrollView>
   );
 };
