@@ -37,7 +37,11 @@ type Product = {
   short_description: string;
   description: string;
   price: number;
-  stock_availability: boolean;
+  inventory?: {
+    stock_availability: boolean;
+    qty: number;
+    manage_stock: boolean;
+  };
   images?: ProductImage[];
   image?: string;
   description_data?: ProductDescription;
@@ -274,7 +278,7 @@ const HomeScreen = ({navigation}: any) => {
               isFavorite={favorites.includes(item.product_id.toString())}
               onPressFavorite={() => toggleFavorite(item.product_id.toString())}
               onPressCart={() => handleAddToCart(item)}
-              stock={item.stock_availability}
+              stock_availability={item.inventory?.stock_availability ?? false}
               description={item.description}
               product_id={item.product_id}
             />

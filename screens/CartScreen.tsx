@@ -23,7 +23,7 @@ type CartItem = {
   cart_item_id: number;
   product_id: number;
   cart_id: number;
-  qty: number;
+  quantity: number;
   [key: string]: any;
 };
 
@@ -31,6 +31,7 @@ const SHIPPING_COST = 6;
 
 const CartScreen = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => [450], []);
   const navigation =
@@ -113,7 +114,6 @@ const CartScreen = () => {
 
       const backendCartItems = cart?.items || [];
       const cartId = backendCartItems[0]?.cart_id;
-
       if (!cartId) {
         console.error('❌ No cart_id found');
         return;
@@ -140,6 +140,7 @@ const CartScreen = () => {
       console.log(
         `🛒 Updating backend cart - cart_id: ${cartId}, cart_item_id: ${cartItemId}, qty: ${newQuantity}`,
       );
+
       await updateCartItemQuantity(token, cartItemId, cartId, newQuantity);
       console.log('✅ Quantity updated on backend');
 
@@ -173,7 +174,6 @@ const CartScreen = () => {
 
       const backendCartItems = cart?.items || [];
       const cartId = backendCartItems[0]?.cart_id;
-
       if (!cartId) {
         console.error('❌ No cart_id found');
         return;
@@ -220,7 +220,7 @@ const CartScreen = () => {
 
       // Update local UI state by cart_item_id
       const updatedItems = cartItems.map((item: CartItem) =>
-        item.cart_item_id === cartItemId
+        item.product_id === Number(itemId)
           ? {...item, qty: newQuantity, quantity: newQuantity}
           : item,
       );
@@ -246,7 +246,7 @@ const CartScreen = () => {
 
   const selectedItems = cartItems.filter(item => item.selected);
   const subtotal = selectedItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + item.price * item.qty,
     0,
   );
   const total = subtotal + SHIPPING_COST;
@@ -273,13 +273,14 @@ const CartScreen = () => {
         )}
         <View style={styles.qtyRow}>
           <TouchableOpacity
-            onPress={() => decreaseQty(item.id, item.selectedColor?.color)}
+            onPress={() => decreaseQty(item.id)}
             style={styles.qtyBtn}>
             <Text style={styles.qtyText}>-</Text>
           </TouchableOpacity>
-          <Text style={styles.qtyNum}>{item.qty}</Text>
+          <Text style={styles.qtyNum}>{item.quantity}</Text>
+
           <TouchableOpacity
-            onPress={() => increaseQty(item.id, item.selectedColor?.color)}
+            onPress={() => increaseQty(item.id)}
             style={styles.qtyBtn}>
             <Text style={styles.qtyText}>+</Text>
           </TouchableOpacity>
@@ -386,7 +387,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   qtyText: {fontSize: 18},
-  qtyNum: {marginHorizontal: 10},
+  qtyNum: {
+    marginHorizontal: 10,
+    fontSize: 16,
+    color: '#000', // ✅ make sure text color isn't white on white
+  },
   checkbox: {marginRight: 8},
   checkCircle: {
     width: 20,

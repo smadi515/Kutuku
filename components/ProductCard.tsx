@@ -1,5 +1,14 @@
 import React from 'react';
-import {View, Text, Image, StyleSheet, TouchableOpacity} from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  ToastAndroid,
+  Platform,
+  Alert,
+} from 'react-native';
 import Icon from './icon';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -22,7 +31,7 @@ type ProductCardProps = {
   price: number;
   image: string;
   description: string;
-  stock: boolean;
+  stock_availability: boolean;
   isFavorite: boolean;
   onPressFavorite: () => void;
   onPressCart: () => void;
@@ -36,12 +45,29 @@ const ProductCard: React.FC<ProductCardProps> = ({
   price,
   image,
   description,
-  stock,
+  stock_availability,
   isFavorite,
   onPressFavorite,
   onPressCart,
 }) => {
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
+
+  const showOutOfStockMessage = () => {
+    const message = 'This product is out of stock.';
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      Alert.alert('Out of Stock', message);
+    }
+  };
+
+  const handleCartPress = () => {
+    if (!stock_availability) {
+      showOutOfStockMessage();
+      return;
+    }
+    onPressCart();
+  };
 
   return (
     <TouchableOpacity
@@ -65,7 +91,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             color={isFavorite ? 'red' : '#777'}
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.cartIcon} onPress={onPressCart}>
+        <TouchableOpacity style={styles.cartIcon} onPress={handleCartPress}>
           <Icon name="shoppingcart" type="ant" size={16} color="#333" />
         </TouchableOpacity>
       </View>
@@ -77,7 +103,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <Text style={styles.designer} numberOfLines={1}>
           {designer}
         </Text>
-        {/* 👇 Add description */}
         <Text style={styles.description} numberOfLines={2}>
           {description || 'No description available'}
         </Text>
@@ -89,8 +114,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
             marginTop: 4,
           }}>
           <Text style={styles.productPrice}>${price.toFixed(2)}</Text>
-          <Text>|</Text>
-          <Text>{stock ? 'Available in stock' : 'Out of stock'}</Text>
+          {!stock_availability && (
+            <>
+              <Text>|</Text>
+              <Text style={{color: 'red'}}>Out of stock</Text>
+            </>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -103,7 +132,6 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 2,
   },
-
   card: {
     width: '48%',
     backgroundColor: '#fff',
