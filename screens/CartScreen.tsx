@@ -1,4 +1,4 @@
-// screens/CartScreen.tsx
+// CartScreen.tsx
 import React, {useEffect, useState, useRef, useMemo} from 'react';
 import {
   View,
@@ -9,244 +9,193 @@ import {
   TouchableOpacity,
   Pressable,
 } from 'react-native';
-import Icon from '../components/icon';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Header from '../components/Header';
-import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import type {RootStackParamList} from '../App';
+import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+
+import Icon from '../components/icon';
+import Header from '../components/Header';
 import CustomInput from '../components/CustomInput';
-import {updateCartItemQuantity} from '../lib/api'; // Adjust the path as needed
-import {getCustomerCart, deleteCartItem} from '../lib/api'; // assuming correct import
+
+import {
+  deleteCartItem,
+  updateCartItemQuantity,
+  getProductById,
+  getCustomerCart,
+} from '../lib/api';
+import type {RootStackParamList} from '../App';
+
 type CartItem = {
   cart_item_id: number;
   product_id: number;
   cart_id: number;
+  price: number;
+  qty: number;
   quantity: number;
-  [key: string]: any;
+  title: string;
+  image: {uri: string} | undefined;
+  selected?: boolean;
+  selectedColor?: {color: string};
+};
+type ProductImage = {
+  is_main: boolean;
+  listing_image: string;
+};
+type CartApiItem = {
+  cart_item_id: number;
+  product_id: number;
+  cart_id: number;
+  qty: number;
+  price?: number;
 };
 
+type ProductDescription = {
+  name?: string;
+  description?: string;
+  short_description?: string;
+};
 const SHIPPING_COST = 6;
 
 const CartScreen = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => [450], []);
+  const snapPoints = useMemo(() => ['50%'], []);
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  console.log(navigation);
 
   useEffect(() => {
     loadCartItems();
   }, []);
 
   const loadCartItems = async () => {
-    const storedCart = await AsyncStorage.getItem('cart');
-    const items = storedCart ? JSON.parse(storedCart) : [];
-    setCartItems(items);
-  };
-
-  const updateCart = async (updatedCart: CartItem[]) => {
-    setCartItems(updatedCart);
-    await AsyncStorage.setItem('cart', JSON.stringify(updatedCart));
-  };
-  // Delete function:
-  const deleteItem = async (cart_item_id: number) => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        console.error('❌ Missing token');
+        setCartItems([]);
         return;
       }
 
       const cart = await getCustomerCart(token);
-      const backendCartItems = cart?.items || [];
-      const cartId = cart?.id || backendCartItems[0]?.cart_id;
-
-      if (!cartId) {
-        console.error('❌ No cart_id found');
+      if (!cart || !cart.items) {
+        setCartItems([]);
         return;
       }
 
-      // Find backend cart item with matching cart_item_id
-      const backendItem = backendCartItems.find(
-        (item: CartItem) => item.cart_item_id === cart_item_id,
+      const enrichedItems = await Promise.all(
+        (cart.items as CartApiItem[]).map(async (item: CartApiItem) => {
+          const product = await getProductById(item.product_id);
+          const mainImage =
+            product.images?.find((img: ProductImage) => img.is_main) ||
+            product.images?.[0];
+
+          let desc: ProductDescription = {};
+          if (
+            typeof product.description === 'object' &&
+            product.description !== null
+          ) {
+            desc = product.description;
+          }
+
+          const quantity = item.qty ?? 1;
+          console.log(
+            `🛒 CartItem ID: ${item.cart_item_id}, Product ID: ${item.product_id}, Quantity: ${quantity}`,
+          );
+
+          const enriched: CartItem = {
+            cart_item_id: item.cart_item_id,
+            product_id: item.product_id,
+            cart_id: item.cart_id,
+            qty: item.qty,
+            quantity: quantity,
+            price: item.price ?? product.price ?? 0,
+            title: product.name || desc.name || 'No title',
+            image: mainImage ? {uri: mainImage.listing_image} : undefined,
+            selected: false,
+            selectedColor: undefined,
+          };
+
+          return enriched;
+        }),
       );
 
-      if (!backendItem) {
-        console.error('❌ Cart item not found for cart_item_id:', cart_item_id);
+      setCartItems(enrichedItems);
+    } catch (error) {
+      console.error('❌ Failed to load cart items:', error);
+    }
+  };
+
+  const updateItemQty = async (productId: number, change: number) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+
+      const item = cartItems.find(i => i.product_id === productId);
+      if (!item) return;
+
+      const newQty = (item.quantity || 0) + change;
+
+      if (newQty < 1) {
+        await deleteItem(item.cart_item_id);
         return;
       }
+
+      await updateCartItemQuantity(
+        token,
+        item.cart_item_id,
+        item.cart_id,
+        newQty,
+      );
 
       console.log(
-        `🗑️ Deleting item cart_item_id: ${cart_item_id} from cart_id: ${cartId}`,
+        `✅ Updated quantity for product ID ${productId}: ${item.quantity} → ${newQty}`,
       );
 
-      await deleteCartItem(token, cartId, cart_item_id);
-      console.log('✅ Item deleted from backend');
-
-      // Update local UI state and AsyncStorage
-      const updatedItems = cartItems.filter(
-        item => item.cart_item_id !== cart_item_id,
+      const updatedItems = cartItems.map(i =>
+        i.product_id === productId ? {...i, quantity: newQty, qty: newQty} : i,
       );
       setCartItems(updatedItems);
-      await AsyncStorage.setItem('cart', JSON.stringify(updatedItems));
+    } catch (error) {
+      console.error('❌ Failed to update item quantity:', error);
+    }
+  };
+
+  const deleteItem = async (cart_item_id: number) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+
+      const item = cartItems.find(i => i.cart_item_id === cart_item_id);
+      if (!item) return;
+
+      await deleteCartItem(token, item.cart_id, cart_item_id);
+
+      const updatedItems = cartItems.filter(
+        i => i.cart_item_id !== cart_item_id,
+      );
+      setCartItems(updatedItems);
     } catch (error) {
       console.error('❌ Failed to delete item:', error);
     }
   };
 
-  const increaseQty = async (itemId: string, color?: string) => {
-    try {
-      console.log(
-        `🔄 Attempting to increase qty for itemId: ${itemId} Color: ${color}`,
-      );
-
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        console.error('❌ Missing token');
-        return;
-      }
-
-      const cart = await getCustomerCart(token);
-      console.log('📦 Full cart response from backend: ', cart);
-
-      const backendCartItems = cart?.items || [];
-      const cartId = backendCartItems[0]?.cart_id;
-      if (!cartId) {
-        console.error('❌ No cart_id found');
-        return;
-      }
-
-      await AsyncStorage.setItem('cartId', cartId.toString());
-      console.log('✅ Saved cartId to AsyncStorage:', cartId);
-
-      // 🔍 Find matching item from backend cart
-      const backendItem = backendCartItems.find(
-        (item: CartItem) => item.product_id === Number(itemId),
-      );
-
-      if (!backendItem) {
-        console.error('❌ Cart item not found for product:', itemId);
-        return;
-      }
-
-      const cartItemId = backendItem.cart_item_id;
-      const newQuantity = backendItem.qty + 1;
-      console.log(
-        `🆙 Increasing quantity for cart_item_id ${cartItemId} to ${newQuantity}`,
-      );
-      console.log(
-        `🛒 Updating backend cart - cart_id: ${cartId}, cart_item_id: ${cartItemId}, qty: ${newQuantity}`,
-      );
-
-      await updateCartItemQuantity(token, cartItemId, cartId, newQuantity);
-      console.log('✅ Quantity updated on backend');
-
-      // Update local UI state
-      const updatedItems = cartItems.map((item: CartItem) =>
-        item.product_id === Number(itemId)
-          ? {...item, qty: newQuantity, quantity: newQuantity}
-          : item,
-      );
-
-      await updateCart(updatedItems);
-    } catch (error) {
-      console.error('❌ Failed to increase quantity:', error);
-    }
-  };
-
-  const decreaseQty = async (itemId: string, color?: string) => {
-    try {
-      console.log(
-        `🔄 Attempting to decrease qty for itemId: ${itemId} Color: ${color}`,
-      );
-
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        console.error('❌ Missing token');
-        return;
-      }
-
-      const cart = await getCustomerCart(token);
-      console.log('📦 Full cart response from backend: ', cart);
-
-      const backendCartItems = cart?.items || [];
-      const cartId = backendCartItems[0]?.cart_id;
-      if (!cartId) {
-        console.error('❌ No cart_id found');
-        return;
-      }
-
-      await AsyncStorage.setItem('cartId', cartId.toString());
-      console.log('✅ Saved cartId to AsyncStorage:', cartId);
-
-      // Find matching item from backend cart by product_id
-      const backendItem = backendCartItems.find(
-        (item: CartItem) => item.product_id === Number(itemId),
-      );
-
-      if (!backendItem) {
-        console.error('❌ Cart item not found for product:', itemId);
-        return;
-      }
-
-      const cartItemId = backendItem.cart_item_id;
-      const newQuantity = backendItem.qty - 1;
-
-      if (newQuantity < 1) {
-        // Delete item from backend
-        console.log(
-          `🗑️ Quantity is 0, deleting item cart_item_id: ${cartItemId} from backend and UI`,
-        );
-        await deleteItem(cartItemId);
-
-        // Update UI: remove item from cartItems
-        const updatedItems = cartItems.filter(
-          (item: CartItem) => item.cart_item_id !== cartItemId,
-        );
-
-        await updateCart(updatedItems);
-        return;
-      }
-
-      // Decrease qty on backend
-      console.log(
-        `🆙 Decreasing quantity for cart_item_id ${cartItemId} to ${newQuantity}`,
-      );
-      await updateCartItemQuantity(token, cartItemId, cartId, newQuantity);
-      console.log('✅ Quantity updated on backend');
-
-      // Update local UI state by cart_item_id
-      const updatedItems = cartItems.map((item: CartItem) =>
-        item.product_id === Number(itemId)
-          ? {...item, qty: newQuantity, quantity: newQuantity}
-          : item,
-      );
-
-      await updateCart(updatedItems);
-    } catch (error) {
-      console.error('❌ Failed to decrease quantity:', error);
-    }
-  };
-
-  const toggleSelect = (id: string, color?: string) => {
+  const toggleSelect = (cart_item_id: number) => {
     const updated = cartItems.map(item =>
-      item.id === id && item.selectedColor?.color === color
+      item.cart_item_id === cart_item_id
         ? {...item, selected: !item.selected}
         : item,
     );
-    updateCart(updated);
+    setCartItems(updated);
   };
 
   const openSummary = () => {
-    bottomSheetRef.current?.snapToIndex(0);
+    bottomSheetRef.current?.expand();
   };
 
   const selectedItems = cartItems.filter(item => item.selected);
   const subtotal = selectedItems.reduce(
-    (sum, item) => sum + item.price * item.qty,
+    (sum, item) => sum + item.price * (item.quantity || 1),
     0,
   );
   const total = subtotal + SHIPPING_COST;
@@ -255,7 +204,7 @@ const CartScreen = () => {
     <View style={styles.itemContainer}>
       <TouchableOpacity
         style={styles.checkbox}
-        onPress={() => toggleSelect(item.id, item.selectedColor?.color)}>
+        onPress={() => toggleSelect(item.cart_item_id)}>
         <View
           style={[
             styles.checkCircle,
@@ -263,7 +212,13 @@ const CartScreen = () => {
           ]}
         />
       </TouchableOpacity>
-      <Image source={item.image} style={styles.image} />
+
+      {item.image ? (
+        <Image source={item.image} style={styles.image} />
+      ) : (
+        <View style={[styles.image, {backgroundColor: '#ccc'}]} />
+      )}
+
       <View style={{flex: 1, marginHorizontal: 10}}>
         <Text style={styles.title}>{item.title}</Text>
         {item.selectedColor?.color && (
@@ -271,32 +226,31 @@ const CartScreen = () => {
             Color: {item.selectedColor.color}
           </Text>
         )}
+
         <View style={styles.qtyRow}>
           <TouchableOpacity
-            onPress={() => decreaseQty(item.id)}
+            onPress={() => updateItemQty(item.product_id, -1)}
             style={styles.qtyBtn}>
             <Text style={styles.qtyText}>-</Text>
           </TouchableOpacity>
+
           <Text style={styles.qtyNum}>{item.quantity}</Text>
 
           <TouchableOpacity
-            onPress={() => increaseQty(item.id)}
+            onPress={() => updateItemQty(item.product_id, 1)}
             style={styles.qtyBtn}>
             <Text style={styles.qtyText}>+</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
-            onPress={() => deleteItem(item.id)}
+            onPress={() => deleteItem(item.cart_item_id)}
             style={{marginLeft: 15}}>
-            <Icon
-              type={'Ionicons'}
-              name="trash-outline"
-              size={24}
-              color="red"
-            />
+            <Icon type="Ionicons" name="trash-outline" size={24} color="red" />
           </TouchableOpacity>
+
           <View style={{alignItems: 'flex-end', flex: 1}}>
             <Text style={styles.price}>
-              ${(item.price * item.quantity).toFixed(2)}
+              ${(item.price * (item.quantity || 1)).toFixed(2)}
             </Text>
           </View>
         </View>
@@ -306,24 +260,11 @@ const CartScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="My Cart"
-        showBack={true}
-        showImage={false}
-        rightIcons={[
-          {
-            name: 'cart-outline',
-            type: 'Ionicons',
-            onPress: () => navigation.navigate('CartScreen'),
-          },
-        ]}
-      />
+      <Header title="My Cart" showBack showImage={false} rightIcons={[]} />
 
       <FlatList
         data={cartItems}
-        keyExtractor={item =>
-          `${item.id}-${item.selectedColor?.color || 'default'}`
-        }
+        keyExtractor={item => item.cart_item_id.toString()}
         renderItem={renderItem}
         ListEmptyComponent={
           <Text style={styles.empty}>Your cart is empty!</Text>
@@ -372,11 +313,7 @@ const styles = StyleSheet.create({
   image: {width: 60, height: 60, borderRadius: 8},
   title: {fontWeight: 'bold', fontSize: 14},
   price: {color: 'black', marginTop: 2, fontSize: 20},
-  qtyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
+  qtyRow: {flexDirection: 'row', alignItems: 'center', marginTop: 4},
   qtyBtn: {
     width: 28,
     height: 28,
@@ -387,11 +324,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   qtyText: {fontSize: 18},
-  qtyNum: {
-    marginHorizontal: 10,
-    fontSize: 16,
-    color: '#000', // ✅ make sure text color isn't white on white
-  },
+  qtyNum: {marginHorizontal: 10, fontSize: 16, color: '#000'},
   checkbox: {marginRight: 8},
   checkCircle: {
     width: 20,
@@ -402,23 +335,14 @@ const styles = StyleSheet.create({
   },
   summaryBtn: {
     backgroundColor: 'purple',
-    padding: 12,
-    alignItems: 'center',
+    padding: 15,
     margin: 10,
     borderRadius: 10,
-  },
-  summaryText: {color: '#fff', fontWeight: 'bold'},
-  sheetContent: {padding: 20},
-  sheetTitle: {fontWeight: 'bold', fontSize: 16, marginBottom: 10},
-  total: {marginTop: 10, fontWeight: 'bold'},
-  checkoutBtn: {
-    backgroundColor: 'purple',
-    marginTop: 20,
-    padding: 12,
-    borderRadius: 10,
     alignItems: 'center',
   },
-  checkoutText: {color: '#fff', fontWeight: 'bold'},
+  summaryText: {color: 'white', fontWeight: 'bold'},
+  sheetContent: {gap: 10},
+  total: {marginTop: 10, fontWeight: 'bold', fontSize: 18},
 });
 
 export default CartScreen;
