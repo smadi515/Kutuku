@@ -48,8 +48,7 @@ type Product = {
 };
 
 const HomeScreen = ({navigation}: any) => {
-  const [quantity, setQuantity] = useState(1);
-  console.log(setQuantity);
+  const [quantity] = useState(1); // No need to change quantity for now
   const [firstName, setFirstName] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -141,15 +140,15 @@ const HomeScreen = ({navigation}: any) => {
         return;
       }
 
-      // 2. Send to backend
-      await addItemToCart(
+      // 2. Add item to backend cart
+      const backendResponse = await addItemToCart(
         token,
         cart.cart_id,
         item.product_id.toString(),
         quantity,
       );
 
-      // 3. Add to local AsyncStorage cart
+      // 3. Add item to local cart
       const storedCart = await AsyncStorage.getItem('cart');
       const parsedCart = storedCart ? JSON.parse(storedCart) : [];
 
@@ -160,12 +159,12 @@ const HomeScreen = ({navigation}: any) => {
         quantity: quantity,
         selected: true,
         image: {uri: item.image},
+        cart_item_id: backendResponse?.cart_item_id || null,
       };
 
       const updatedCart = [...parsedCart, newItem];
       await AsyncStorage.setItem('cart', JSON.stringify(updatedCart));
 
-      // 4. Navigate to CartScreen (no need to pass item now)
       navigation.navigate('CartScreen');
     } catch (error) {
       console.error('Error in handleAddToCart:', error);
@@ -254,7 +253,7 @@ const HomeScreen = ({navigation}: any) => {
         </TouchableOpacity>
       </View>
 
-      {/* Product Grid or Categories */}
+      {/* Content */}
       {activeTab === 'Home' ? (
         <FlatList
           data={products}

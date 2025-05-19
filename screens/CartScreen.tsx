@@ -25,6 +25,7 @@ import {
   getCustomerCart,
 } from '../lib/api';
 import type {RootStackParamList} from '../App';
+import CustomButton from '../components/CustomButton';
 
 type CartItem = {
   cart_item_id: number;
@@ -289,6 +290,9 @@ const CartScreen = () => {
               iconType="MaterialCommunityIcons"
               iconName="brightness-percent"
             />
+            <View style={{width: '100%', alignItems: 'center'}}>
+              <CustomButton text="apply promo" />
+            </View>
             <Text>Subtotal: ${subtotal.toFixed(2)}</Text>
             <Text>Shipping: ${SHIPPING_COST}</Text>
             <Text style={styles.total}>Total: ${total.toFixed(2)}</Text>

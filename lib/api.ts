@@ -222,7 +222,6 @@ export const getCustomerCart = async (token: string) => {
     return null;
   }
 };
-
 export const createCart = async (token: string) => {
   try {
     const response = await fetch('https://api.sareh-nomow.xyz/api/carts', {
@@ -237,9 +236,7 @@ export const createCart = async (token: string) => {
     }
 
     const data = await response.json();
-
-    console.log('Cart created successfully:', data); // <-- This logs the created cart info
-
+    console.log('Cart created successfully:', data);
     return data;
   } catch (error) {
     console.error('createCart error:', error);
@@ -379,3 +376,75 @@ export default function buildUrlWithQueryParams(
 
   return `${apiUrl}?${queryString}`;
 }
+export const addOrUpdateCartItem = async (
+  token: string,
+  cart_id: number,
+  product_id: number,
+  quantity: number,
+) => {
+  const cart = await getCustomerCart(token);
+  const existingItem = cart.items.find(
+    (item: any) => item.product_id === product_id,
+  );
+
+  if (existingItem) {
+    const newQty = existingItem.qty + quantity;
+    return updateCartItemQuantity(
+      token,
+      existingItem.cart_item_id,
+      cart_id,
+      newQty,
+    );
+  } else {
+    const response = await fetch(
+      `https://api.sareh-nomow.xyz/api/carts/${cart_id}/items`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({product_id, qty: quantity}),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('🔴 Add item error:', errorData);
+      throw new Error('Failed to add item to cart');
+    }
+
+    return response.json();
+  }
+};
+
+export const applyCoupon = async (
+  cartId: string,
+  couponCode: string,
+  token: string,
+) => {
+  try {
+    const response = await fetch(
+      `https://api.sareh-nomow.xyz/api/coupons/apply`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          cart_id: cartId,
+          coupon_code: couponCode,
+        }),
+      },
+    );
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to apply coupon');
+    }
+    return data; // Assumes data contains updated cart with total
+  } catch (error) {
+    throw error;
+  }
+};
