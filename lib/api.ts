@@ -246,7 +246,7 @@ export const createCart = async (token: string) => {
 
 export const addItemToCart = async (
   token: string,
-  cartId: string,
+  cartId: number,
   productId: string | number,
   quantity: number,
 ) => {
@@ -419,7 +419,7 @@ export const addOrUpdateCartItem = async (
 };
 
 export const applyCoupon = async (
-  cartId: string,
+  cartId: number,
   couponCode: string,
   token: string,
 ) => {
@@ -444,6 +444,43 @@ export const applyCoupon = async (
       throw new Error(data.message || 'Failed to apply coupon');
     }
     return data; // Assumes data contains updated cart with total
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getOrCreateCartId = async (token: string) => {
+  try {
+    const cartRes = await fetch(
+      'https://api.sareh-nomow.xyz/api/carts/customer',
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    if (!cartRes.ok) {
+      const errorData = await cartRes.json();
+      if (errorData.message === 'no active cart found') {
+        // Create new cart
+        const createRes = await fetch('https://api.sareh-nomow.xyz/api/carts', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!createRes.ok) throw new Error('Failed to create cart');
+        const createData = await createRes.json();
+        return createData.cart_id;
+      } else {
+        throw new Error(errorData.message || 'Failed to get cart');
+      }
+    }
+
+    const data = await cartRes.json();
+    return data.cart_id;
   } catch (error) {
     throw error;
   }

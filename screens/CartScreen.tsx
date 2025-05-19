@@ -17,15 +17,16 @@ import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 import Icon from '../components/icon';
 import Header from '../components/Header';
 import CustomInput from '../components/CustomInput';
+import CustomButton from '../components/CustomButton';
 
 import {
   deleteCartItem,
   updateCartItemQuantity,
   getProductById,
   getCustomerCart,
+  applyCoupon,
 } from '../lib/api';
 import type {RootStackParamList} from '../App';
-import CustomButton from '../components/CustomButton';
 
 type CartItem = {
   cart_item_id: number;
@@ -35,14 +36,16 @@ type CartItem = {
   qty: number;
   quantity: number;
   title: string;
-  image: {uri: string} | undefined;
+  image?: {uri: string};
   selected?: boolean;
   selectedColor?: {color: string};
 };
+
 type ProductImage = {
   is_main: boolean;
   listing_image: string;
 };
+
 type CartApiItem = {
   cart_item_id: number;
   product_id: number;
@@ -56,9 +59,15 @@ type ProductDescription = {
   description?: string;
   short_description?: string;
 };
+
 const SHIPPING_COST = 6;
 
 const CartScreen = () => {
+  const [cartId, setCartId] = useState<number | null>(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [discountedTotal, setDiscountedTotal] = useState<number | null>(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['50%'], []);
@@ -75,15 +84,22 @@ const CartScreen = () => {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         setCartItems([]);
+        setCartId(null);
         return;
       }
 
       const cart = await getCustomerCart(token);
+      console.log('Fetched Cart:', cart); // <-- DEBUG HERE
+
       if (!cart || !cart.items) {
         setCartItems([]);
+        setCartId(null);
         return;
       }
 
+      setCartId(cart.id || null);
+
+      // Enrich cart items with product details
       const enrichedItems = await Promise.all(
         (cart.items as CartApiItem[]).map(async (item: CartApiItem) => {
           const product = await getProductById(item.product_id);
@@ -100,30 +116,30 @@ const CartScreen = () => {
           }
 
           const quantity = item.qty ?? 1;
-          console.log(
-            `🛒 CartItem ID: ${item.cart_item_id}, Product ID: ${item.product_id}, Quantity: ${quantity}`,
-          );
 
-          const enriched: CartItem = {
+          return {
             cart_item_id: item.cart_item_id,
             product_id: item.product_id,
             cart_id: item.cart_id,
             qty: item.qty,
-            quantity: quantity,
+            quantity,
             price: item.price ?? product.price ?? 0,
             title: product.name || desc.name || 'No title',
             image: mainImage ? {uri: mainImage.listing_image} : undefined,
             selected: false,
             selectedColor: undefined,
-          };
-
-          return enriched;
+          } as CartItem;
         }),
       );
 
       setCartItems(enrichedItems);
-    } catch (error) {
-      console.error('❌ Failed to load cart items:', error);
+      setDiscountedTotal(null);
+      setCouponCode('');
+      setError('');
+    } catch (err) {
+      console.error('❌ Failed to load cart items:', err);
+      setCartItems([]);
+      setCartId(null);
     }
   };
 
@@ -136,7 +152,6 @@ const CartScreen = () => {
       if (!item) return;
 
       const newQty = (item.quantity || 0) + change;
-
       if (newQty < 1) {
         await deleteItem(item.cart_item_id);
         return;
@@ -149,16 +164,12 @@ const CartScreen = () => {
         newQty,
       );
 
-      console.log(
-        `✅ Updated quantity for product ID ${productId}: ${item.quantity} → ${newQty}`,
-      );
-
       const updatedItems = cartItems.map(i =>
         i.product_id === productId ? {...i, quantity: newQty, qty: newQty} : i,
       );
       setCartItems(updatedItems);
-    } catch (error) {
-      console.error('❌ Failed to update item quantity:', error);
+    } catch (err) {
+      console.error('❌ Failed to update item quantity:', err);
     }
   };
 
@@ -176,8 +187,8 @@ const CartScreen = () => {
         i => i.cart_item_id !== cart_item_id,
       );
       setCartItems(updatedItems);
-    } catch (error) {
-      console.error('❌ Failed to delete item:', error);
+    } catch (err) {
+      console.error('❌ Failed to delete item:', err);
     }
   };
 
@@ -192,6 +203,38 @@ const CartScreen = () => {
 
   const openSummary = () => {
     bottomSheetRef.current?.expand();
+  };
+
+  const handleApplyCoupon = async () => {
+    console.log(cartId, couponCode);
+
+    if (!cartId) {
+      setError('No active cart found. Please add items to your cart first.');
+      return;
+    }
+    if (!couponCode.trim()) {
+      setError('Please enter a coupon code');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) throw new Error('User not authenticated');
+
+      const response = await applyCoupon(cartId, couponCode.trim(), token);
+      setDiscountedTotal(response.total ?? null);
+      if (response.total === undefined) {
+        setError('Invalid response from coupon API');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to apply coupon');
+      setDiscountedTotal(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const selectedItems = cartItems.filter(item => item.selected);
@@ -289,13 +332,39 @@ const CartScreen = () => {
               placeholder="Enter your Promo Code"
               iconType="MaterialCommunityIcons"
               iconName="brightness-percent"
+              value={couponCode}
+              onChangeText={setCouponCode}
             />
             <View style={{width: '100%', alignItems: 'center'}}>
-              <CustomButton text="apply promo" />
+              <CustomButton
+                text={loading ? 'Applying...' : 'Apply Promo'}
+                onPress={handleApplyCoupon}
+                disabled={loading}
+              />
             </View>
-            <Text>Subtotal: ${subtotal.toFixed(2)}</Text>
+
+            {error ? (
+              <Text style={{color: 'red', marginTop: 6}}>{error}</Text>
+            ) : null}
+
+            <Text style={{marginTop: 12}}>
+              Subtotal: ${subtotal.toFixed(2)}
+            </Text>
             <Text>Shipping: ${SHIPPING_COST}</Text>
-            <Text style={styles.total}>Total: ${total.toFixed(2)}</Text>
+
+            {discountedTotal !== null ? (
+              <>
+                <Text
+                  style={{textDecorationLine: 'line-through', color: 'gray'}}>
+                  Total: ${total.toFixed(2)}
+                </Text>
+                <Text style={styles.total}>
+                  Discounted Total: ${discountedTotal.toFixed(2)}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.total}>Total: ${total.toFixed(2)}</Text>
+            )}
           </View>
         </BottomSheetView>
       </BottomSheet>
@@ -319,34 +388,38 @@ const styles = StyleSheet.create({
   price: {color: 'black', marginTop: 2, fontSize: 20},
   qtyRow: {flexDirection: 'row', alignItems: 'center', marginTop: 4},
   qtyBtn: {
-    width: 28,
-    height: 28,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    width: 30,
+    height: 30,
+    backgroundColor: '#ECECEC',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 4,
+    borderRadius: 6,
   },
-  qtyText: {fontSize: 18},
-  qtyNum: {marginHorizontal: 10, fontSize: 16, color: '#000'},
-  checkbox: {marginRight: 8},
+  qtyText: {fontWeight: 'bold', fontSize: 20},
+  qtyNum: {paddingHorizontal: 6, fontSize: 18},
+  checkbox: {padding: 10},
   checkCircle: {
     width: 20,
     height: 20,
-    borderWidth: 1,
-    borderColor: 'purple',
     borderRadius: 10,
+    borderColor: 'gray',
+    borderWidth: 2,
   },
   summaryBtn: {
     backgroundColor: 'purple',
     padding: 15,
     margin: 10,
     borderRadius: 10,
-    alignItems: 'center',
   },
-  summaryText: {color: 'white', fontWeight: 'bold'},
-  sheetContent: {gap: 10},
-  total: {marginTop: 10, fontWeight: 'bold', fontSize: 18},
+  summaryText: {
+    textAlign: 'center',
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  sheetContent: {
+    flex: 1,
+  },
+  total: {fontWeight: 'bold', fontSize: 20, marginTop: 6},
 });
 
 export default CartScreen;
