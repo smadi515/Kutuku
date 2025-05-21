@@ -366,6 +366,12 @@ const CartScreen = () => {
               <Text style={styles.total}>Total: ${total.toFixed(2)}</Text>
             )}
           </View>
+          <CustomButton
+            text="Checkout"
+            onPress={() => {
+              navigation.navigate('PaymentScreen');
+              bottomSheetRef.current?.close();
+            }}/>
         </BottomSheetView>
       </BottomSheet>
     </View>
