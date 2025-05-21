@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useRef} from 'react';
+import React, {useState, useMemo, useRef, useEffect} from 'react';
 import {
   View,
   Text,
@@ -9,58 +9,64 @@ import {
 } from 'react-native';
 import Header from '../components/Header';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
-import {useRoute, useNavigation, RouteProp} from '@react-navigation/native';
-import {RootStackParamList} from '../App';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useNavigation} from '@react-navigation/native';
 import CustomButton from '../components/CustomButton';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getCartItems} from '../lib/api'; // ✅ use your API method
+import {StackNavigationProp} from '@react-navigation/stack';
+import {RootStackParamList} from '../App';
 const PaymentScreen = () => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  type NavigationProp = StackNavigationProp<RootStackParamList>;
+  const navigation = useNavigation<NavigationProp>();
 
-  // 👇 Correct route with proper screen
-  const route = useRoute<RouteProp<RootStackParamList, 'PaymentScreen'>>();
-
-  const {
-    selectedItems,
-    subtotal,
-    total,
-    address: incomingAddress = '',
-  } = route.params;
-
-  const [currentAddress, setCurrentAddress] = useState(incomingAddress || '');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [subtotal, setSubtotal] = useState<number>(0);
+  const [currentAddress, _setCurrentAddress] = useState<string>('');
+
   const bottomSheetRef = useRef<BottomSheet>(null);
   const bottomSheetReff = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => [250], []);
 
-  const openAddressScreen = () => {
-    navigation.navigate('AddressScreen', {
-      selectedItems,
-      subtotal,
-      total,
-      address: currentAddress,
-    });
-  };
-  const openBottomSheet = () => {
-    bottomSheetRef.current?.expand();
-  };
-  const openSheet = () => {
-    bottomSheetReff.current?.expand();
-  };
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) return;
+
+        const cart = await getCartItems(token);
+        if (cart && cart.items) {
+          setCartItems(cart.items);
+          const total = cart.items.reduce(
+            (acc: number, item: any) => acc + item.product_price * item.qty,
+            0,
+          );
+          setSubtotal(total);
+        }
+      } catch (error) {
+        console.error('Error loading cart:', error);
+      }
+    };
+
+    fetchCart();
+  }, []);
+
+  const totalQuantity = cartItems.reduce((acc, item) => acc + item.qty, 0);
+
+  const openBottomSheet = () => bottomSheetRef.current?.expand();
+  const openSheet = () => bottomSheetReff.current?.expand();
 
   const confirmPaymentMethod = (method: string) => {
     setPaymentMethod(method);
     bottomSheetRef.current?.close();
   };
-  console.log(setCurrentAddress, 'senand');
 
   return (
     <View style={{flex: 1, backgroundColor: '#F9F9F9'}}>
       <Header title="Payment" showBack={true} showImage={false} />
       <ScrollView style={{padding: 20}}>
         <Text style={styles.title}>Shipping Address</Text>
-        <TouchableOpacity onPress={openAddressScreen}>
+        <TouchableOpacity onPress={() => navigation.navigate('AddressScreen')}>
           <View style={styles.mapPreview}>
             <Text style={styles.mapText}>
               {currentAddress || 'Select address '}
@@ -68,15 +74,32 @@ const PaymentScreen = () => {
           </View>
         </TouchableOpacity>
 
+        <View style={styles.summaryContainer}>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Subtotal:</Text>
+            <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Quantity:</Text>
+            <Text style={styles.summaryValue}>{totalQuantity}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Delivery Price:</Text>
+            <Text style={[styles.summaryValue, {fontStyle: 'italic'}]}>
+              (Delivery price will be here)
+            </Text>
+          </View>
+        </View>
+
         <Text style={styles.title}>Products</Text>
-        {selectedItems.map((item, index) => (
+        {cartItems.map((item, index) => (
           <View key={index} style={styles.itemRow}>
-            <Image source={item.image} style={styles.itemImg} />
+            <Image source={{uri: item.image}} style={styles.itemImg} />
             <View style={{flex: 1, marginLeft: 10}}>
-              <Text>{item.title}</Text>
-              <Text>Qty: {item.quantity}</Text>
+              <Text>{item.product_name}</Text>
+              <Text>Qty: {item.qty}</Text>
             </View>
-            <Text>${(item.price * item.quantity).toFixed(2)}</Text>
+            <Text>${(item.product_price * item.qty).toFixed(2)}</Text>
           </View>
         ))}
 
@@ -89,38 +112,27 @@ const PaymentScreen = () => {
           <Text style={styles.confirmText}>Confirm Payment</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Order Confirmation */}
       <BottomSheet
         ref={bottomSheetReff}
         index={-1}
         snapPoints={snapPoints}
         enablePanDownToClose>
-        <BottomSheetView
-          style={{
-            alignItems: 'center',
-            padding: 10,
-          }}>
+        <BottomSheetView style={{alignItems: 'center', padding: 10}}>
           <Image
             source={require('../assets/Maskgroup1.png')}
             style={{height: 120, width: 120, borderRadius: 60}}
           />
           <Text style={{color: 'black', fontSize: 20}}>Order Successfully</Text>
-
           <CustomButton
             text="Order Tracking"
-            onPress={() => {
-              navigation.navigate('MyOrders', {
-                newOrder: {
-                  items: selectedItems,
-                  address: currentAddress,
-                  paymentMethod,
-                  total,
-                  status: 'On Progress',
-                },
-              });
-            }}
+            onPress={() => navigation.navigate('MyOrders')}
           />
         </BottomSheetView>
       </BottomSheet>
+
+      {/* Payment Method */}
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
@@ -144,6 +156,30 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   mapText: {color: '#333'},
+  summaryContainer: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginVertical: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  summaryLabel: {
+    fontWeight: '600',
+    fontSize: 16,
+    color: '#333',
+  },
+  summaryValue: {
+    fontSize: 16,
+    color: '#333',
+  },
   itemRow: {
     flexDirection: 'row',
     backgroundColor: '#fff',

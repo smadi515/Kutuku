@@ -58,23 +58,10 @@ export type RootStackParamList = {
   Profile: undefined;
   StoreScreen: {categoryId?: number; brandId?: number};
   ChangePassword: undefined;
-  MyOrders: {
-    newOrder?: {
-      items: any[];
-      address: string;
-      paymentMethod: string;
-      total: number;
-      status: string;
-    };
-  };
+  MyOrders: undefined;
   SettingsScreen: undefined;
   HelpSupport: undefined;
-  AddressScreen: {
-    selectedItems: CartItem[];
-    subtotal: number;
-    total: number;
-    address?: string;
-  };
+  AddressScreen: undefined;
   SecurityScreen: undefined;
   NotificationSetting: undefined;
   NotificationScreen: undefined;
@@ -82,12 +69,7 @@ export type RootStackParamList = {
   LegalPolicies: undefined;
   LanguageScreen: undefined;
   CartScreen: undefined;
-  PaymentScreen: {
-    selectedItems: CartItem[];
-    subtotal: number;
-    total: number;
-    address?: string;
-  };
+  PaymentScreen: undefined;
   SearchScreen: undefined;
 };
 

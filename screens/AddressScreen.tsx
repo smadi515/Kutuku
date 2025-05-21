@@ -11,13 +11,11 @@ import {
   FlatList,
 } from 'react-native';
 import {ScrollView} from 'react-native-gesture-handler';
-import {useRoute, useNavigation, RouteProp} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
 import CustomInput from '../components/CustomInput';
 import {createAddress} from '../lib/api';
-import {RootStackParamList} from '../App';
 
 interface City {
   id: number;
@@ -32,11 +30,6 @@ interface Country {
 }
 
 const AddressScreen = () => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'AddressScreen'>>();
-  const {selectedItems, subtotal, total} = route.params;
-
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address1, setAddress1] = useState('');
@@ -113,13 +106,6 @@ const AddressScreen = () => {
       console.log('Sending address:', newAddress);
 
       await createAddress(newAddress, token);
-
-      navigation.navigate('PaymentScreen', {
-        selectedItems,
-        subtotal,
-        total,
-        address: address1,
-      });
     } catch (error) {
       console.error('Error creating address:', error);
       Alert.alert('Error', 'Failed to create address.');
