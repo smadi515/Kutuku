@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useRef, useEffect} from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,25 +8,46 @@ import {
   ScrollView,
 } from 'react-native';
 import Header from '../components/Header';
-import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
-import {useNavigation} from '@react-navigation/native';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import CustomButton from '../components/CustomButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {getCartItems} from '../lib/api'; // ✅ use your API method
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RootStackParamList} from '../App';
+import { getCartItems } from '../lib/api';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../App';
+
+interface Address {
+  id: string;
+  street: string;
+  city: string;
+  country: string;
+}
+
+type NavigationProp = StackNavigationProp<RootStackParamList, 'PaymentScreen'>;
+type RouteProps = RouteProp<RootStackParamList, 'PaymentScreen'>;
+
 const PaymentScreen = () => {
-  type NavigationProp = StackNavigationProp<RootStackParamList>;
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteProps>();
+  const addressId = route.params?.addressId;
 
   const [paymentMethod, setPaymentMethod] = useState('');
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [subtotal, setSubtotal] = useState<number>(0);
   const [currentAddress, _setCurrentAddress] = useState<string>('');
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const bottomSheetRef = useRef<BottomSheet>(null);
   const bottomSheetReff = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => [250], []);
+
+  // Set selected address based on route param when addresses load
+  useEffect(() => {
+    if (addressId) {
+      setSelectedAddressId(addressId.toString());
+    }
+  }, [addressId]);
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -51,8 +72,40 @@ const PaymentScreen = () => {
     fetchCart();
   }, []);
 
-  const totalQuantity = cartItems.reduce((acc, item) => acc + item.qty, 0);
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) return;
 
+        const response = await fetch('https://api.sareh-nomow.xyz/api/addresses', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
+
+        // Transform the backend data to match Address interface
+        const transformed = data.map((item: any) => ({
+          id: item.id.toString(),
+          street: item.address_1,
+          city: item.city?.name || 'Unknown City',
+          country: item.countries?.name || 'Unknown Country',
+        }));
+
+        setAddresses(transformed);
+
+        // If addressId is available, ensure selectedAddressId is set (fallback)
+        if (addressId) {
+          setSelectedAddressId(addressId.toString());
+        }
+      } catch (error) {
+        console.error('Failed to fetch addresses:', error);
+      }
+    };
+
+    fetchAddresses();
+  }, [addressId]);
+
+  const totalQuantity = cartItems.reduce((acc, item) => acc + item.qty, 0);
   const openBottomSheet = () => bottomSheetRef.current?.expand();
   const openSheet = () => bottomSheetReff.current?.expand();
 
@@ -62,17 +115,65 @@ const PaymentScreen = () => {
   };
 
   return (
-    <View style={{flex: 1, backgroundColor: '#F9F9F9'}}>
+    <View style={{ flex: 1, backgroundColor: '#F9F9F9' }}>
       <Header title="Payment" showBack={true} showImage={false} />
-      <ScrollView style={{padding: 20}}>
-        <Text style={styles.title}>Shipping Address</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('AddressScreen')}>
-          <View style={styles.mapPreview}>
-            <Text style={styles.mapText}>
-              {currentAddress || 'Select address '}
-            </Text>
-          </View>
-        </TouchableOpacity>
+      <ScrollView style={{ padding: 20 }}>
+        <View style={styles.mapPreview}>
+          <Text style={styles.title}>Choose an Address</Text>
+
+          {Array.isArray(addresses) && addresses.length > 0 ? (
+            <View style={{ backgroundColor: '#fff', borderRadius: 10, padding: 10 }}>
+              {addresses.map((addr) => (
+                <TouchableOpacity
+                  key={addr.id}
+                  onPress={() => {
+                    setSelectedAddressId(addr.id);
+                    _setCurrentAddress(`${addr.street}, ${addr.city}, ${addr.country}`);
+                  }}
+                  style={{
+                    padding: 10,
+                    backgroundColor: addr.id === selectedAddressId ? '#d0f0c0' : '#f0f0f0',
+                    borderRadius: 8,
+                    marginBottom: 5,
+                  }}>
+                  <Text>{addr.street}, {addr.city}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <Text style={{ color: '#888' }}>No addresses found</Text>
+          )}
+
+          {/* Card showing city name of selected address */}
+          {selectedAddressId && (
+            <View
+              style={{
+                marginTop: 10,
+                backgroundColor: '#fff',
+                padding: 12,
+                borderRadius: 10,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Selected City</Text>
+              <Text style={{ fontSize: 18, color: '#555' }}>
+                {addresses.find((addr) => addr.id === selectedAddressId)?.city || 'N/A'}
+              </Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('AddressScreen')}
+            style={{
+              marginTop: 10,
+              padding: 12,
+              backgroundColor: '#000',
+              borderRadius: 8,
+              alignItems: 'center',
+            }}>
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Create Address</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.summaryContainer}>
           <View style={styles.summaryRow}>
@@ -85,7 +186,7 @@ const PaymentScreen = () => {
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Delivery Price:</Text>
-            <Text style={[styles.summaryValue, {fontStyle: 'italic'}]}>
+            <Text style={[styles.summaryValue, { fontStyle: 'italic' }]}>
               (Delivery price will be here)
             </Text>
           </View>
@@ -94,8 +195,8 @@ const PaymentScreen = () => {
         <Text style={styles.title}>Products</Text>
         {cartItems.map((item, index) => (
           <View key={index} style={styles.itemRow}>
-            <Image source={{uri: item.image}} style={styles.itemImg} />
-            <View style={{flex: 1, marginLeft: 10}}>
+            <Image source={{ uri: item.image }} style={styles.itemImg} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
               <Text>{item.product_name}</Text>
               <Text>Qty: {item.qty}</Text>
             </View>
@@ -119,12 +220,12 @@ const PaymentScreen = () => {
         index={-1}
         snapPoints={snapPoints}
         enablePanDownToClose>
-        <BottomSheetView style={{alignItems: 'center', padding: 10}}>
+        <BottomSheetView style={{ alignItems: 'center', padding: 10 }}>
           <Image
             source={require('../assets/Maskgroup1.png')}
-            style={{height: 120, width: 120, borderRadius: 60}}
+            style={{ height: 120, width: 120, borderRadius: 60 }}
           />
-          <Text style={{color: 'black', fontSize: 20}}>Order Successfully</Text>
+          <Text style={{ color: 'black', fontSize: 20 }}>Order Successfully</Text>
           <CustomButton
             text="Order Tracking"
             onPress={() => navigation.navigate('MyOrders')}
@@ -138,7 +239,7 @@ const PaymentScreen = () => {
         index={-1}
         snapPoints={snapPoints}
         enablePanDownToClose>
-        <BottomSheetView style={{padding: 20}}>
+        <BottomSheetView style={{ padding: 20 }}>
           <TouchableOpacity onPress={() => confirmPaymentMethod('Cash')}>
             <Text style={styles.option}>Cash</Text>
           </TouchableOpacity>
@@ -149,13 +250,12 @@ const PaymentScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  title: {fontWeight: 'bold', fontSize: 16, marginVertical: 10},
+  title: { fontWeight: 'bold', fontSize: 16, marginVertical: 10 },
   mapPreview: {
     backgroundColor: '#eee',
     padding: 12,
     borderRadius: 10,
   },
-  mapText: {color: '#333'},
   summaryContainer: {
     backgroundColor: '#fff',
     padding: 15,
@@ -188,7 +288,7 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     alignItems: 'center',
   },
-  itemImg: {width: 50, height: 50, borderRadius: 6},
+  itemImg: { width: 50, height: 50, borderRadius: 6 },
   selectBtn: {
     backgroundColor: '#fff',
     padding: 12,
@@ -204,11 +304,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 20,
   },
-  confirmText: {color: '#fff', fontWeight: 'bold'},
-  option: {
-    fontSize: 16,
-    paddingVertical: 10,
-  },
+  confirmText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  option: { fontSize: 18, paddingVertical: 10 },
 });
 
 export default PaymentScreen;

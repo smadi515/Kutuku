@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,18 +10,21 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import {ScrollView} from 'react-native-gesture-handler';
+import { ScrollView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
 import CustomInput from '../components/CustomInput';
-import {createAddress} from '../lib/api';
+import { createAddress } from '../lib/api';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
 
 interface MethodDetails {
   name: string;
 }
 interface ZoneMethod {
   cost: number;
-  is_enabled: boolean;
+
   method: MethodDetails;
 }
 interface City {
@@ -46,6 +49,7 @@ interface Country {
   Cities: City[];
   ShippingZone: ShippingZone[];
 }
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const AddressScreen = () => {
   const [fullName, setFullName] = useState('');
@@ -62,6 +66,17 @@ const AddressScreen = () => {
   const [cityModalVisible, setCityModalVisible] = useState(false);
   const [ShippingModalVisible, setShippingModalVisible] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const navigation = useNavigation<NavigationProp>();
+
+  const fetchCountry = async (id: number) => {
+    try {
+      const response = await fetch(`https://api.sareh-nomow.xyz/api/countries/${id}`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -70,6 +85,7 @@ const AddressScreen = () => {
     };
 
     const fetchCountries = async () => {
+
       try {
         const response = await fetch('https://api.sareh-nomow.xyz/api/countries');
         const data = await response.json();
@@ -111,11 +127,15 @@ const AddressScreen = () => {
         postcode,
         country_id: selectedCountry!.id,
         city_id: selectedCity!.id,
-        shipping_cost: shippingCost?.cost ?? 0,
       };
 
       console.log('📤 Sending address:', newAddress);
-      await createAddress(newAddress, token);
+      const createdAddress = await createAddress(newAddress, token);
+      console.log('✅ Address created:', createdAddress);
+      const addressId = createdAddress.id;
+      navigation.navigate('PaymentScreen', { addressId });  // <-- fixed here
+      console.log(addressId, "addressId");
+
     } catch (error) {
       console.error('❌ Error creating address:', error);
       Alert.alert('Error', 'Failed to create address.');
@@ -126,59 +146,90 @@ const AddressScreen = () => {
     setter(text.replace(/[^0-9]/g, ''));
   };
 
-const getShippingMethods = (): Shipping[] => {
-  const methods: Shipping[] = [];
-
-  if (!selectedCountry?.ShippingZone) {
-    console.warn('⚠️ No selected country or ShippingZone.');
-    return [];
-  }
-
-  selectedCountry.ShippingZone.forEach((zone, zoneIndex) => {
-    console.log(`📦 Zone ${zoneIndex}:`, JSON.stringify(zone, null, 2));
-
-    const rawMethods = (zone as any).zone_methods;
-
-    if (!rawMethods) {
-      console.warn(`❌ zone_methods is missing in zone ${zoneIndex}`);
-      return;
+  const getShippingMethods = (): Shipping[] => {
+    if (!selectedCountry || !Array.isArray(selectedCountry.ShippingZone)) {
+      console.warn('⚠️ No selected country or ShippingZone is not an array.');
+      return [];
     }
 
-    const methodsArray: ZoneMethod[] = Array.isArray(rawMethods)
-      ? rawMethods
-      : typeof rawMethods === 'object'
-        ? Object.values(rawMethods) as ZoneMethod[]
-        : [];
+    return selectedCountry.ShippingZone.flatMap((zone, zoneIndex) => {
+      if (!zone || typeof zone !== 'object') {
+        console.warn(`❌ zone is not a valid object at index ${zoneIndex}`);
+        return [];
+      }
 
-    methodsArray.forEach((method, methodIndex) => {
-      if (method?.is_enabled && method?.method?.name) {
-        methods.push({
+      const methods = zone.zone_methods;
+      console.log(`📦 Zone ${zoneIndex} (${zone.name}) - Methods:`, methods);
+      console.log("zone", zone);
+      console.log("zone methods", methods);
+      console.log("zone methods", zone.zone_methods);
+
+
+      if (!Array.isArray(methods)) {
+        console.warn(`❌ zone_methods is not an array in zone ${zoneIndex} (${zone.name}) of country: ${selectedCountry.name}`);
+        return [];
+      }
+
+      if (methods.length === 0) {
+        console.warn(`⚠️ zone_methods is empty in zone ${zoneIndex} (${zone.name}) of country: ${selectedCountry.name}`);
+        return [];
+      }
+
+      return methods
+        .filter(method => method?.method?.name && typeof method.cost === 'number')
+        .map(method => ({
           cost: method.cost,
           name: method.method.name,
-        });
-      } else {
-        console.log(`❌ Skipped method ${methodIndex} in zone ${zoneIndex}`, method);
-      }
+        }));
     });
-  });
+  };
 
-  if (methods.length === 0) {
-    console.log('⚠️ No shipping methods found after filtering.');
+
+
+
+  const onCountryChange = async (item: Country) => {
+    console.log('🌍 Selected Country:', item.id);
+    if (!Array.isArray(item.ShippingZone)) {
+      console.warn(`❌ Country ${item.name} has no valid ShippingZone array.`);
+    }
+    if (!Array.isArray(item.ShippingZone) || item.ShippingZone.length === 0) {
+      console.warn(`❌ No ShippingZone defined for country: ${item.name}`);
+    } else {
+      item.ShippingZone.forEach((zone, index) => {
+        console.log(`📦 Zone ${index} (${zone.name})`);
+        if (!Array.isArray(zone.zone_methods)) {
+          console.warn(`❌ zone_methods is not an array in zone ${index} of country: ${item.name}`);
+        } else if (zone.zone_methods.length === 0) {
+          console.warn(`⚠️ zone_methods is empty in zone ${index} of country: ${item.name}`);
+        } else {
+          console.log(`✅ zone_methods (${zone.zone_methods.length}) in zone ${index} of ${item.name}`);
+          zone.zone_methods.forEach(method => {
+            console.log(`➡️ Method: ${method.method?.name}, Cost: ${method.cost}`);
+          });
+        }
+      });
+    }
+
+    // setSelectedCountry(item);
+    // call api to get country details and set selected country
+    const _country = await fetchCountry(item.id);
+    console.log('🌍 Fetched Country:', _country);
+    setSelectedCountry(_country);
+
+    setSelectedCity(null);
+    setShippingCost(null);
+    setCountryModalVisible(false);
   }
 
-  return methods;
-};
-
-
   return (
-    <View style={{flex: 1}}>
+    <View style={{ flex: 1 }}>
       <Header title="Address" showBack={true} showImage={false} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{flex: 1}}>
-        <ScrollView contentContainerStyle={{padding: 10}}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={{ padding: 10 }}>
           <Text style={styles.label}>Enter your address:</Text>
 
           <CustomInput label="Full Name" placeholder="Enter full name" iconType="feather" iconName="user" value={fullName} onChangeText={setFullName} />
-          <CustomInput label="Phone Number" placeholder="Enter phone number" iconType="feather" iconName="phone" value={phoneNumber} onChangeText={handleNumericInput(setPhoneNumber)} keyboardType="numeric" />
+          <CustomInput label="Phone Number" placeholder="Enter phone number" iconType="feather" iconName="phone" value={phoneNumber} onChangeText={setPhoneNumber} />
           <CustomInput label="Address 1" placeholder="Enter address" iconType="feather" iconName="map-pin" value={address1} onChangeText={setAddress1} />
           <CustomInput label="Address 2" placeholder="Enter address line 2" iconType="feather" iconName="map" value={address2} onChangeText={setAddress2} />
           <CustomInput label="Postcode" placeholder="Enter postcode" iconType="feather" iconName="hash" value={postcode} onChangeText={handleNumericInput(setPostcode)} />
@@ -209,17 +260,10 @@ const getShippingMethods = (): Shipping[] => {
         <FlatList
           data={countries}
           keyExtractor={item => item.id.toString()}
-          renderItem={({item}) => (
+          renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.option}
-              onPress={() => {
-                console.log('🌍 Selected Country:', item.name);
-                console.log('📦 Shipping Zones:', JSON.stringify(item.ShippingZone, null, 2));
-                setSelectedCountry(item);
-                setSelectedCity(null);
-                setShippingCost(null);
-                setCountryModalVisible(false);
-              }}>
+              onPress={() => onCountryChange(item)}>
               <Text>{item.name}</Text>
             </TouchableOpacity>
           )}
@@ -231,7 +275,7 @@ const getShippingMethods = (): Shipping[] => {
         <FlatList
           data={selectedCountry?.Cities || []}
           keyExtractor={item => item.id.toString()}
-          renderItem={({item}) => (
+          renderItem={({ item }) => (
             <TouchableOpacity style={styles.option} onPress={() => { setSelectedCity(item); setCityModalVisible(false); }}>
               <Text>{item.name}</Text>
             </TouchableOpacity>
@@ -244,10 +288,20 @@ const getShippingMethods = (): Shipping[] => {
         <FlatList
           data={getShippingMethods()}
           keyExtractor={(_, index) => index.toString()}
-          renderItem={({item}) => (
-            <TouchableOpacity style={styles.option} onPress={() => { setShippingCost(item); setShippingModalVisible(false); }}>
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.option}
+              onPress={() => {
+                setShippingCost(item);
+                setShippingModalVisible(false);
+              }}>
               <Text>{item.name} - {item.cost} JOD</Text>
             </TouchableOpacity>
+          )}
+          ListEmptyComponent={() => (
+            <View style={{ padding: 20 }}>
+              <Text>No shipping methods available for this country.</Text>
+            </View>
           )}
         />
       </Modal>

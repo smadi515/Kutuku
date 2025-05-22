@@ -9,7 +9,7 @@ export const login = async (email: string, password: string) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({email, password}),
+    body: JSON.stringify({ email, password }),
   });
 
   const res = await response.json();
@@ -54,7 +54,7 @@ export const verifyOtp = async (email: string, otp: string) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({email, otp}),
+    body: JSON.stringify({ email, otp }),
   });
 
   const res = await response.json();
@@ -228,10 +228,14 @@ export const createCart = async (token: string) => {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',  // <-- Add this
       },
     });
+    console.log('Token passed to createCart:', token);
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      console.error('createCart API error response:', errorData);
       throw new Error('Failed to create cart');
     }
 
@@ -346,7 +350,7 @@ export const updateCartItemQuantity = async (
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({qty: quantity}),
+        body: JSON.stringify({ qty: quantity }),
       },
     );
 
@@ -404,7 +408,7 @@ export const addOrUpdateCartItem = async (
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({product_id, qty: quantity}),
+        body: JSON.stringify({ product_id, qty: quantity }),
       },
     );
 
