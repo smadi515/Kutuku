@@ -1,5 +1,5 @@
 // CartScreen.tsx
-import React, {useEffect, useState, useRef, useMemo} from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,12 @@ import {
   Image,
   TouchableOpacity,
   Pressable,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 
 import Icon from '../components/icon';
 import Header from '../components/Header';
@@ -26,7 +27,7 @@ import {
   getCustomerCart,
   applyCoupon,
 } from '../lib/api';
-import type {RootStackParamList} from '../App';
+import type { RootStackParamList } from '../App';
 
 type CartItem = {
   cart_item_id: number;
@@ -36,10 +37,12 @@ type CartItem = {
   qty: number;
   quantity: number;
   title: string;
-  image?: {uri: string};
+  image?: { uri: string };
   selected?: boolean;
-  selectedColor?: {color: string};
+  selectedColor?: { color: string };
 };
+
+
 
 type ProductImage = {
   is_main: boolean;
@@ -93,11 +96,11 @@ const CartScreen = () => {
 
       if (!cart || !cart.items) {
         setCartItems([]);
-        setCartId(null);
+        setCartId(cart.id || null);
         return;
       }
 
-      setCartId(cart.id || null);
+      setCartId(cart.cart_id || null);
 
       // Enrich cart items with product details
       const enrichedItems = await Promise.all(
@@ -125,7 +128,7 @@ const CartScreen = () => {
             quantity,
             price: item.price ?? product.price ?? 0,
             title: product.name || desc.name || 'No title',
-            image: mainImage ? {uri: mainImage.listing_image} : undefined,
+            image: mainImage ? { uri: mainImage.listing_image } : undefined,
             selected: false,
             selectedColor: undefined,
           } as CartItem;
@@ -165,7 +168,7 @@ const CartScreen = () => {
       );
 
       const updatedItems = cartItems.map(i =>
-        i.product_id === productId ? {...i, quantity: newQty, qty: newQty} : i,
+        i.product_id === productId ? { ...i, quantity: newQty, qty: newQty } : i,
       );
       setCartItems(updatedItems);
     } catch (err) {
@@ -195,7 +198,7 @@ const CartScreen = () => {
   const toggleSelect = (cart_item_id: number) => {
     const updated = cartItems.map(item =>
       item.cart_item_id === cart_item_id
-        ? {...item, selected: !item.selected}
+        ? { ...item, selected: !item.selected }
         : item,
     );
     setCartItems(updated);
@@ -244,7 +247,7 @@ const CartScreen = () => {
   );
   const total = subtotal + SHIPPING_COST;
 
-  const renderItem = ({item}: {item: CartItem}) => (
+  const renderItem = ({ item }: { item: CartItem }) => (
     <View style={styles.itemContainer}>
       <TouchableOpacity
         style={styles.checkbox}
@@ -252,7 +255,7 @@ const CartScreen = () => {
         <View
           style={[
             styles.checkCircle,
-            item.selected && {backgroundColor: 'purple'},
+            item.selected && { backgroundColor: 'purple' },
           ]}
         />
       </TouchableOpacity>
@@ -260,13 +263,13 @@ const CartScreen = () => {
       {item.image ? (
         <Image source={item.image} style={styles.image} />
       ) : (
-        <View style={[styles.image, {backgroundColor: '#ccc'}]} />
+        <View style={[styles.image, { backgroundColor: '#ccc' }]} />
       )}
 
-      <View style={{flex: 1, marginHorizontal: 10}}>
+      <View style={{ flex: 1, marginHorizontal: 10 }}>
         <Text style={styles.title}>{item.title}</Text>
         {item.selectedColor?.color && (
-          <Text style={{fontSize: 12, color: '#555'}}>
+          <Text style={{ fontSize: 12, color: '#555' }}>
             Color: {item.selectedColor.color}
           </Text>
         )}
@@ -288,11 +291,11 @@ const CartScreen = () => {
 
           <TouchableOpacity
             onPress={() => deleteItem(item.cart_item_id)}
-            style={{marginLeft: 15}}>
+            style={{ marginLeft: 15 }}>
             <Icon type="Ionicons" name="trash-outline" size={24} color="red" />
           </TouchableOpacity>
 
-          <View style={{alignItems: 'flex-end', flex: 1}}>
+          <View style={{ alignItems: 'flex-end', flex: 1 }}>
             <Text style={styles.price}>
               ${(item.price * (item.quantity || 1)).toFixed(2)}
             </Text>
@@ -326,7 +329,7 @@ const CartScreen = () => {
         index={-1}
         snapPoints={snapPoints}
         enablePanDownToClose>
-        <BottomSheetView style={{padding: 20, flex: 1}}>
+        <BottomSheetView style={{ padding: 20, flex: 1 }}>
           <View style={styles.sheetContent}>
             <CustomInput
               placeholder="Enter your Promo Code"
@@ -335,7 +338,7 @@ const CartScreen = () => {
               value={couponCode}
               onChangeText={setCouponCode}
             />
-            <View style={{width: '100%', alignItems: 'center'}}>
+            <View style={{ width: '100%', alignItems: 'center' }}>
               <CustomButton
                 text={loading ? 'Applying...' : 'Apply Promo'}
                 onPress={handleApplyCoupon}
@@ -344,10 +347,10 @@ const CartScreen = () => {
             </View>
 
             {error ? (
-              <Text style={{color: 'red', marginTop: 6}}>{error}</Text>
+              <Text style={{ color: 'red', marginTop: 6 }}>{error}</Text>
             ) : null}
 
-            <Text style={{marginTop: 12}}>
+            <Text style={{ marginTop: 12 }}>
               Subtotal: ${subtotal.toFixed(2)}
             </Text>
             <Text>Shipping: ${SHIPPING_COST}</Text>
@@ -355,7 +358,7 @@ const CartScreen = () => {
             {discountedTotal !== null ? (
               <>
                 <Text
-                  style={{textDecorationLine: 'line-through', color: 'gray'}}>
+                  style={{ textDecorationLine: 'line-through', color: 'gray' }}>
                   Total: ${total.toFixed(2)}
                 </Text>
                 <Text style={styles.total}>
@@ -369,9 +372,16 @@ const CartScreen = () => {
           <CustomButton
             text="Checkout"
             onPress={() => {
-              navigation.navigate('PaymentScreen');
+              if (!cartId) {
+                Alert.alert('No active cart found!');
+                return;
+              }
+
+              navigation.navigate('PaymentScreen', { cartId } as any);
+
               bottomSheetRef.current?.close();
-            }}/>
+            }}
+          />
         </BottomSheetView>
       </BottomSheet>
     </View>
@@ -379,8 +389,8 @@ const CartScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F9F9F9'},
-  empty: {textAlign: 'center', marginTop: 20, color: '#777'},
+  container: { flex: 1, backgroundColor: '#F9F9F9' },
+  empty: { textAlign: 'center', marginTop: 20, color: '#777' },
   itemContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -389,10 +399,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  image: {width: 60, height: 60, borderRadius: 8},
-  title: {fontWeight: 'bold', fontSize: 14},
-  price: {color: 'black', marginTop: 2, fontSize: 20},
-  qtyRow: {flexDirection: 'row', alignItems: 'center', marginTop: 4},
+  image: { width: 60, height: 60, borderRadius: 8 },
+  title: { fontWeight: 'bold', fontSize: 14 },
+  price: { color: 'black', marginTop: 2, fontSize: 20 },
+  qtyRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   qtyBtn: {
     width: 30,
     height: 30,
@@ -401,9 +411,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 6,
   },
-  qtyText: {fontWeight: 'bold', fontSize: 20},
-  qtyNum: {paddingHorizontal: 6, fontSize: 18},
-  checkbox: {padding: 10},
+  qtyText: { fontWeight: 'bold', fontSize: 20 },
+  qtyNum: { paddingHorizontal: 6, fontSize: 18 },
+  checkbox: { padding: 10 },
   checkCircle: {
     width: 20,
     height: 20,
@@ -425,7 +435,7 @@ const styles = StyleSheet.create({
   sheetContent: {
     flex: 1,
   },
-  total: {fontWeight: 'bold', fontSize: 20, marginTop: 6},
+  total: { fontWeight: 'bold', fontSize: 20, marginTop: 6 },
 });
 
 export default CartScreen;

@@ -20,6 +20,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 
 interface MethodDetails {
+  id: number;
   name: string;
 }
 interface ZoneMethod {
@@ -40,6 +41,7 @@ interface ShippingZone {
   zone_methods: ZoneMethod[] | null;
 }
 interface Shipping {
+  id: number;
   cost: number;
   name: string;
 }
@@ -62,6 +64,7 @@ const AddressScreen = () => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [shippingCost, setShippingCost] = useState<Shipping | null>(null);
+
   const [countryModalVisible, setCountryModalVisible] = useState(false);
   const [cityModalVisible, setCityModalVisible] = useState(false);
   const [ShippingModalVisible, setShippingModalVisible] = useState(false);
@@ -107,6 +110,7 @@ const AddressScreen = () => {
     if (!postcode.trim()) missingFields.push('Postcode');
     if (!selectedCountry) missingFields.push('Country');
     if (!selectedCity) missingFields.push('City');
+    if (!shippingCost) missingFields.push('Shipping Method');
 
     if (missingFields.length > 0) {
       Alert.alert('Missing Information', `Please fill in:\n${missingFields.join('\n')}`);
@@ -129,12 +133,16 @@ const AddressScreen = () => {
         city_id: selectedCity!.id,
       };
 
-      console.log('📤 Sending address:', newAddress);
       const createdAddress = await createAddress(newAddress, token);
-      console.log('✅ Address created:', createdAddress);
       const addressId = createdAddress.id;
-      navigation.navigate('PaymentScreen', { addressId });  // <-- fixed here
-      console.log(addressId, "addressId");
+
+      navigation.navigate('PaymentScreen', {
+        cartId: null,
+        addressId: addressId,
+        shippingZoneMethodId: shippingCost!.id,
+        shippingCost: shippingCost!.cost,
+        shippingMethodName: shippingCost!.name,
+      });
 
     } catch (error) {
       console.error('❌ Error creating address:', error);
@@ -178,9 +186,11 @@ const AddressScreen = () => {
       return methods
         .filter(method => method?.method?.name && typeof method.cost === 'number')
         .map(method => ({
+          id: method.method?.id ?? 0, // include id for use in PaymentScreen
           cost: method.cost,
           name: method.method.name,
         }));
+
     });
   };
 

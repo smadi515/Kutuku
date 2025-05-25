@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  Alert,
 } from 'react-native';
 import Header from '../components/Header';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
@@ -29,26 +30,26 @@ type RouteProps = RouteProp<RootStackParamList, 'PaymentScreen'>;
 const PaymentScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const addressId = route.params?.addressId;
 
-  const [paymentMethod, setPaymentMethod] = useState('');
+  // Extract params from route
+  const { cartId, addressId, shippingCost: initialShippingCost = 0, shippingMethodName: initialShippingMethodName = '', shippingZoneMethodId } = route.params;
+
+  const [shippingCost, setShippingCost] = useState<number>(initialShippingCost);
+  const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [subtotal, setSubtotal] = useState<number>(0);
-  const [currentAddress, _setCurrentAddress] = useState<string>('');
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [currentAddress, setCurrentAddress] = useState<string>('');
+  const [shippingMethodName, setShippingMethodName] = useState<string>(initialShippingMethodName);
 
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const bottomSheetReff = useRef<BottomSheet>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(addressId ? addressId.toString() : null);
+
+  const bottomSheetRef = useRef<BottomSheet>(null);     // Payment method selection sheet
+  const confirmationSheetRef = useRef<BottomSheet>(null); // Order confirmation sheet
+
   const snapPoints = useMemo(() => [250], []);
 
-  // Set selected address based on route param when addresses load
-  useEffect(() => {
-    if (addressId) {
-      setSelectedAddressId(addressId.toString());
-    }
-  }, [addressId]);
-
+  // Load cart items on mount
   useEffect(() => {
     const fetchCart = async () => {
       try {
@@ -58,60 +59,153 @@ const PaymentScreen = () => {
         const cart = await getCartItems(token);
         if (cart && cart.items) {
           setCartItems(cart.items);
-          const total = cart.items.reduce(
-            (acc: number, item: any) => acc + item.product_price * item.qty,
-            0,
-          );
+          const total = cartItems.reduce((acc, item) => acc + item.product_price * item.qty, 0);
           setSubtotal(total);
         }
       } catch (error) {
         console.error('Error loading cart:', error);
       }
     };
-
     fetchCart();
   }, []);
 
+  // Load user addresses on mount or when addressId changes
   useEffect(() => {
     const fetchAddresses = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
         if (!token) return;
 
-        const response = await fetch('https://api.sareh-nomow.xyz/api/addresses', {
+        const res = await fetch('https://api.sareh-nomow.xyz/api/addresses', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const data = await response.json();
-
-        // Transform the backend data to match Address interface
-        const transformed = data.map((item: any) => ({
+        if (!res.ok) {
+          console.error('Failed to fetch addresses');
+          return;
+        }
+        const data = await res.json();
+        const transformed: Address[] = data.map((item: any) => ({
           id: item.id.toString(),
           street: item.address_1,
           city: item.city?.name || 'Unknown City',
           country: item.countries?.name || 'Unknown Country',
         }));
-
         setAddresses(transformed);
 
-        // If addressId is available, ensure selectedAddressId is set (fallback)
         if (addressId) {
           setSelectedAddressId(addressId.toString());
+          const selected = transformed.find(addr => addr.id === addressId.toString());
+          if (selected) {
+            setCurrentAddress(`${selected.street}, ${selected.city}, ${selected.country}`);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch addresses:', error);
       }
     };
-
     fetchAddresses();
   }, [addressId]);
 
-  const totalQuantity = cartItems.reduce((acc, item) => acc + item.qty, 0);
-  const openBottomSheet = () => bottomSheetRef.current?.expand();
-  const openSheet = () => bottomSheetReff.current?.expand();
+  // When user selects an address, fetch shipping zones and update shipping cost & method
+  const onSelectAddress = async (addr: Address) => {
+    setSelectedAddressId(addr.id);
+    setCurrentAddress(`${addr.street}, ${addr.city}, ${addr.country}`);
 
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+
+      // Use the selected address' country id or address id - adjust endpoint if needed
+      const res = await fetch(`https://api.sareh-nomow.xyz/api/countries/${addr.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Shipping zones API error:', errorText);
+        setShippingCost(0);
+        setShippingMethodName('N/A');
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data.zone_methods && data.zone_methods.length > 0) {
+        const method = data.zone_methods[0];
+        setShippingCost(parseFloat(method.cost) || 0);
+        setShippingMethodName(method.method?.name || 'N/A');
+      } else {
+        setShippingCost(0);
+        setShippingMethodName('N/A');
+      }
+    } catch (error) {
+      console.error('Error fetching shipping method:', error);
+      setShippingCost(0);
+      setShippingMethodName('N/A');
+    }
+  };
+
+  // Calculate totals
+  const totalQuantity = cartItems.reduce((acc, item) => acc + item.qty, 0);
+  const totalPrice = subtotal + shippingCost;
+
+  const openPaymentMethodSheet = () => bottomSheetRef.current?.expand();
+  const openConfirmationSheet = () => confirmationSheetRef.current?.expand();
+
+  // Called when user picks a payment method
   const confirmPaymentMethod = (method: string) => {
     setPaymentMethod(method);
     bottomSheetRef.current?.close();
+  };
+
+  // Confirm payment: set shipping address & method, then show confirmation
+  const confirmPayment = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token || !cartId || !selectedAddressId || !shippingZoneMethodId) {
+        Alert.alert('Missing required information');
+        return;
+      }
+
+      // 1. Set Shipping Address
+      const addressResponse = await fetch(
+        `https://api.sareh-nomow.xyz/api/carts/${cartId}/shipping-address/${selectedAddressId}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!addressResponse.ok) {
+        Alert.alert('Failed to set shipping address');
+        return;
+      }
+
+      // 2. Set Shipping Method
+      const methodResponse = await fetch(
+        `https://api.sareh-nomow.xyz/api/carts/${cartId}/shipping-method/${shippingZoneMethodId}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!methodResponse.ok) {
+        Alert.alert('Failed to set shipping method');
+        return;
+      }
+
+      openConfirmationSheet();
+    } catch (error) {
+      console.error('Error during payment confirmation:', error);
+      Alert.alert('Error during payment confirmation, please try again.');
+    }
   };
 
   return (
@@ -121,21 +215,19 @@ const PaymentScreen = () => {
         <View style={styles.mapPreview}>
           <Text style={styles.title}>Choose an Address</Text>
 
-          {Array.isArray(addresses) && addresses.length > 0 ? (
+          {addresses.length > 0 ? (
             <View style={{ backgroundColor: '#fff', borderRadius: 10, padding: 10 }}>
-              {addresses.map((addr) => (
+              {addresses.map(addr => (
                 <TouchableOpacity
                   key={addr.id}
-                  onPress={() => {
-                    setSelectedAddressId(addr.id);
-                    _setCurrentAddress(`${addr.street}, ${addr.city}, ${addr.country}`);
-                  }}
+                  onPress={() => onSelectAddress(addr)}
                   style={{
                     padding: 10,
                     backgroundColor: addr.id === selectedAddressId ? '#d0f0c0' : '#f0f0f0',
                     borderRadius: 8,
                     marginBottom: 5,
-                  }}>
+                  }}
+                >
                   <Text>{addr.street}, {addr.city}</Text>
                 </TouchableOpacity>
               ))}
@@ -144,7 +236,6 @@ const PaymentScreen = () => {
             <Text style={{ color: '#888' }}>No addresses found</Text>
           )}
 
-          {/* Card showing city name of selected address */}
           {selectedAddressId && (
             <View
               style={{
@@ -157,7 +248,7 @@ const PaymentScreen = () => {
             >
               <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Selected City</Text>
               <Text style={{ fontSize: 18, color: '#555' }}>
-                {addresses.find((addr) => addr.id === selectedAddressId)?.city || 'N/A'}
+                {addresses.find(addr => addr.id === selectedAddressId)?.city || 'N/A'}
               </Text>
             </View>
           )}
@@ -170,7 +261,8 @@ const PaymentScreen = () => {
               backgroundColor: '#000',
               borderRadius: 8,
               alignItems: 'center',
-            }}>
+            }}
+          >
             <Text style={{ color: '#fff', fontWeight: 'bold' }}>Create Address</Text>
           </TouchableOpacity>
         </View>
@@ -185,10 +277,16 @@ const PaymentScreen = () => {
             <Text style={styles.summaryValue}>{totalQuantity}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Delivery Price:</Text>
-            <Text style={[styles.summaryValue, { fontStyle: 'italic' }]}>
-              (Delivery price will be here)
-            </Text>
+            <Text style={styles.summaryLabel}>Shipping:</Text>
+            <Text style={styles.summaryValue}>${shippingCost.toFixed(2)}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Shipping Method:</Text>
+            <Text style={styles.summaryValue}>{shippingMethodName || 'N/A'}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Total:</Text>
+            <Text style={styles.summaryValue}>${totalPrice.toFixed(2)}</Text>
           </View>
         </View>
 
@@ -205,27 +303,28 @@ const PaymentScreen = () => {
         ))}
 
         <Text style={styles.title}>Payment Method</Text>
-        <TouchableOpacity style={styles.selectBtn} onPress={openBottomSheet}>
+        <TouchableOpacity style={styles.selectBtn} onPress={openPaymentMethodSheet}>
           <Text>{paymentMethod || 'Choose Payment Method'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.confirmBtn} onPress={openSheet}>
+        <TouchableOpacity style={styles.confirmBtn} onPress={confirmPayment}>
           <Text style={styles.confirmText}>Confirm Payment</Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Order Confirmation */}
+      {/* Confirmation Bottom Sheet */}
       <BottomSheet
-        ref={bottomSheetReff}
+        ref={confirmationSheetRef}
         index={-1}
         snapPoints={snapPoints}
-        enablePanDownToClose>
+        enablePanDownToClose
+      >
         <BottomSheetView style={{ alignItems: 'center', padding: 10 }}>
           <Image
             source={require('../assets/Maskgroup1.png')}
             style={{ height: 120, width: 120, borderRadius: 60 }}
           />
-          <Text style={{ color: 'black', fontSize: 20 }}>Order Successfully</Text>
+          <Text style={{ color: 'black', fontSize: 20, marginVertical: 10 }}>Order Successfully</Text>
           <CustomButton
             text="Order Tracking"
             onPress={() => navigation.navigate('MyOrders')}
@@ -233,16 +332,18 @@ const PaymentScreen = () => {
         </BottomSheetView>
       </BottomSheet>
 
-      {/* Payment Method */}
+      {/* Payment Method Selection Bottom Sheet */}
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
         snapPoints={snapPoints}
-        enablePanDownToClose>
+        enablePanDownToClose
+      >
         <BottomSheetView style={{ padding: 20 }}>
           <TouchableOpacity onPress={() => confirmPaymentMethod('Cash')}>
             <Text style={styles.option}>Cash</Text>
           </TouchableOpacity>
+          {/* Add more payment options here if needed */}
         </BottomSheetView>
       </BottomSheet>
     </View>
@@ -284,28 +385,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#fff',
     padding: 10,
-    borderRadius: 8,
     marginVertical: 5,
+    borderRadius: 10,
     alignItems: 'center',
   },
-  itemImg: { width: 50, height: 50, borderRadius: 6 },
+  itemImg: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#ddd',
+  },
   selectBtn: {
-    backgroundColor: '#fff',
     padding: 12,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    backgroundColor: '#eee',
+    alignItems: 'center',
     marginVertical: 10,
   },
   confirmBtn: {
+    marginVertical: 15,
     backgroundColor: '#000',
-    padding: 14,
+    borderRadius: 8,
+    padding: 15,
     alignItems: 'center',
-    borderRadius: 10,
-    marginTop: 20,
   },
-  confirmText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  option: { fontSize: 18, paddingVertical: 10 },
+  confirmText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  option: {
+    fontSize: 18,
+    paddingVertical: 12,
+    borderBottomColor: '#ccc',
+    borderBottomWidth: 1,
+  },
 });
 
 export default PaymentScreen;

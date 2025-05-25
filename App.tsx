@@ -69,7 +69,13 @@ export type RootStackParamList = {
   LegalPolicies: undefined;
   LanguageScreen: undefined;
   CartScreen: undefined;
-  PaymentScreen: { addressId: number }; // <-- Add expected param
+  PaymentScreen: {
+    cartId: number | null;
+    addressId: number;
+    shippingCost: number;
+    shippingMethodName: string;
+    shippingZoneMethodId: number; // ✅ Add this line
+  };// <-- Add expected param
   SearchScreen: undefined;
 };
 
