@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,14 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import {ScrollView} from 'react-native-gesture-handler';
+import { ScrollView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
 import CustomInput from '../components/CustomInput';
-import {createAddress} from '../lib/api';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../App';
+import { createAddress } from '../lib/api';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
 
 interface MethodDetails {
   id: number;
@@ -143,10 +143,11 @@ const AddressScreen = () => {
       const addressId = createdAddress.id;
 
       // 🛒 Step 1: Get Cart ID
-      const getEffectiveCartId = async () => {
+      const getEffectiveCartId = async (): Promise<number | null> => {
         const storedCartId = await AsyncStorage.getItem('cartId');
-        return storedCartId || null;
+        return storedCartId ? Number(storedCartId) : null;
       };
+
       const cartId = await getEffectiveCartId();
       if (!cartId) throw new Error('Cart ID not found.');
 
@@ -154,7 +155,7 @@ const AddressScreen = () => {
       await fetch(
         `https://api.sareh-nomow.xyz/api/carts/${cartId}/shipping-address/${addressId}`,
         {
-          method: 'POST',
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
@@ -164,11 +165,9 @@ const AddressScreen = () => {
 
       // 🚚 Step 3: Attach Shipping Method to Cart
       await fetch(
-        `https://api.sareh-nomow.xyz/api/carts/${cartId}/shipping-method/${
-          shippingCost!.id
-        }`,
+        `https://api.sareh-nomow.xyz/api/carts/${cartId}/shipping-method/${shippingCost!.id}`,
         {
-          method: 'POST',
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
@@ -287,12 +286,12 @@ const AddressScreen = () => {
   };
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{ flex: 1 }}>
       <Header title="Address" showBack={true} showImage={false} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{flex: 1}}>
-        <ScrollView contentContainerStyle={{padding: 10}}>
+        style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={{ padding: 10 }}>
           <Text style={styles.label}>Enter your address:</Text>
 
           <CustomInput
@@ -354,8 +353,8 @@ const AddressScreen = () => {
               {selectedCity
                 ? selectedCity.name
                 : selectedCountry
-                ? 'Select City'
-                : 'Choose Country First'}
+                  ? 'Select City'
+                  : 'Choose Country First'}
             </Text>
           </TouchableOpacity>
 
@@ -368,8 +367,8 @@ const AddressScreen = () => {
               {shippingCost
                 ? `${shippingCost.name} - ${shippingCost.cost} JOD`
                 : selectedCountry
-                ? 'Select Shipping Method'
-                : 'Choose Country First'}
+                  ? 'Select Shipping Method'
+                  : 'Choose Country First'}
             </Text>
           </TouchableOpacity>
 
@@ -384,7 +383,7 @@ const AddressScreen = () => {
         <FlatList
           data={countries}
           keyExtractor={item => item.id.toString()}
-          renderItem={({item}) => (
+          renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.option}
               onPress={() => onCountryChange(item)}>
@@ -399,7 +398,7 @@ const AddressScreen = () => {
         <FlatList
           data={selectedCountry?.Cities || []}
           keyExtractor={item => item.id.toString()}
-          renderItem={({item}) => (
+          renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.option}
               onPress={() => {
@@ -417,7 +416,7 @@ const AddressScreen = () => {
         <FlatList
           data={getShippingMethods()}
           keyExtractor={(_, index) => index.toString()}
-          renderItem={({item}) => (
+          renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.option}
               onPress={() => {
@@ -433,7 +432,7 @@ const AddressScreen = () => {
             </TouchableOpacity>
           )}
           ListEmptyComponent={() => (
-            <View style={{padding: 20}}>
+            <View style={{ padding: 20 }}>
               <Text>No shipping methods available for this country.</Text>
             </View>
           )}
@@ -444,8 +443,8 @@ const AddressScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  label: {fontSize: 16, marginBottom: 10},
-  dropdownLabel: {marginTop: 10, fontSize: 14, fontWeight: '500'},
+  label: { fontSize: 16, marginBottom: 10 },
+  dropdownLabel: { marginTop: 10, fontSize: 14, fontWeight: '500' },
   dropdown: {
     borderWidth: 1,
     borderColor: '#ccc',
