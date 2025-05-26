@@ -16,7 +16,13 @@ import Header from '../components/Header';
 import ProductCard from '../components/ProductCard';
 import type {RootStackParamList} from '../App';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {getProducts, getSubcategories} from '../lib/api';
+import {
+  getProducts,
+  getSubcategories,
+  getCustomerCart,
+  createCart,
+  addItemToCart,
+} from '../lib/api';
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -33,14 +39,17 @@ type ProductDescription = {
   description?: string;
   short_description?: string;
 };
-
 type Product = {
   product_id: number;
   name: string;
   short_description: string;
   description: string;
   price: number;
-  stock_availability: boolean;
+  inventory?: {
+    stock_availability: boolean;
+    qty: number;
+    manage_stock: boolean;
+  };
   images?: ProductImage[];
   image?: string;
   description_data?: ProductDescription;
@@ -55,6 +64,7 @@ type Category = {
 const StoreScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'StoreScreen'>>();
+  const [quantity] = useState(1); // No need to change quantity for now
 
   const categoryId = route.params?.categoryId;
   const brandId = route.params?.brandId;
@@ -120,27 +130,55 @@ const StoreScreen = () => {
     fetchData();
   }, [selectedSubcategoryId, categoryId, brandId]);
 
-  const handleAddToCart = async (product: Product) => {
+  const handleAddToCart = async (item: Product) => {
     try {
-      const existingCart = await AsyncStorage.getItem('cart');
-      let cart = existingCart ? JSON.parse(existingCart) : [];
-      const index = cart.findIndex(
-        (item: any) => item.product_id === product.product_id,
-      );
-
-      if (index >= 0) {
-        cart[index].quantity += 1;
-      } else {
-        cart.push({...product, quantity: 1});
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.warn('User not logged in');
+        return;
       }
 
-      await AsyncStorage.setItem('cart', JSON.stringify(cart));
+      // 1. Ensure customer cart exists
+      let cart = await getCustomerCart(token);
+      if (!cart || !cart.cart_id) {
+        cart = await createCart(token);
+      }
+
+      if (!cart || !cart.cart_id) {
+        console.error('Failed to get or create cart');
+        return;
+      }
+
+      // 2. Add item to backend cart
+      const backendResponse = await addItemToCart(
+        token,
+        cart.cart_id,
+        item.product_id.toString(),
+        quantity,
+      );
+
+      // 3. Add item to local cart
+      const storedCart = await AsyncStorage.getItem('cart');
+      const parsedCart = storedCart ? JSON.parse(storedCart) : [];
+
+      const newItem = {
+        id: item.product_id.toString(),
+        title: item.name,
+        price: item.price,
+        quantity: quantity,
+        selected: true,
+        image: {uri: item.image},
+        cart_item_id: backendResponse?.cart_item_id || null,
+      };
+
+      const updatedCart = [...parsedCart, newItem];
+      await AsyncStorage.setItem('cart', JSON.stringify(updatedCart));
+
       navigation.navigate('CartScreen');
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      console.error('Error in handleAddToCart:', error);
     }
   };
-
   const toggleFavorite = async (productId: string) => {
     try {
       let updatedFavorites = favorites.includes(productId)
@@ -240,7 +278,7 @@ const StoreScreen = () => {
               isFavorite={favorites.includes(item.product_id.toString())}
               onPressFavorite={() => toggleFavorite(item.product_id.toString())}
               onPressCart={() => handleAddToCart(item)}
-              stock={item.stock_availability}
+              stock_availability={item.inventory?.stock_availability ?? false}
               description={item.description}
               product_id={item.product_id}
             />

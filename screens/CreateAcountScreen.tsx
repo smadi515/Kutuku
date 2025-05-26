@@ -1,6 +1,6 @@
 import {View, Text, StyleSheet, ScrollView, Alert} from 'react-native';
 import React, {useEffect, useState} from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // ✅ استيراد AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
@@ -35,7 +35,6 @@ const CreateAccountScreen = ({navigation}: any) => {
           response?.email ||
           response?.phoneNumber
         ) {
-          // ✅ حفظ الاسم الكامل
           await AsyncStorage.setItem('userFullName', username);
 
           navigation.navigate('OTPScreen', {email});

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,14 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import {ScrollView} from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
 import CustomInput from '../components/CustomInput';
-import { createAddress } from '../lib/api';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../App';
+import {createAddress} from '../lib/api';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../App';
 
 interface MethodDetails {
   id: number;
@@ -25,7 +25,7 @@ interface MethodDetails {
 }
 interface ZoneMethod {
   cost: number;
-
+  shipping_zone_method_id: number; // <-- Add this
   method: MethodDetails;
 }
 interface City {
@@ -73,7 +73,9 @@ const AddressScreen = () => {
 
   const fetchCountry = async (id: number) => {
     try {
-      const response = await fetch(`https://api.sareh-nomow.xyz/api/countries/${id}`);
+      const response = await fetch(
+        `https://api.sareh-nomow.xyz/api/countries/${id}`,
+      );
       const data = await response.json();
       return data;
     } catch (error) {
@@ -88,9 +90,10 @@ const AddressScreen = () => {
     };
 
     const fetchCountries = async () => {
-
       try {
-        const response = await fetch('https://api.sareh-nomow.xyz/api/countries');
+        const response = await fetch(
+          'https://api.sareh-nomow.xyz/api/countries',
+        );
         const data = await response.json();
         setCountries(data);
       } catch (error) {
@@ -113,7 +116,10 @@ const AddressScreen = () => {
     if (!shippingCost) missingFields.push('Shipping Method');
 
     if (missingFields.length > 0) {
-      Alert.alert('Missing Information', `Please fill in:\n${missingFields.join('\n')}`);
+      Alert.alert(
+        'Missing Information',
+        `Please fill in:\n${missingFields.join('\n')}`,
+      );
       return;
     }
 
@@ -135,24 +141,28 @@ const AddressScreen = () => {
 
       const createdAddress = await createAddress(newAddress, token);
       const addressId = createdAddress.id;
-
+      console.log(
+        `Navigating with shippingZoneMethodId: ${
+          shippingCost!.id
+        }, Shipping Method Name: ${shippingCost!.name}`,
+      );
       navigation.navigate('PaymentScreen', {
         cartId: null,
         addressId: addressId,
-        shippingZoneMethodId: shippingCost!.id,
+        shippingZoneMethodId: shippingCost!.id, // this is now shipping_zone_method_id
         shippingCost: shippingCost!.cost,
         shippingMethodName: shippingCost!.name,
       });
-
     } catch (error) {
       console.error('❌ Error creating address:', error);
       Alert.alert('Error', 'Failed to create address.');
     }
   };
 
-  const handleNumericInput = (setter: (value: string) => void) => (text: string) => {
-    setter(text.replace(/[^0-9]/g, ''));
-  };
+  const handleNumericInput =
+    (setter: (value: string) => void) => (text: string) => {
+      setter(text.replace(/[^0-9]/g, ''));
+    };
 
   const getShippingMethods = (): Shipping[] => {
     if (!selectedCountry || !Array.isArray(selectedCountry.ShippingZone)) {
@@ -168,35 +178,41 @@ const AddressScreen = () => {
 
       const methods = zone.zone_methods;
       console.log(`📦 Zone ${zoneIndex} (${zone.name}) - Methods:`, methods);
-      console.log("zone", zone);
-      console.log("zone methods", methods);
-      console.log("zone methods", zone.zone_methods);
-
+      console.log('zone', zone);
+      console.log('zone methods', methods);
+      console.log('zone methods', zone.zone_methods);
 
       if (!Array.isArray(methods)) {
-        console.warn(`❌ zone_methods is not an array in zone ${zoneIndex} (${zone.name}) of country: ${selectedCountry.name}`);
+        console.warn(
+          `❌ zone_methods is not an array in zone ${zoneIndex} (${zone.name}) of country: ${selectedCountry.name}`,
+        );
         return [];
       }
 
       if (methods.length === 0) {
-        console.warn(`⚠️ zone_methods is empty in zone ${zoneIndex} (${zone.name}) of country: ${selectedCountry.name}`);
+        console.warn(
+          `⚠️ zone_methods is empty in zone ${zoneIndex} (${zone.name}) of country: ${selectedCountry.name}`,
+        );
         return [];
       }
 
       return methods
-        .filter(method => method?.method?.name && typeof method.cost === 'number')
-        .map(method => ({
-          id: method.method?.id ?? 0, // include id for use in PaymentScreen
-          cost: method.cost,
-          name: method.method.name,
-        }));
-
+        .filter(
+          method => method?.method?.name && typeof method.cost === 'number',
+        )
+        .map(method => {
+          console.log(
+            `➡️ shipping_zone_method_id: ${method.shipping_zone_method_id} in zone: ${zone.name}`,
+          );
+          return {
+            id: method.shipping_zone_method_id, // <-- ✅ Correct ID
+            cost: method.cost,
+            name: method.method.name,
+            shipping_zone_method_id: zone.shipping_zone_id, // include shipping_zone_method_id for use in PaymentScreen
+          };
+        });
     });
   };
-
-
-
-
   const onCountryChange = async (item: Country) => {
     console.log('🌍 Selected Country:', item.id);
     if (!Array.isArray(item.ShippingZone)) {
@@ -208,13 +224,21 @@ const AddressScreen = () => {
       item.ShippingZone.forEach((zone, index) => {
         console.log(`📦 Zone ${index} (${zone.name})`);
         if (!Array.isArray(zone.zone_methods)) {
-          console.warn(`❌ zone_methods is not an array in zone ${index} of country: ${item.name}`);
+          console.warn(
+            `❌ zone_methods is not an array in zone ${index} of country: ${item.name}`,
+          );
         } else if (zone.zone_methods.length === 0) {
-          console.warn(`⚠️ zone_methods is empty in zone ${index} of country: ${item.name}`);
+          console.warn(
+            `⚠️ zone_methods is empty in zone ${index} of country: ${item.name}`,
+          );
         } else {
-          console.log(`✅ zone_methods (${zone.zone_methods.length}) in zone ${index} of ${item.name}`);
+          console.log(
+            `✅ zone_methods (${zone.zone_methods.length}) in zone ${index} of ${item.name}`,
+          );
           zone.zone_methods.forEach(method => {
-            console.log(`➡️ Method: ${method.method?.name}, Cost: ${method.cost}`);
+            console.log(
+              `➡️ Method: ${method.method?.name}, Cost: ${method.cost}`,
+            );
           });
         }
       });
@@ -229,34 +253,93 @@ const AddressScreen = () => {
     setSelectedCity(null);
     setShippingCost(null);
     setCountryModalVisible(false);
-  }
+  };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{flex: 1}}>
       <Header title="Address" showBack={true} showImage={false} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ padding: 10 }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{flex: 1}}>
+        <ScrollView contentContainerStyle={{padding: 10}}>
           <Text style={styles.label}>Enter your address:</Text>
 
-          <CustomInput label="Full Name" placeholder="Enter full name" iconType="feather" iconName="user" value={fullName} onChangeText={setFullName} />
-          <CustomInput label="Phone Number" placeholder="Enter phone number" iconType="feather" iconName="phone" value={phoneNumber} onChangeText={setPhoneNumber} />
-          <CustomInput label="Address 1" placeholder="Enter address" iconType="feather" iconName="map-pin" value={address1} onChangeText={setAddress1} />
-          <CustomInput label="Address 2" placeholder="Enter address line 2" iconType="feather" iconName="map" value={address2} onChangeText={setAddress2} />
-          <CustomInput label="Postcode" placeholder="Enter postcode" iconType="feather" iconName="hash" value={postcode} onChangeText={handleNumericInput(setPostcode)} />
+          <CustomInput
+            label="Full Name"
+            placeholder="Enter full name"
+            iconType="feather"
+            iconName="user"
+            value={fullName}
+            onChangeText={setFullName}
+          />
+          <CustomInput
+            label="Phone Number"
+            placeholder="Enter phone number"
+            iconType="feather"
+            iconName="phone"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+          />
+          <CustomInput
+            label="Address 1"
+            placeholder="Enter address"
+            iconType="feather"
+            iconName="map-pin"
+            value={address1}
+            onChangeText={setAddress1}
+          />
+          <CustomInput
+            label="Address 2"
+            placeholder="Enter address line 2"
+            iconType="feather"
+            iconName="map"
+            value={address2}
+            onChangeText={setAddress2}
+          />
+          <CustomInput
+            label="Postcode"
+            placeholder="Enter postcode"
+            iconType="feather"
+            iconName="hash"
+            value={postcode}
+            onChangeText={handleNumericInput(setPostcode)}
+          />
 
           <Text style={styles.dropdownLabel}>Country</Text>
-          <TouchableOpacity style={styles.dropdown} onPress={() => setCountryModalVisible(true)}>
-            <Text>{selectedCountry ? selectedCountry.name : 'Select Country'}</Text>
+          <TouchableOpacity
+            style={styles.dropdown}
+            onPress={() => setCountryModalVisible(true)}>
+            <Text>
+              {selectedCountry ? selectedCountry.name : 'Select Country'}
+            </Text>
           </TouchableOpacity>
 
           <Text style={styles.dropdownLabel}>City</Text>
-          <TouchableOpacity style={styles.dropdown} onPress={() => setCityModalVisible(true)} disabled={!selectedCountry}>
-            <Text>{selectedCity ? selectedCity.name : selectedCountry ? 'Select City' : 'Choose Country First'}</Text>
+          <TouchableOpacity
+            style={styles.dropdown}
+            onPress={() => setCityModalVisible(true)}
+            disabled={!selectedCountry}>
+            <Text>
+              {selectedCity
+                ? selectedCity.name
+                : selectedCountry
+                ? 'Select City'
+                : 'Choose Country First'}
+            </Text>
           </TouchableOpacity>
 
           <Text style={styles.dropdownLabel}>Shipping</Text>
-          <TouchableOpacity style={styles.dropdown} onPress={() => setShippingModalVisible(true)} disabled={!selectedCountry}>
-            <Text>{shippingCost ? `${shippingCost.name} - ${shippingCost.cost} JOD` : selectedCountry ? 'Select Shipping Method' : 'Choose Country First'}</Text>
+          <TouchableOpacity
+            style={styles.dropdown}
+            onPress={() => setShippingModalVisible(true)}
+            disabled={!selectedCountry}>
+            <Text>
+              {shippingCost
+                ? `${shippingCost.name} - ${shippingCost.cost} JOD`
+                : selectedCountry
+                ? 'Select Shipping Method'
+                : 'Choose Country First'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
@@ -270,7 +353,7 @@ const AddressScreen = () => {
         <FlatList
           data={countries}
           keyExtractor={item => item.id.toString()}
-          renderItem={({ item }) => (
+          renderItem={({item}) => (
             <TouchableOpacity
               style={styles.option}
               onPress={() => onCountryChange(item)}>
@@ -285,8 +368,13 @@ const AddressScreen = () => {
         <FlatList
           data={selectedCountry?.Cities || []}
           keyExtractor={item => item.id.toString()}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.option} onPress={() => { setSelectedCity(item); setCityModalVisible(false); }}>
+          renderItem={({item}) => (
+            <TouchableOpacity
+              style={styles.option}
+              onPress={() => {
+                setSelectedCity(item);
+                setCityModalVisible(false);
+              }}>
               <Text>{item.name}</Text>
             </TouchableOpacity>
           )}
@@ -298,18 +386,23 @@ const AddressScreen = () => {
         <FlatList
           data={getShippingMethods()}
           keyExtractor={(_, index) => index.toString()}
-          renderItem={({ item }) => (
+          renderItem={({item}) => (
             <TouchableOpacity
               style={styles.option}
               onPress={() => {
                 setShippingCost(item);
+                console.log(
+                  `Selected shipping method: ${item.name} with shipping_zone_method_id: ${item.id}`,
+                );
                 setShippingModalVisible(false);
               }}>
-              <Text>{item.name} - {item.cost} JOD</Text>
+              <Text>
+                {item.name} - {item.cost} JOD
+              </Text>
             </TouchableOpacity>
           )}
           ListEmptyComponent={() => (
-            <View style={{ padding: 20 }}>
+            <View style={{padding: 20}}>
               <Text>No shipping methods available for this country.</Text>
             </View>
           )}
@@ -320,8 +413,8 @@ const AddressScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  label: { fontSize: 16, marginBottom: 10 },
-  dropdownLabel: { marginTop: 10, fontSize: 14, fontWeight: '500' },
+  label: {fontSize: 16, marginBottom: 10},
+  dropdownLabel: {marginTop: 10, fontSize: 14, fontWeight: '500'},
   dropdown: {
     borderWidth: 1,
     borderColor: '#ccc',

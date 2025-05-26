@@ -18,27 +18,31 @@ const ImagePickerComponent: React.FC<Props> = ({
   customIcon,
 }) => {
   const handleSelectImage = () => {
-    Alert.alert('اختر المصدر', 'من أين تريد تحميل الصورة؟', [
-      {
-        text: 'الكاميرا',
-        onPress: async () => {
-          const result = await launchCamera({mediaType: 'photo'});
-          if (!result.didCancel && result.assets?.[0]) {
-            onPick(result.assets[0]);
-          }
+    Alert.alert(
+      'Select source',
+      'Where do you want to download the image from?',
+      [
+        {
+          text: 'camera',
+          onPress: async () => {
+            const result = await launchCamera({mediaType: 'photo'});
+            if (!result.didCancel && result.assets?.[0]) {
+              onPick(result.assets[0]);
+            }
+          },
         },
-      },
-      {
-        text: 'المعرض',
-        onPress: async () => {
-          const result = await launchImageLibrary({mediaType: 'photo'});
-          if (!result.didCancel && result.assets?.[0]) {
-            onPick(result.assets[0]);
-          }
+        {
+          text: 'Exhibition',
+          onPress: async () => {
+            const result = await launchImageLibrary({mediaType: 'photo'});
+            if (!result.didCancel && result.assets?.[0]) {
+              onPick(result.assets[0]);
+            }
+          },
         },
-      },
-      {text: 'إلغاء', style: 'cancel'},
-    ]);
+        {text: 'cancel', style: 'cancel'},
+      ],
+    );
   };
 
   return (
