@@ -34,6 +34,7 @@ const CustomButton: React.FC<Props> = ({
   showRightArrow,
   disabled = false,
   loading = false,
+  // Optional color prop for future use
 }) => {
   const isIconRow = type === 'ICON_ROW';
   const isDisabled = disabled || loading;

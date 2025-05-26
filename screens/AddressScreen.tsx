@@ -141,21 +141,52 @@ const AddressScreen = () => {
 
       const createdAddress = await createAddress(newAddress, token);
       const addressId = createdAddress.id;
-      console.log(
-        `Navigating with shippingZoneMethodId: ${
-          shippingCost!.id
-        }, Shipping Method Name: ${shippingCost!.name}`,
+
+      // 🛒 Step 1: Get Cart ID
+      const getEffectiveCartId = async () => {
+        const storedCartId = await AsyncStorage.getItem('cartId');
+        return storedCartId || null;
+      };
+      const cartId = await getEffectiveCartId();
+      if (!cartId) throw new Error('Cart ID not found.');
+
+      // 📦 Step 2: Attach Address to Cart
+      await fetch(
+        `https://api.sareh-nomow.xyz/api/carts/${cartId}/shipping-address/${addressId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
+
+      // 🚚 Step 3: Attach Shipping Method to Cart
+      await fetch(
+        `https://api.sareh-nomow.xyz/api/carts/${cartId}/shipping-method/${
+          shippingCost!.id
+        }`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      // ✅ Navigate to payment after updates
       navigation.navigate('PaymentScreen', {
-        cartId: null,
-        addressId: addressId,
-        shippingZoneMethodId: shippingCost!.id, // this is now shipping_zone_method_id
+        cartId,
+        addressId,
+        shippingZoneMethodId: shippingCost!.id,
         shippingCost: shippingCost!.cost,
         shippingMethodName: shippingCost!.name,
       });
     } catch (error) {
-      console.error('❌ Error creating address:', error);
-      Alert.alert('Error', 'Failed to create address.');
+      console.error('❌ Error in handleConfirm:', error);
+      Alert.alert('Error', 'Failed to confirm address and shipping method.');
     }
   };
 

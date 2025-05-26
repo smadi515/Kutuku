@@ -14,7 +14,31 @@ import {RootStackParamList} from '../App';
 import Icon from '../components/icon';
 import Header from '../components/Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import {getCustomerCart, createCart, addItemToCart} from '../lib/api';
+type ProductDescription = {
+  name?: string;
+  description?: string;
+  short_description?: string;
+};
+type ProductImage = {
+  is_main: boolean;
+  listing_image: string;
+};
+type Product = {
+  product_id: number;
+  name: string;
+  short_description: string;
+  description: string;
+  price: number;
+  inventory?: {
+    stock_availability: boolean;
+    qty: number;
+    manage_stock: boolean;
+  };
+  images?: ProductImage[];
+  image?: string;
+  description_data?: ProductDescription;
+};
 const ProductsDetails = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -43,33 +67,54 @@ const ProductsDetails = () => {
   const increaseQuantity = () => setQuantity(prev => prev + 1);
   const decreaseQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
-  const handleAddToCart = async () => {
-    const storedCart = await AsyncStorage.getItem('cart');
-    let cart = storedCart ? JSON.parse(storedCart) : [];
+  const handleAddToCart = async (item: Product) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.warn('User not logged in');
+        return;
+      }
 
-    const existingItemIndex = cart.findIndex(
-      (cartItem: any) => cartItem.id === product.product_id.toString(),
-    );
+      // 1. Ensure customer cart exists
+      let cart = await getCustomerCart(token);
+      if (!cart || !cart.cart_id) {
+        cart = await createCart(token);
+      }
 
-    const productTitle = product?.description?.name || 'Unnamed Product';
-    const productImage =
-      product?.images?.[0]?.single_image || 'https://via.placeholder.com/150';
+      if (!cart || !cart.cart_id) {
+        console.error('Failed to get or create cart');
+        return;
+      }
 
-    if (existingItemIndex !== -1) {
-      cart[existingItemIndex].quantity += quantity;
-    } else {
-      cart.push({
-        id: product.product_id.toString(),
-        title: productTitle,
-        price: product.price,
+      // 2. Add item to backend cart
+      const backendResponse = await addItemToCart(
+        token,
+        cart.cart_id,
+        item.product_id.toString(),
         quantity,
-        selected: true,
-        image: {uri: productImage},
-      });
-    }
+      );
 
-    await AsyncStorage.setItem('cart', JSON.stringify(cart));
-    navigation.navigate('CartScreen');
+      // 3. Add item to local cart
+      const storedCart = await AsyncStorage.getItem('cart');
+      const parsedCart = storedCart ? JSON.parse(storedCart) : [];
+
+      const newItem = {
+        id: item.product_id.toString(),
+        title: item.name,
+        price: item.price,
+        quantity: quantity,
+        selected: true,
+        image: {uri: item.image},
+        cart_item_id: backendResponse?.cart_item_id || null,
+      };
+
+      const updatedCart = [...parsedCart, newItem];
+      await AsyncStorage.setItem('cart', JSON.stringify(updatedCart));
+
+      navigation.navigate('CartScreen');
+    } catch (error) {
+      console.error('Error in handleAddToCart:', error);
+    }
   };
 
   if (loading) {
@@ -153,7 +198,9 @@ const ProductsDetails = () => {
           </>
         )}
 
-        <TouchableOpacity style={styles.cartButton} onPress={handleAddToCart}>
+        <TouchableOpacity
+          style={styles.cartButton}
+          onPress={() => handleAddToCart(product)}>
           <Text style={styles.cartButtonText}>Add to Cart</Text>
         </TouchableOpacity>
       </View>

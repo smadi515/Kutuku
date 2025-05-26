@@ -6,14 +6,13 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  Alert,
 } from 'react-native';
 import Header from '../components/Header';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import CustomButton from '../components/CustomButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {getCartItems, applyCoupon} from '../lib/api';
+import {getCartItems} from '../lib/api';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../App';
 import CustomInput from '../components/CustomInput';
@@ -48,10 +47,9 @@ const PaymentScreen = () => {
   const [discountedTotal, setDiscountedTotal] = useState<number | null>(null);
 
   const [shippingCost, setShippingCost] = useState<number>(initialShippingCost);
-  const [shippingZoneMethodId, setShippingZoneMethodId] = useState<
-    number | null
-  >(route.params.shippingZoneMethodId || null);
+
   const [error, setError] = useState('');
+  console.log(error);
 
   const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -148,12 +146,6 @@ const PaymentScreen = () => {
     };
     persistCartId();
   }, [cartId]);
-  const getEffectiveCartId = async () => {
-    if (cartId) return cartId;
-
-    const storedCartId = await AsyncStorage.getItem('cartId');
-    return storedCartId || null;
-  };
 
   // When user selects an address, fetch shipping zones and update shipping cost & method
   const onSelectAddress = async (addr: Address) => {
@@ -176,7 +168,6 @@ const PaymentScreen = () => {
         console.error('Shipping zones API error:', errorText);
         setShippingCost(0); // Fixed
         setShippingMethodName('N/A');
-        setShippingZoneMethodId(null); // Also add this
         return;
       }
 
@@ -188,17 +179,14 @@ const PaymentScreen = () => {
 
         setShippingCost(parseFloat(method.cost) || 0);
         setShippingMethodName(method.method?.name || 'N/A');
-        setShippingZoneMethodId(method?.id ?? null); // ✅ This is correct
       } else {
         setShippingCost(0);
         setShippingMethodName('N/A');
-        setShippingZoneMethodId(null);
       }
     } catch (error) {
       console.error('Error fetching shipping method:', error);
       setShippingCost(0);
       setShippingMethodName('N/A');
-      setShippingZoneMethodId(null);
     }
   };
 
@@ -207,106 +195,155 @@ const PaymentScreen = () => {
   const totalPrice = subtotal + shippingCost;
 
   const openPaymentMethodSheet = () => bottomSheetRef.current?.expand();
-  const openConfirmationSheet = () => confirmationSheetRef.current?.expand();
+  const getEffectiveCartId = async () => {
+    if (cartId) return cartId;
+
+    const storedCartId = await AsyncStorage.getItem('cartId');
+    return storedCartId || null;
+  };
 
   // Called when user picks a payment method
   const confirmPaymentMethod = (method: string) => {
     setPaymentMethod(method);
     bottomSheetRef.current?.close();
   };
-
-  // Confirm payment: set shipping address & method, then show confirmation
   const confirmPayment = async () => {
-    console.log('Selected Address ID:', selectedAddressId);
-    console.log('Shipping Zone Method ID:', shippingZoneMethodId);
-    console.log('Confirm Payment called');
+    console.log('Confirm Payment Pressed');
 
     try {
+      setLoading(true);
+
       const token = await AsyncStorage.getItem('token');
-      const effectiveCartId = await getEffectiveCartId();
+      console.log('Retrieved token:', token);
+      if (!token) throw new Error('User not authenticated');
 
-      if (
-        !token ||
-        !effectiveCartId ||
-        !selectedAddressId ||
-        shippingZoneMethodId === null
-      ) {
-        Alert.alert('Missing required information');
-        return;
-      }
-      console.log('Token:', token);
-      console.log('Cart ID:', effectiveCartId);
-      console.log('Selected Address ID:', selectedAddressId);
-      console.log('Shipping Zone Method ID:', shippingZoneMethodId);
-      const addressResponse = await fetch(
-        `https://api.sareh-nomow.xyz/api/carts/${effectiveCartId}/shipping-address/${selectedAddressId}`,
-        {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+      const finalCartId = await getEffectiveCartId();
+      console.log('Retrieved finalCartId:', finalCartId);
+      if (!finalCartId) throw new Error('Cart ID not found');
+
+      const requestBody = {
+        cartId: Number(finalCartId), // 👈 cast to number
+        paymentMethod: 'cash_on_delivery',
+      };
+      console.log('Request body:', requestBody);
+
+      const response = await fetch('https://api.sareh-nomow.xyz/api/orders', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify(requestBody),
+      });
 
-      if (!addressResponse.ok) {
-        Alert.alert('Failed to set shipping address');
-        return;
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Order confirmation failed:', errorText);
+        throw new Error(errorText || 'Order confirmation failed');
       }
 
-      const methodResponse = await fetch(
-        `https://api.sareh-nomow.xyz/api/carts/${effectiveCartId}/shipping-method/${shippingZoneMethodId}`,
-        {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
+      const data = await response.json();
+      console.log('Order confirmed:', data);
 
-      if (!methodResponse.ok) {
-        Alert.alert('Failed to set shipping method');
-        return;
-      }
-
-      openConfirmationSheet();
-    } catch (error) {
-      console.error('Error during payment confirmation:', error);
-      Alert.alert('Error during payment confirmation, please try again.');
+      navigation.navigate('MyOrders');
+    } catch (err: any) {
+      console.error('Error confirming payment:', err.message);
+      setError(err.message || 'Failed to confirm payment');
+    } finally {
+      setLoading(false);
     }
   };
+
   const handleApplyCoupon = async () => {
-    console.log(cartId, couponCode);
+    console.log('Apply Coupon Pressed');
 
     if (!cartId) {
-      setError('No active cart found. Please add items to your cart first.');
+      const errMsg =
+        'No active cart found. Please add items to your cart first.';
+      console.warn(errMsg);
+      setError(errMsg);
       return;
     }
+
     if (!couponCode.trim()) {
-      setError('Please enter a coupon code');
+      const errMsg = 'Please enter a coupon code';
+      console.warn(errMsg);
+      setError(errMsg);
       return;
     }
 
     setLoading(true);
     setError('');
-
     try {
       const token = await AsyncStorage.getItem('token');
+      console.log('Token:', token);
       if (!token) throw new Error('User not authenticated');
 
-      const response = await applyCoupon(cartId, couponCode.trim(), token);
-      setDiscountedTotal(response.total ?? null);
-      if (response.total === undefined) {
-        setError('Invalid response from coupon API');
+      console.log('Sending apply coupon request...');
+      const applyResponse = await fetch(
+        'https://api.sareh-nomow.xyz/api/coupons/apply',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            couponCode: couponCode.trim(),
+            cartId,
+          }),
+        },
+      );
+
+      console.log('Apply response status:', applyResponse.status);
+
+      if (!applyResponse.ok) {
+        const errorText = await applyResponse.text();
+        console.error('Failed to apply coupon:', errorText);
+        throw new Error(errorText || 'Failed to apply coupon');
+      }
+
+      console.log('Fetching updated cart...');
+      const cartResponse = await fetch(
+        'https://api.sareh-nomow.xyz/api/carts/customer',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      console.log('Cart fetch status:', cartResponse.status);
+
+      if (!cartResponse.ok) {
+        const errorText = await cartResponse.text();
+        console.error('Error fetching updated cart:', errorText);
+        throw new Error('Failed to fetch updated cart');
+      }
+
+      const cartData = await cartResponse.json();
+      console.log('Updated cart data:', cartData);
+
+      if (cartData.grand_total !== undefined) {
+        console.log('Setting discounted total:', cartData.grand_total);
+        setDiscountedTotal(cartData.grand_total);
+      } else {
+        console.error('grand_total not found in cart response');
+        throw new Error('grand_total not found in cart response');
       }
     } catch (err: any) {
+      console.error('Coupon error:', err.message);
       setError(err.message || 'Failed to apply coupon');
       setDiscountedTotal(null);
     } finally {
+      console.log('Finished coupon request');
       setLoading(false);
     }
   };
+
   return (
     <View style={{flex: 1, backgroundColor: '#F9F9F9'}}>
       <Header title="Payment" showBack={true} showImage={false} />
@@ -362,7 +399,7 @@ const PaymentScreen = () => {
             style={{
               marginTop: 10,
               padding: 12,
-              backgroundColor: '#000',
+              backgroundColor: 'purple',
               borderRadius: 8,
               alignItems: 'center',
             }}>
@@ -371,30 +408,49 @@ const PaymentScreen = () => {
             </Text>
           </TouchableOpacity>
         </View>
-
         <View style={styles.summaryContainer}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal:</Text>
-            <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Quantity:</Text>
-            <Text style={styles.summaryValue}>{totalQuantity}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Shipping:</Text>
-            <Text style={styles.summaryValue}>${shippingCost.toFixed(2)}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Shipping Method:</Text>
             <Text style={styles.summaryValue}>
-              {shippingMethodName || 'N/A'}
+              ${subtotal ? subtotal.toFixed(2) : '0.00'}
             </Text>
           </View>
 
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total:</Text>
-            <Text style={styles.summaryValue}>${totalPrice.toFixed(2)}</Text>
+            <Text style={styles.summaryLabel}>Quantity:</Text>
+            <Text style={styles.summaryValue}>
+              {typeof totalQuantity === 'number' ? totalQuantity : 0}
+            </Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Shipping:</Text>
+            <Text style={styles.summaryValue}>
+              ${shippingCost ? shippingCost.toFixed(2) : '0.00'}
+            </Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Shipping Method:</Text>
+            <Text style={styles.summaryValue}>
+              {shippingMethodName || 'Not selected'}
+            </Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryLabel, {color: 'gray'}]}>Total:</Text>
+            <Text style={[styles.summaryValue, {color: 'gray'}]}>
+              ${totalPrice ? totalPrice.toFixed(2) : '0.00'}
+            </Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryLabel, {fontWeight: 'bold'}]}>
+              Total After Discount:
+            </Text>
+            <Text style={[styles.summaryValue, {fontWeight: 'bold'}]}>
+              ${discountedTotal ? discountedTotal.toFixed(2) : '0.00'}
+            </Text>
           </View>
         </View>
 
@@ -528,7 +584,7 @@ const styles = StyleSheet.create({
   },
   confirmBtn: {
     marginVertical: 15,
-    backgroundColor: '#000',
+    backgroundColor: 'purple',
     borderRadius: 8,
     padding: 15,
     alignItems: 'center',
