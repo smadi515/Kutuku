@@ -1,115 +1,103 @@
-import React, {useState} from 'react';
-import {
-  View,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  StatusBar,
-} from 'react-native';
-
-import CustomInput from '../components/CustomInput';
-import ImagePickerComponent from '../components/ImagePickerComponent';
-import Icon from '../components/icon';
+import React from 'react';
+import {View, Text, StatusBar, StyleSheet} from 'react-native';
 import Header from '../components/Header';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import Icon from '../components/icon'; // adjust the path if necessary
+import {useRoute, useNavigation} from '@react-navigation/native';
+import type {RouteProp} from '@react-navigation/native';
 import type {RootStackParamList} from '../App';
+
+type ProfileScreenRouteProp = RouteProp<RootStackParamList, 'Profile'>;
+
 const Profile = () => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<ProfileScreenRouteProp>();
+  const navigation = useNavigation();
 
-  const [image, setImage] = useState<any>(null);
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [isPasswordVisible, setIsPasswordVisible] = useState(true);
-
-  const handleImagePick = (asset: any) => {
-    setImage(asset);
-    console.log({password});
-    console.log({phoneNumber});
-    console.log({name});
-  };
-
-  const togglePasswordVisibility = () => {
-    setIsPasswordVisible(prev => !prev);
-  };
+  const {
+    fullName = 'Unknown',
+    birthday = new Date().toISOString(),
+    phoneNumber = 'Unknown',
+  } = route.params || {};
 
   return (
-    <View style={{flex: 1, backgroundColor: '#fff', padding: 16}}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+
       <Header
         title="Profile"
         showImage={false}
         rightIcons={[
           {
             name: 'settings-outline',
-            type: 'Ionicons',
-            onPress: () => navigation.navigate('SettingsScreen'), // add navigation to settings if needed
+            type: 'ionicon',
+            onPress: () => navigation.navigate('SettingsScreen'),
           },
         ]}
       />
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      {/* Profile Image */}
-      <View style={{alignItems: 'center', marginBottom: 20}}>
-        <ImagePickerComponent
-          image={image}
-          onPick={handleImagePick}
-          extraStyle={{
-            width: 150,
-            height: 150,
-            borderRadius: 75,
-            backgroundColor: '#f0f0f0',
-            justifyContent: 'center',
-            alignItems: 'center',
-            overflow: 'hidden',
-          }}
-          customIcon={
-            <View style={{alignItems: 'center'}}>
-              <Icon name="camera" type="feather" size={28} color="#666" />
-              <Text style={{color: '#666', marginTop: 5}}>Add Photo</Text>
-            </View>
-          }
+      <View style={styles.card}>
+        <Icon
+          name="person-circle-outline"
+          type="ionicon"
+          size={80}
+          color="purple"
         />
-      </View>
+        <Text style={styles.name}>{fullName}</Text>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <CustomInput
-          label="Full Name"
-          iconType="materialcommunity"
-          iconName="account"
-          onChangeText={setName}
-          placeholder="Enter your full name"
-        />
-        <CustomInput
-          label="Password"
-          iconType="materialcommunity"
-          iconName="lock-outline"
-          secureTextEntry={isPasswordVisible}
-          onChangeText={setPassword}
-          placeholder="Enter your password"
-        />
-        <TouchableOpacity
-          style={{position: 'absolute', top: 162, right: 30}}
-          onPress={togglePasswordVisibility}>
+        <View style={styles.infoRow}>
+          <Icon name="call-outline" type="ionicon" size={20} color="purple" />
+          <Text style={styles.infoText}>{phoneNumber}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
           <Icon
-            name={isPasswordVisible ? 'eye-off' : 'eye'}
-            type="feather"
+            name="calendar-outline"
+            type="ionicon"
             size={20}
-            color="#888"
+            color="purple"
           />
-        </TouchableOpacity>
-
-        <CustomInput
-          label="Phone Number"
-          iconType="fontawesome"
-          iconName="phone"
-          onChangeText={setPhoneNumber}
-          placeholder="Enter your phone number"
-        />
-      </ScrollView>
+          <Text style={styles.infoText}>
+            {new Date(birthday).toLocaleDateString()}
+          </Text>
+        </View>
+      </View>
     </View>
   );
 };
 
 export default Profile;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 20,
+  },
+  card: {
+    marginTop: 50,
+    backgroundColor: '#F5F0FF',
+    borderRadius: 20,
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    shadowColor: 'purple',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  name: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#333',
+    marginTop: 10,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  infoText: {
+    fontSize: 16,
+    marginLeft: 10,
+    color: '#555',
+  },
+});

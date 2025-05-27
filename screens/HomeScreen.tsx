@@ -273,11 +273,11 @@ const HomeScreen = ({navigation}: any) => {
             onPress={() => navigation.navigate('SearchScreen')}
           />
           <Icon
-            name="notifications-outline"
+            name="cart"
             type="ionicon"
             size={22}
             color="#333"
-            onPress={() => navigation.navigate('NotificationScreen')}
+            onPress={() => navigation.navigate('CartScreen')}
           />
         </View>
       </View>

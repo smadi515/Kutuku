@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { ActivityIndicator, View, I18nManager } from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {ActivityIndicator, View, I18nManager} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Screens
@@ -55,8 +55,12 @@ export type RootStackParamList = {
   Home: undefined;
   EditProfile: undefined;
   Favorites: undefined;
-  Profile: undefined;
-  StoreScreen: { categoryId?: number; brandId?: number };
+  Profile: {
+    fullName: string;
+    birthday: string;
+    phoneNumber: string;
+  };
+  StoreScreen: {categoryId?: number; brandId?: number};
   ChangePassword: undefined;
   MyOrders: undefined;
   SettingsScreen: undefined;
@@ -65,7 +69,7 @@ export type RootStackParamList = {
   SecurityScreen: undefined;
   NotificationSetting: undefined;
   NotificationScreen: undefined;
-  ProductsDetails: { product_id: number };
+  ProductsDetails: {product_id: number};
   LegalPolicies: undefined;
   LanguageScreen: undefined;
   CartScreen: undefined;
@@ -75,7 +79,7 @@ export type RootStackParamList = {
     shippingCost: number;
     shippingMethodName: string;
     shippingZoneMethodId: number; // ✅ Add this line
-  };// <-- Add expected param
+  }; // <-- Add expected param
   SearchScreen: undefined;
 };
 
@@ -96,18 +100,18 @@ const App = () => {
 
   if (!initialRoute) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
         <ActivityIndicator size="large" color="#000" />
       </View>
     );
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{flex: 1}}>
       <NavigationContainer>
         <Stack.Navigator
           initialRouteName={initialRoute}
-          screenOptions={{ headerShown: false }}>
+          screenOptions={{headerShown: false}}>
           <Stack.Screen name="Splash" component={SplashScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="OTPScreen" component={OTPScreen} />
