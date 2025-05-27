@@ -186,7 +186,10 @@ const CartScreen = () => {
     );
     setCartItems(updated);
   };
-
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
   const renderItem = ({item}: {item: CartItem}) => (
     <View style={styles.itemContainer}>
       <TouchableOpacity
@@ -257,9 +260,26 @@ const CartScreen = () => {
           <Text style={styles.empty}>Your cart is empty!</Text>
         }
       />
+      <View
+        style={{
+          paddingHorizontal: 15,
+          paddingVertical: 10,
+          backgroundColor: '#fff',
+          borderTopWidth: 1,
+          borderColor: '#ddd',
+        }}>
+        <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+          <Text style={{fontSize: 16, fontWeight: 'bold'}}>Subtotal:</Text>
+          <Text style={{fontSize: 16, fontWeight: 'bold'}}>
+            ${subtotal.toFixed(2)}
+          </Text>
+        </View>
+      </View>
+
       <View style={{width: '100%', padding: 10, alignItems: 'center'}}>
         <CustomButton
           text="GO To Checkout"
+          disabled={cartItems.length === 0}
           onPress={() => {
             if (!cartId) {
               Alert.alert('No active cart found!');

@@ -9,7 +9,7 @@ export const login = async (email: string, password: string) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({email, password}),
   });
 
   const res = await response.json();
@@ -54,7 +54,7 @@ export const verifyOtp = async (email: string, otp: string) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email, otp }),
+    body: JSON.stringify({email, otp}),
   });
 
   const res = await response.json();
@@ -228,7 +228,7 @@ export const createCart = async (token: string) => {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',  // <-- Add this
+        'Content-Type': 'application/json', // <-- Add this
       },
     });
     console.log('Token passed to createCart:', token);
@@ -337,36 +337,38 @@ export const deleteCartItem = async (
 };
 export const updateCartItemQuantity = async (
   token: string,
-  cart_item_id: number,
-  cart_id: number,
+  cartItemId: number,
+  cartId: number,
   quantity: number,
 ) => {
-  try {
-    const response = await fetch(
-      `https://api.sareh-nomow.xyz/api/carts/${cart_id}/items/${cart_item_id}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ qty: quantity }),
+  console.log(
+    `PUT https://api.sareh-nomow.xyz/api/carts/${cartId}/items/${cartItemId}`,
+    {
+      qty: quantity,
+    },
+  );
+
+  const response = await fetch(
+    `https://api.sareh-nomow.xyz/api/carts/${cartId}/items/${cartItemId}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
-    );
+      body: JSON.stringify({qty: quantity}),
+    },
+  );
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('🔴 Backend error:', errorData);
-      throw new Error('Failed to update cart item quantity');
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('🔥 updateCartItemQuantity failed:', error);
-    throw error;
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Failed to update cart item:', errorText);
+    throw new Error(`Failed to update cart item. Status: ${response.status}`);
   }
+
+  return await response.json();
 };
+
 // ================= HELPER =================
 export default function buildUrlWithQueryParams(
   apiUrl: string,
@@ -408,7 +410,7 @@ export const addOrUpdateCartItem = async (
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ product_id, qty: quantity }),
+        body: JSON.stringify({product_id, qty: quantity}),
       },
     );
 

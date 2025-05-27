@@ -17,9 +17,18 @@ import {
   getCustomerCart,
   createCart,
   addItemToCart,
+  updateCartItemQuantity,
 } from '../lib/api';
 import BrandTab from './BrandTab';
-
+type LocalCartItem = {
+  id: string;
+  title: string;
+  price: number;
+  quantity: number;
+  selected: boolean;
+  image: {uri?: string};
+  cart_item_id: number | null;
+};
 type ProductDescription = {
   name?: string;
   description?: string;
@@ -45,6 +54,12 @@ type Product = {
   images?: ProductImage[];
   image?: string;
   description_data?: ProductDescription;
+};
+type BackendCartItem = {
+  product_id: number | string;
+  cart_item_id: number;
+  quantity: number;
+  // add other relevant fields if you have them
 };
 
 const HomeScreen = ({navigation}: any) => {
@@ -123,13 +138,14 @@ const HomeScreen = ({navigation}: any) => {
 
   const handleAddToCart = async (item: Product) => {
     try {
+      console.log('Starting handleAddToCart for product:', item.product_id);
+
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         console.warn('User not logged in');
         return;
       }
 
-      // 1. Ensure customer cart exists
       let cart = await getCustomerCart(token);
       if (!cart || !cart.cart_id) {
         cart = await createCart(token);
@@ -140,30 +156,71 @@ const HomeScreen = ({navigation}: any) => {
         return;
       }
 
-      // 2. Add item to backend cart
-      const backendResponse = await addItemToCart(
-        token,
-        cart.cart_id,
-        item.product_id.toString(),
-        quantity,
+      const storedCart = await AsyncStorage.getItem('cart');
+      const parsedCart: LocalCartItem[] = storedCart
+        ? JSON.parse(storedCart)
+        : [];
+
+      const backendCartItems: BackendCartItem[] = cart.items || [];
+
+      // Sync cart_item_ids into parsedCart
+      parsedCart.forEach(localItem => {
+        const backendItem = backendCartItems.find(
+          bItem => bItem.product_id.toString() === localItem.id,
+        );
+        if (backendItem) {
+          localItem.cart_item_id = backendItem.cart_item_id;
+        }
+      });
+
+      const existingItemIndex = parsedCart.findIndex(
+        cartItem => cartItem.id === item.product_id.toString(),
       );
 
-      // 3. Add item to local cart
-      const storedCart = await AsyncStorage.getItem('cart');
-      const parsedCart = storedCart ? JSON.parse(storedCart) : [];
+      if (existingItemIndex !== -1) {
+        // Update quantity
+        const existingItem = parsedCart[existingItemIndex];
+        const newQuantity = existingItem.quantity + quantity;
 
-      const newItem = {
-        id: item.product_id.toString(),
-        title: item.name,
-        price: item.price,
-        quantity: quantity,
-        selected: true,
-        image: {uri: item.image},
-        cart_item_id: backendResponse?.cart_item_id || null,
-      };
+        if (!existingItem.cart_item_id) {
+          console.error('Cannot update: cart_item_id is missing');
+          return;
+        }
 
-      const updatedCart = [...parsedCart, newItem];
-      await AsyncStorage.setItem('cart', JSON.stringify(updatedCart));
+        await updateCartItemQuantity(
+          token,
+          existingItem.cart_item_id,
+          cart.cart_id,
+          newQuantity,
+        );
+
+        parsedCart[existingItemIndex].quantity = newQuantity;
+        console.log('Updated existing item quantity:', newQuantity);
+      } else {
+        // Add new item
+        const backendResponse = await addItemToCart(
+          token,
+          cart.cart_id,
+          item.product_id.toString(),
+          quantity,
+        );
+
+        const newItem: LocalCartItem = {
+          id: item.product_id.toString(),
+          title: item.name,
+          price: item.price,
+          quantity: quantity,
+          selected: true,
+          image: {uri: item.image ?? ''},
+          cart_item_id: backendResponse?.cart_item_id || null,
+        };
+
+        parsedCart.push(newItem);
+        console.log('Added new item to cart:', newItem);
+      }
+
+      await AsyncStorage.setItem('cart', JSON.stringify(parsedCart));
+      console.log('Cart saved to AsyncStorage:', parsedCart);
 
       navigation.navigate('CartScreen');
     } catch (error) {
