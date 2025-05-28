@@ -61,7 +61,7 @@ const CreateAccountScreen = ({navigation}: any) => {
           await AsyncStorage.setItem('userFullName', user.full_name);
         }
 
-        navigation.replace('Home');
+        navigation.replace('TabNavigationScreen');
       } else {
         Alert.alert('Login Failed', response.message || 'Invalid credentials');
       }

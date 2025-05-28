@@ -96,7 +96,7 @@ const App = () => {
   useEffect(() => {
     const checkLoginStatus = async () => {
       const token = await AsyncStorage.getItem('token');
-      setInitialRoute(token ? 'Home' : 'Splash');
+      setInitialRoute(token ? 'TabNavigationScreen' : 'Splash');
     };
     checkLoginStatus();
   }, []);

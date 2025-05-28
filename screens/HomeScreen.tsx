@@ -248,7 +248,6 @@ const HomeScreen = ({navigation}: any) => {
       <ActivityIndicator size="large" color="purple" style={{marginTop: 20}} />
     );
   }
-
   return (
     <View style={styles.container}>
       {/* Top Bar */}
