@@ -16,6 +16,7 @@ import {getCartItems} from '../lib/api';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../App';
 import CustomInput from '../components/CustomInput';
+import Icon from '../components/icon';
 interface CartItem {
   product_price: number;
   qty: number;
@@ -343,6 +344,38 @@ const PaymentScreen = () => {
       setLoading(false);
     }
   };
+  const deleteAddress = async (id: string) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) throw new Error('User not authenticated');
+
+      const res = await fetch(
+        `https://api.sareh-nomow.xyz/api/addresses/${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      console.log(`DELETE address response status: ${res.status}`);
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to delete address:', errorText);
+        return;
+      }
+
+      console.log(`Address ${id} successfully deleted.`);
+
+      // Refresh the list of addresses
+      setAddresses(prev => prev.filter(addr => addr.id !== id));
+    } catch (err: any) {
+      console.error('Delete address error:', err.message);
+    }
+  };
 
   return (
     <View style={{flex: 1, backgroundColor: '#F9F9F9'}}>
@@ -365,9 +398,43 @@ const PaymentScreen = () => {
                     borderRadius: 8,
                     marginBottom: 5,
                   }}>
-                  <Text>
-                    {addr.street}, {addr.city}
-                  </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                    <Text style={{flex: 1}}>
+                      {addr.street}, {addr.city}, {addr.country}
+                    </Text>
+                    <View style={{flexDirection: 'row'}}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (selectedAddressId !== null) {
+                            navigation.navigate('EditAddressScreen', {
+                              addressId: Number(selectedAddressId),
+                            });
+                          }
+                        }}
+                        style={{marginHorizontal: 5}}>
+                        <Icon
+                          type={'Ionicons'}
+                          name="create-outline"
+                          size={20}
+                          color="#007bff"
+                        />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity onPress={() => deleteAddress(addr.id)}>
+                        <Icon
+                          type={'Ionicons'}
+                          name="trash"
+                          size={20}
+                          color="red"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                 </TouchableOpacity>
               ))}
             </View>

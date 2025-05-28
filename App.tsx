@@ -30,7 +30,8 @@ import LanguageScreen from './screens/LanguageScreen';
 import HelpSupport from './screens/HelpSupport';
 import AddressScreen from './screens/AddressScreen';
 import OTPScreen from './screens/OTPScreen';
-
+import EditAddressScreen from './screens/EditAddressScreen';
+import Home from './screens/HomeScreen';
 // Prevent RTL layout
 I18nManager.allowRTL(false);
 I18nManager.forceRTL(false);
@@ -47,6 +48,7 @@ export type CartItem = {
 
 // Navigation type definitions
 export type RootStackParamList = {
+  TabNavigationScreen: undefined;
   Splash: undefined;
   Login: undefined;
   OTPScreen: undefined;
@@ -81,6 +83,7 @@ export type RootStackParamList = {
     shippingZoneMethodId: number; // ✅ Add this line
   }; // <-- Add expected param
   SearchScreen: undefined;
+  EditAddressScreen: {addressId: number}; // New screen for editing address
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -117,12 +120,19 @@ const App = () => {
           <Stack.Screen name="OTPScreen" component={OTPScreen} />
           <Stack.Screen name="CreateAcount" component={CreateAcountScreen} />
           <Stack.Screen name="Onboarding" component={OnboardingFlow} />
-          <Stack.Screen name="Home" component={TabNavigationScreen} />
+          <Stack.Screen
+            name="TabNavigationScreen"
+            component={TabNavigationScreen}
+          />
           <Stack.Screen name="EditProfile" component={EditProfile} />
           <Stack.Screen name="Favorites" component={Favorites} />
           <Stack.Screen name="Profile" component={Profile} />
           <Stack.Screen name="StoreScreen" component={StoreScreen} />
           <Stack.Screen name="ChangePassword" component={ChangePassword} />
+          <Stack.Screen
+            name="EditAddressScreen"
+            component={EditAddressScreen}
+          />
           <Stack.Screen name="MyOrders" component={MyOrders} />
           <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
           <Stack.Screen name="HelpSupport" component={HelpSupport} />
@@ -136,6 +146,7 @@ const App = () => {
             name="NotificationScreen"
             component={NotificationScreen}
           />
+          <Stack.Screen name="Home" component={Home} />
           <Stack.Screen name="ProductsDetails" component={ProductsDetails} />
           <Stack.Screen name="LegalPolicies" component={LegalPolicies} />
           <Stack.Screen name="LanguageScreen" component={LanguageScreen} />

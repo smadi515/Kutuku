@@ -1,4 +1,3 @@
-// HomeScreen.tsx
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import MyOrders from './MyOrders';
@@ -9,7 +8,7 @@ import Icon from '../components/icon'; // Make sure path is correct
 
 const Tab = createBottomTabNavigator();
 
-const HomeScreen = () => {
+const TabNavigationScreen = () => {
   return (
     <Tab.Navigator
       screenOptions={({route}) => ({
@@ -52,4 +51,4 @@ const HomeScreen = () => {
   );
 };
 
-export default HomeScreen;
+export default TabNavigationScreen;
