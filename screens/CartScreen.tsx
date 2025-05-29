@@ -24,6 +24,7 @@ import {
   getCustomerCart,
 } from '../lib/api';
 import type {RootStackParamList} from '../App';
+import {useTranslation} from 'react-i18next';
 
 type CartItem = {
   cart_item_id: number;
@@ -58,6 +59,8 @@ type ProductDescription = {
 };
 
 const CartScreen = () => {
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [cartId, setCartId] = useState<number | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const navigation =
@@ -190,6 +193,7 @@ const CartScreen = () => {
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
+
   const renderItem = ({item}: {item: CartItem}) => (
     <View style={styles.itemContainer}>
       <TouchableOpacity
@@ -199,6 +203,7 @@ const CartScreen = () => {
           style={[
             styles.checkCircle,
             item.selected && {backgroundColor: 'purple'},
+            {direction: isRTL ? 'rtl' : 'ltr'},
           ]}
         />
       </TouchableOpacity>
@@ -250,15 +255,18 @@ const CartScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Header title="My Cart" showBack showImage={false} rightIcons={[]} />
+      <Header
+        title={t('cart.title')}
+        showBack
+        showImage={false}
+        rightIcons={[]}
+      />
 
       <FlatList
         data={cartItems}
         keyExtractor={item => item.cart_item_id.toString()}
         renderItem={renderItem}
-        ListEmptyComponent={
-          <Text style={styles.empty}>Your cart is empty!</Text>
-        }
+        ListEmptyComponent={<Text style={styles.empty}>{t('cart.empty')}</Text>}
       />
       <View
         style={{
@@ -269,7 +277,9 @@ const CartScreen = () => {
           borderColor: '#ddd',
         }}>
         <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-          <Text style={{fontSize: 16, fontWeight: 'bold'}}>Subtotal:</Text>
+          <Text style={{fontSize: 16, fontWeight: 'bold'}}>
+            {t('cart.subtotal')}
+          </Text>
           <Text style={{fontSize: 16, fontWeight: 'bold'}}>
             ${subtotal.toFixed(2)}
           </Text>
@@ -278,11 +288,11 @@ const CartScreen = () => {
 
       <View style={{width: '100%', padding: 10, alignItems: 'center'}}>
         <CustomButton
-          text="GO To Checkout"
+          text={t('cart.checkout')}
           disabled={cartItems.length === 0}
           onPress={() => {
             if (!cartId) {
-              Alert.alert('No active cart found!');
+              Alert.alert(t('cart.noActiveCart'));
               return;
             }
 

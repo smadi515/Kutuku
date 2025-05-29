@@ -1,16 +1,16 @@
 import {View, Text, ScrollView} from 'react-native';
 import React from 'react';
 import Header from '../components/Header';
+import {useTranslation} from 'react-i18next';
 
 const LegalPolicies = () => {
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   return (
-    <View
-      style={{
-        flex: 1,
-      }}>
+    <View style={{flex: 1}}>
       <Header
         showImage={false}
-        title="LegalPolicies"
+        title={t('LegalPolicies.title')}
         showBack={true}
         rightIcons={[
           {
@@ -20,49 +20,27 @@ const LegalPolicies = () => {
           },
         ]}
       />
-      <ScrollView style={{margin: 5, padding: 5}}>
-        <Text style={{fontSize: 25, fontFamily: 'bold'}}>Terms</Text>
-        <View style={{alignItems: 'center', justifyContent: 'center'}}>
-          <Text style={{color: 'gray'}}>
-            By using [KUTUKU], you agree to the following terms: You must be at
-            least 13 years old to use this app. You agree not to misuse the app
-            (e.g., for fraud, spam, or illegal activity). Prices and product
-            availability may change at any time. We are not responsible for
-            delays or failures outside our control. Violation of these terms may
-            result in account suspension or removal.
-          </Text>
-        </View>
-        <Text style={{fontSize: 25, fontFamily: 'bold', margin: 5}}>
-          Changes to the service and/or Terms
+      <ScrollView
+        style={{margin: 5, padding: 5, direction: isRTL ? 'rtl' : 'ltr'}}>
+        <Text style={{fontSize: 25, fontFamily: 'bold'}}>
+          {t('LegalPolicies.terms_title')}
         </Text>
         <View style={{alignItems: 'center', justifyContent: 'center'}}>
-          <Text style={{color: 'gray'}}>
-            Effective Date: April 29, 2025 Your privacy is important to us. This
-            Privacy Policy explains how [Your App Name] collects, uses, and
-            protects your information. What We Collect: Personal information
-            (e.g., name, email, address) Usage data (e.g., app interactions,
-            pages visited) Device information (e.g., mobile OS, device type) How
-            We Use Your Data: To provide and improve our services To communicate
-            with you about your orders or inquiries To enhance app performance
-            and security Data Sharing: We do not sell or rent your personal
-            data. We may share it with third-party services (like payment
-            processors) only as needed to operate the app.
-          </Text>
+          <Text style={{color: 'gray'}}>{t('LegalPolicies.terms_text')}</Text>
         </View>
 
         <Text style={{fontSize: 25, fontFamily: 'bold', margin: 5}}>
-          Return & Refund Policy
+          {t('LegalPolicies.changes_title')}
         </Text>
         <View style={{alignItems: 'center', justifyContent: 'center'}}>
-          <Text style={{color: 'gray'}}>
-            We want you to be happy with your purchase. If you're not satisfied,
-            please review our return policy: Returns: You may request a return
-            within 7 days of receiving the item. Items must be unused and in
-            original condition. Refunds: Once we receive and inspect your
-            return, we will process your refund within 3–7 business days.
-            Non-Returnable Items: Sale items or used products are not eligible
-            for return.
-          </Text>
+          <Text style={{color: 'gray'}}>{t('LegalPolicies.changes_text')}</Text>
+        </View>
+
+        <Text style={{fontSize: 25, fontFamily: 'bold', margin: 5}}>
+          {t('LegalPolicies.refund_title')}
+        </Text>
+        <View style={{alignItems: 'center', justifyContent: 'center'}}>
+          <Text style={{color: 'gray'}}>{t('LegalPolicies.refund_text')}</Text>
         </View>
       </ScrollView>
     </View>

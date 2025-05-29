@@ -3,13 +3,16 @@ import React from 'react';
 import Header from '../components/Header';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
+import {useTranslation} from 'react-i18next';
 
 const ChangePassword = () => {
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   return (
     <View style={{flex: 1}}>
       <Header
         showImage={false}
-        title="Change Password"
+        title={t('ChangePassword.title')}
         showBack={true}
         rightIcons={[
           {
@@ -19,17 +22,17 @@ const ChangePassword = () => {
           },
         ]}
       />
-      <View style={{padding: 1}}>
+      <View style={{padding: 1, direction: isRTL ? 'rtl' : 'ltr'}}>
         <CustomInput
-          label="New Password"
-          placeholder="Enter New Password"
+          label={t('ChangePassword.newPassword')}
+          placeholder={t('ChangePassword.newPasswordPlaceholder')}
           secureTextEntry
           iconType="feather"
           iconName="lock"
         />
         <CustomInput
-          label="Confirm Password"
-          placeholder="Confirm Your New Password"
+          label={t('ChangePassword.confirmPassword')}
+          placeholder={t('ChangePassword.confirmPasswordPlaceholder')}
           secureTextEntry
           iconType="feather"
           iconName="lock"
@@ -43,7 +46,7 @@ const ChangePassword = () => {
           position: 'absolute',
           bottom: 20,
         }}>
-        <CustomButton text="Change Now " type="PRIMARY" />
+        <CustomButton text={t('ChangePassword.changeNow')} type="PRIMARY" />
       </View>
     </View>
   );

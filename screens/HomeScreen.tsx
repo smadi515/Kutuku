@@ -20,6 +20,8 @@ import {
   updateCartItemQuantity,
 } from '../lib/api';
 import BrandTab from './BrandTab';
+import {useTranslation} from 'react-i18next';
+
 type LocalCartItem = {
   id: string;
   title: string;
@@ -69,7 +71,8 @@ const HomeScreen = ({navigation}: any) => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('Home');
   const [loading, setLoading] = useState(true);
-
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -249,7 +252,7 @@ const HomeScreen = ({navigation}: any) => {
     );
   }
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
       {/* Top Bar */}
       <View style={styles.topBar}>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -258,8 +261,10 @@ const HomeScreen = ({navigation}: any) => {
             style={styles.avatar}
           />
           <View style={{marginLeft: 10}}>
-            <Text>hi, {firstName || 'Guest'}</Text>
-            <Text style={styles.subText}>Let’s go shopping</Text>
+            <Text>
+              {t('HomeScreen.hi')} {firstName || 'Guest'}
+            </Text>
+            <Text style={styles.subText}>{t('HomeScreen.letsGoShopping')}</Text>
           </View>
         </View>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -288,7 +293,7 @@ const HomeScreen = ({navigation}: any) => {
             style={
               activeTab === 'Home' ? styles.activeTab : styles.inactiveTab
             }>
-            Home
+            {t('HomeScreen.home')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setActiveTab('category')}>
@@ -296,7 +301,7 @@ const HomeScreen = ({navigation}: any) => {
             style={
               activeTab === 'category' ? styles.activeTab : styles.inactiveTab
             }>
-            Category
+            {t('HomeScreen.category')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setActiveTab('brands')}>
@@ -304,7 +309,7 @@ const HomeScreen = ({navigation}: any) => {
             style={
               activeTab === 'brands' ? styles.activeTab : styles.inactiveTab
             }>
-            Brands
+            {t('HomeScreen.brands')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -317,10 +322,12 @@ const HomeScreen = ({navigation}: any) => {
           numColumns={2}
           ListHeaderComponent={
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>New Arrivals</Text>
+              <Text style={styles.sectionTitle}>
+                {t('HomeScreen.newArrivals')}
+              </Text>
               <TouchableOpacity
                 onPress={() => navigation.navigate('StoreScreen')}>
-                <Text style={styles.seeAll}>See All</Text>
+                <Text style={styles.seeAll}>{t('HomeScreen.SeeAll')}</Text>
               </TouchableOpacity>
             </View>
           }
@@ -351,7 +358,10 @@ const HomeScreen = ({navigation}: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#f7f7f7'},
+  container: {
+    flex: 1,
+    backgroundColor: '#f7f7f7',
+  },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',

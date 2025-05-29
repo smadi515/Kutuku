@@ -1,0 +1,151 @@
+{
+  "HomeScreen": {
+    "category": "Category",
+    "letsGoShopping": "Let’s go shopping",
+    "newArrivals": "New Arrivals",
+    "SeeAll": "See All",
+    "home": "Home",
+    "brands": "Brands",
+    "hi": "hi,",
+    "guest": "Guest"
+  },
+  "language_screen": {
+    "title": "Language"
+  },
+  "CategoryTab": {"search_categories": "Search categories..."},
+  "brandsTab": {"search_Brands": "Search brands..."},
+
+  "TabNavigationScreen": {
+    "home": "Home",
+    "my_orders": "My Orders",
+    "favorites": "Favorites",
+    "profile": "Profile"
+  },
+
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "edit_profile": "Edit profile",
+    "change_password": "Change Password",
+    "notifications": "Notifications",
+    "security": "Security",
+    "language": "Language",
+    "preferences": "Preferences",
+    "legal": "Legal and Policies",
+    "help": "Help & Support",
+    "logout": "Logout"
+  },
+  "cart": {
+    "title": "My Cart",
+    "empty": "Your cart is empty!",
+    "subtotal": "Subtotal:",
+    "checkout": "GO To Checkout",
+    "noActiveCart": "No active cart found!"
+  },
+  "PaymentScreen": {
+    "payment": "Payment",
+    "apply_coupon": "Apply Coupon",
+    "shipping_cost": "Shipping Cost",
+    "subtotal": "Subtotal",
+    "select_payment_method": "Select Payment Method",
+    "Selected City": "Selected City",
+    "Quantity": "Quantity:",
+    "Shipping": "Shipping:",
+    "Shipping Method": "Shipping Method:",
+    "Total": "Total:",
+    "Total After Discount": "Total After Discount:",
+    "Products": "Products",
+    "Qty": "Qty:",
+    "Payment Method": "Payment Method",
+    "Confirm Payment": "Confirm Payment",
+    "Order Successfully": "Order Successfully",
+    "Cash": "Cash",
+    "No addresses found": "No addresses found",
+    "Choose an Address": "Choose an Address",
+    "Order Tracking": "Order Tracking",
+    "Create Address": "Create Address",
+    "apply promo": "Apply Promo",
+    "applying": "Applying...",
+    "choose payment method": "Choose Payment Method",
+    "enter_promo_code": "Enter your Promo Code",
+    "not_selected": "Not selected"
+  },
+  "AddressScreen": {
+    "title": "Address",
+    "enter_address": "Enter your address:",
+    "full_name": "Full Name",
+    "enter_full_name": "Enter full name",
+    "phone_number": "Phone Number",
+    "enter_phone_number": "Enter phone number",
+    "address1": "Address 1",
+    "enter_address1": "Enter address",
+    "address2": "Address 2",
+    "enter_address2": "Enter address line 2",
+    "postcode": "Postcode",
+    "enter_postcode": "Enter postcode",
+    "country": "Country",
+    "select_country": "Select Country",
+    "city": "City",
+    "select_city": "Select City",
+    "choose_country_first": "Choose Country First",
+    "shipping": "Shipping",
+    "select_shipping_method": "Select Shipping Method",
+    "confirm": "Confirm",
+    "no_shipping_methods": "No shipping methods available for this country."
+  },
+  "LegalPolicies": {
+    "title": "Legal Policies",
+    "terms_title": "Terms",
+    "terms_text": "By using [KUTUKU], you agree to the following terms: You must be at least 13 years old to use this app. You agree not to misuse the app (e.g., for fraud, spam, or illegal activity). Prices and product availability may change at any time. We are not responsible for delays or failures outside our control. Violation of these terms may result in account suspension or removal.",
+    "changes_title": "Changes to the service and or Terms",
+    "changes_text": "Effective Date: April 29, 2025 Your privacy is important to us. This Privacy Policy explains how [Your App Name] collects, uses, and protects your information. What We Collect: Personal information (e.g., name, email, address) Usage data (e.g., app interactions, pages visited) Device information (e.g., mobile OS, device type) How We Use Your Data: To provide and improve our services To communicate with you about your orders or inquiries To enhance app performance and security Data Sharing: We do not sell or rent your personal data. We may share it with third-party services (like payment processors) only as needed to operate the app.",
+    "refund_title": "Return & Refund Policy",
+    "refund_text": "We want you to be happy with your purchase. If you're not satisfied, please review our return policy: Returns: You may request a return within 7 days of receiving the item. Items must be unused and in original condition. Refunds: Once we receive and inspect your return, we will process your refund within 3–7 business days. Non-Returnable Items: Sale items or used products are not eligible for return."
+  },
+  "HelpSupport": {
+    "title": "Help & Support",
+    "faq": [
+      {
+        "question": "Lorem ipsum dolor sit amet",
+        "answer": "Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet."
+      },
+      {
+        "question": "Lorem ipsum dolor sit amet",
+        "answer": "Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet."
+      },
+      {
+        "question": "Lorem ipsum dolor sit amet",
+        "answer": "Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet."
+      },
+      {
+        "question": "Lorem ipsum dolor sit amet",
+        "answer": "Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet."
+      },
+      {
+        "question": "Lorem ipsum dolor sit amet",
+        "answer": "Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet."
+      }
+    ]
+  },
+  "Security": {
+    "title": "Security",
+    "faceId": "Face ID",
+    "rememberPassword": "Remember Password",
+    "touchId": "Touch ID"
+  },
+  "NotificationSetting": {
+    "title": "Notification",
+    "payment": "Payment",
+    "tracking": "Tracking",
+    "completeOrder": "Complete Order",
+    "notification": "Notification"
+  },
+  "ChangePassword": {
+    "title": "Change Password",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "Enter New Password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm Your New Password",
+    "changeNow": "Change Now"
+  }
+}

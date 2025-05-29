@@ -12,6 +12,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../App';
 import BrandCard from '../components/BrandCard';
 import {getBrands} from '../lib/api';
+import {useTranslation} from 'react-i18next';
 
 type Brand = {
   id: number;
@@ -25,6 +26,8 @@ type NavigationProp = NativeStackNavigationProp<
 >;
 
 const BrandTab = () => {
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [brands, setBrands] = useState<Brand[]>([]);
   const [filteredBrands, setFilteredBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,11 +65,11 @@ const BrandTab = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
       {/* Search Input */}
       <TextInput
         style={styles.searchInput}
-        placeholder="Search brands..."
+        placeholder={t('brandsTab.search_Brands')}
         value={searchText}
         onChangeText={handleSearch}
       />

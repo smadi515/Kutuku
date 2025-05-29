@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import Icon from '../components/icon';
 import Header from '../components/Header';
+import {useTranslation} from 'react-i18next';
 
 type Language = 'en' | 'ar';
 
@@ -16,20 +17,24 @@ const languages = [
   {
     code: 'en',
     name: 'English',
-    flag: require('../assets/usa.png'), // <- Add usa.png to your assets
+    flag: require('../assets/usa.png'),
   },
   {
     code: 'ar',
     name: 'Arabic',
-    flag: require('../assets/ksa.png'), // <- Add ksa.png to your assets
+    flag: require('../assets/ksa.png'),
   },
 ];
 
 const LanguageScreen = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>('en');
+  const {t, i18n} = useTranslation();
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
+    i18n.language as Language,
+  );
 
   const handleSelect = (code: Language) => {
     setSelectedLanguage(code);
+    i18n.changeLanguage(code);
   };
 
   const renderItem = ({item}: {item: (typeof languages)[0]}) => {
@@ -63,7 +68,7 @@ const LanguageScreen = () => {
       <Header
         showBack={true}
         showImage={false}
-        title="Language"
+        title={t('language_screen.title')}
         rightIcons={[
           {
             name: 'info',
@@ -87,7 +92,6 @@ const LanguageScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-
     backgroundColor: '#fff',
   },
   list: {

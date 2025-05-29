@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,15 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import {ScrollView} from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
 import CustomInput from '../components/CustomInput';
-import { createAddress } from '../lib/api';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../App';
+import {createAddress} from '../lib/api';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../App';
+import {useTranslation} from 'react-i18next';
 
 interface MethodDetails {
   id: number;
@@ -54,6 +55,8 @@ interface Country {
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const AddressScreen = () => {
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address1, setAddress1] = useState('');
@@ -165,7 +168,9 @@ const AddressScreen = () => {
 
       // 🚚 Step 3: Attach Shipping Method to Cart
       await fetch(
-        `https://api.sareh-nomow.xyz/api/carts/${cartId}/shipping-method/${shippingCost!.id}`,
+        `https://api.sareh-nomow.xyz/api/carts/${cartId}/shipping-method/${
+          shippingCost!.id
+        }`,
         {
           method: 'PUT',
           headers: {
@@ -286,65 +291,72 @@ const AddressScreen = () => {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <Header title="Address" showBack={true} showImage={false} />
+    <View style={{flex: 1}}>
+      <Header
+        title={t('AddressScreen.title')}
+        showBack={true}
+        showImage={false}
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ padding: 10 }}>
-          <Text style={styles.label}>Enter your address:</Text>
+        style={{flex: 1, direction: isRTL ? 'rtl' : 'ltr'}}>
+        <ScrollView contentContainerStyle={{padding: 10}}>
+          <Text style={styles.label}>{t('AddressScreen.enter_address')}</Text>
 
           <CustomInput
-            label="Full Name"
-            placeholder="Enter full name"
+            label={t('AddressScreen.full_name')}
+            placeholder={t('AddressScreen.enter_full_name')}
             iconType="feather"
             iconName="user"
             value={fullName}
             onChangeText={setFullName}
           />
           <CustomInput
-            label="Phone Number"
-            placeholder="Enter phone number"
+            label={t('AddressScreen.phone_number')}
+            placeholder={t('AddressScreen.enter_phone_number')}
             iconType="feather"
             iconName="phone"
             value={phoneNumber}
             onChangeText={setPhoneNumber}
           />
           <CustomInput
-            label="Address 1"
-            placeholder="Enter address"
+            label={t('AddressScreen.address1')}
+            placeholder={t('AddressScreen.enter_address1')}
             iconType="feather"
             iconName="map-pin"
             value={address1}
             onChangeText={setAddress1}
           />
           <CustomInput
-            label="Address 2"
-            placeholder="Enter address line 2"
+            label={t('AddressScreen.address2')}
+            placeholder={t('AddressScreen.enter_address2')}
             iconType="feather"
             iconName="map"
             value={address2}
             onChangeText={setAddress2}
           />
           <CustomInput
-            label="Postcode"
-            placeholder="Enter postcode"
+            label={t('AddressScreen.postcode')}
+            placeholder={t('AddressScreen.enter_postcode')}
             iconType="feather"
             iconName="hash"
             value={postcode}
             onChangeText={handleNumericInput(setPostcode)}
           />
 
-          <Text style={styles.dropdownLabel}>Country</Text>
+          <Text style={styles.dropdownLabel}>{t('AddressScreen.country')}</Text>
           <TouchableOpacity
             style={styles.dropdown}
             onPress={() => setCountryModalVisible(true)}>
             <Text>
-              {selectedCountry ? selectedCountry.name : 'Select Country'}
+              {selectedCountry
+                ? selectedCountry.name
+                : t('AddressScreen.select_country')}
             </Text>
           </TouchableOpacity>
 
-          <Text style={styles.dropdownLabel}>City</Text>
+          <Text style={styles.dropdownLabel}>{t('AddressScreen.city')}</Text>
           <TouchableOpacity
             style={styles.dropdown}
             onPress={() => setCityModalVisible(true)}
@@ -353,12 +365,14 @@ const AddressScreen = () => {
               {selectedCity
                 ? selectedCity.name
                 : selectedCountry
-                  ? 'Select City'
-                  : 'Choose Country First'}
+                ? t('AddressScreen.select_city')
+                : t('AddressScreen.choose_country_first')}
             </Text>
           </TouchableOpacity>
 
-          <Text style={styles.dropdownLabel}>Shipping</Text>
+          <Text style={styles.dropdownLabel}>
+            {t('AddressScreen.shipping')}
+          </Text>
           <TouchableOpacity
             style={styles.dropdown}
             onPress={() => setShippingModalVisible(true)}
@@ -367,13 +381,13 @@ const AddressScreen = () => {
               {shippingCost
                 ? `${shippingCost.name} - ${shippingCost.cost} JOD`
                 : selectedCountry
-                  ? 'Select Shipping Method'
-                  : 'Choose Country First'}
+                ? t('AddressScreen.select_shipping_method')
+                : t('AddressScreen.choose_country_first')}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
-            <Text style={styles.confirmText}>Confirm</Text>
+            <Text style={styles.confirmText}>{t('AddressScreen.confirm')}</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -383,7 +397,7 @@ const AddressScreen = () => {
         <FlatList
           data={countries}
           keyExtractor={item => item.id.toString()}
-          renderItem={({ item }) => (
+          renderItem={({item}) => (
             <TouchableOpacity
               style={styles.option}
               onPress={() => onCountryChange(item)}>
@@ -398,7 +412,7 @@ const AddressScreen = () => {
         <FlatList
           data={selectedCountry?.Cities || []}
           keyExtractor={item => item.id.toString()}
-          renderItem={({ item }) => (
+          renderItem={({item}) => (
             <TouchableOpacity
               style={styles.option}
               onPress={() => {
@@ -416,7 +430,7 @@ const AddressScreen = () => {
         <FlatList
           data={getShippingMethods()}
           keyExtractor={(_, index) => index.toString()}
-          renderItem={({ item }) => (
+          renderItem={({item}) => (
             <TouchableOpacity
               style={styles.option}
               onPress={() => {
@@ -432,8 +446,8 @@ const AddressScreen = () => {
             </TouchableOpacity>
           )}
           ListEmptyComponent={() => (
-            <View style={{ padding: 20 }}>
-              <Text>No shipping methods available for this country.</Text>
+            <View style={{padding: 20}}>
+              <Text>{t('AddressScreen.no_shipping_methods')}</Text>
             </View>
           )}
         />
@@ -443,8 +457,8 @@ const AddressScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  label: { fontSize: 16, marginBottom: 10 },
-  dropdownLabel: { marginTop: 10, fontSize: 14, fontWeight: '500' },
+  label: {fontSize: 16, marginBottom: 10},
+  dropdownLabel: {marginTop: 10, fontSize: 14, fontWeight: '500'},
   dropdown: {
     borderWidth: 1,
     borderColor: '#ccc',

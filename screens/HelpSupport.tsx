@@ -6,43 +6,18 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import Icon from '../components/icon'; // Adjust the path if needed
+import Icon from '../components/icon';
 import Header from '../components/Header';
-
-interface FAQItem {
-  question: string;
-  answer: string;
-}
-
-const faqData: FAQItem[] = [
-  {
-    question: 'Lorem ipsum dolor sit amet',
-    answer:
-      'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet.',
-  },
-  {
-    question: 'Lorem ipsum dolor sit amet',
-    answer:
-      'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet.',
-  },
-  {
-    question: 'Lorem ipsum dolor sit amet',
-    answer:
-      'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet.',
-  },
-  {
-    question: 'Lorem ipsum dolor sit amet',
-    answer:
-      'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet.',
-  },
-  {
-    question: 'Lorem ipsum dolor sit amet',
-    answer:
-      'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet.',
-  },
-];
+import {useTranslation} from 'react-i18next';
 
 const HelpSupportScreen: React.FC = () => {
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
+  const faqData = t('HelpSupport.faq', {returnObjects: true}) as {
+    question: string;
+    answer: string;
+  }[];
+
   const [expandedIndex, setExpandedIndex] = useState<number | null>(2);
 
   const toggleExpand = (index: number) => {
@@ -50,11 +25,11 @@ const HelpSupportScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
       <Header
         showBack={true}
         showImage={false}
-        title="Language"
+        title={t('HelpSupport.title')}
         rightIcons={[
           {
             name: 'info',
@@ -93,17 +68,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  headerTitle: {
-    fontWeight: '600',
-    fontSize: 16,
-  },
-
   accordionItem: {
     paddingTop: 15,
     marginBottom: 8,

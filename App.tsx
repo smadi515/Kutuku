@@ -4,7 +4,9 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {ActivityIndicator, View, I18nManager} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import './locales/i18n';
+import {I18nextProvider} from 'react-i18next';
+import i18n from './locales/i18n';
 // Screens
 import StoreScreen from './screens/StoreScreen';
 import SplashScreen from './screens/SplashScreen';
@@ -89,6 +91,8 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App = () => {
+  <I18nextProvider i18n={i18n}>{/* your app components */}</I18nextProvider>;
+
   const [initialRoute, setInitialRoute] = useState<
     keyof RootStackParamList | null
   >(null);

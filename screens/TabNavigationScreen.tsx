@@ -5,10 +5,13 @@ import Favorites from './Favorites';
 import Profile from './Profile';
 import Home from '../screens/HomeScreen'; // Make sure path is correct
 import Icon from '../components/icon'; // Make sure path is correct
+import {useTranslation} from 'react-i18next';
 
 const Tab = createBottomTabNavigator();
 
 const TabNavigationScreen = () => {
+  const {t} = useTranslation();
+
   return (
     <Tab.Navigator
       screenOptions={({route}) => ({
@@ -43,10 +46,26 @@ const TabNavigationScreen = () => {
           return <Icon name={iconName} type={type} color={color} size={size} />;
         },
       })}>
-      <Tab.Screen name="Home" component={Home} />
-      <Tab.Screen name="MyOrders" component={MyOrders} />
-      <Tab.Screen name="Favorites" component={Favorites} />
-      <Tab.Screen name="Profile" component={Profile} />
+      <Tab.Screen
+        name="Home"
+        component={Home}
+        options={{tabBarLabel: t('TabNavigationScreen.home')}}
+      />
+      <Tab.Screen
+        name="MyOrders"
+        component={MyOrders}
+        options={{tabBarLabel: t('TabNavigationScreen.my_orders')}}
+      />
+      <Tab.Screen
+        name="Favorites"
+        component={Favorites}
+        options={{tabBarLabel: t('TabNavigationScreen.favorites')}}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={Profile}
+        options={{tabBarLabel: t('TabNavigationScreen.profile')}}
+      />
     </Tab.Navigator>
   );
 };

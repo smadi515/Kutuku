@@ -17,6 +17,7 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../App';
 import CustomInput from '../components/CustomInput';
 import Icon from '../components/icon';
+import {useTranslation} from 'react-i18next';
 interface CartItem {
   product_price: number;
   qty: number;
@@ -35,6 +36,8 @@ type NavigationProp = StackNavigationProp<RootStackParamList, 'PaymentScreen'>;
 type RouteProps = RouteProp<RootStackParamList, 'PaymentScreen'>;
 
 const PaymentScreen = () => {
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
 
@@ -378,11 +381,21 @@ const PaymentScreen = () => {
   };
 
   return (
-    <View style={{flex: 1, backgroundColor: '#F9F9F9'}}>
-      <Header title="Payment" showBack={true} showImage={false} />
-      <ScrollView style={{padding: 20}}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: '#F9F9F9',
+      }}>
+      <Header
+        title={t('PaymentScreen.payment')}
+        showBack={true}
+        showImage={false}
+      />
+      <ScrollView style={{padding: 20, direction: isRTL ? 'rtl' : 'ltr'}}>
         <View style={styles.mapPreview}>
-          <Text style={styles.title}>Choose an Address</Text>
+          <Text style={styles.title}>
+            {t('PaymentScreen.Choose an Address')}
+          </Text>
 
           {addresses.length > 0 ? (
             <View
@@ -439,7 +452,9 @@ const PaymentScreen = () => {
               ))}
             </View>
           ) : (
-            <Text style={{color: '#888'}}>No addresses found</Text>
+            <Text style={{color: '#888'}}>
+              {t('PaymentScreen.No addresses found')}
+            </Text>
           )}
 
           {selectedAddressId && (
@@ -452,7 +467,7 @@ const PaymentScreen = () => {
                 alignItems: 'center',
               }}>
               <Text style={{fontWeight: 'bold', fontSize: 16}}>
-                Selected City
+                {t('PaymentScreen.Selected City')}
               </Text>
               <Text style={{fontSize: 18, color: '#555'}}>
                 {addresses.find(addr => addr.id === selectedAddressId)?.city ||
@@ -471,41 +486,51 @@ const PaymentScreen = () => {
               alignItems: 'center',
             }}>
             <Text style={{color: '#fff', fontWeight: 'bold'}}>
-              Create Address
+              {t('PaymentScreen.Create Address')}
             </Text>
           </TouchableOpacity>
         </View>
         <View style={styles.summaryContainer}>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal:</Text>
+            <Text style={styles.summaryLabel}>
+              {t('PaymentScreen.subtotal')}
+            </Text>
             <Text style={styles.summaryValue}>
               ${subtotal ? subtotal.toFixed(2) : '0.00'}
             </Text>
           </View>
 
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Quantity:</Text>
+            <Text style={styles.summaryLabel}>
+              {t('PaymentScreen.Quantity')}
+            </Text>
             <Text style={styles.summaryValue}>
               {typeof totalQuantity === 'number' ? totalQuantity : 0}
             </Text>
           </View>
 
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Shipping:</Text>
+            <Text style={styles.summaryLabel}>
+              {t('PaymentScreen.Shipping')}
+            </Text>
             <Text style={styles.summaryValue}>
               ${shippingCost ? shippingCost.toFixed(2) : '0.00'}
             </Text>
           </View>
 
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Shipping Method:</Text>
+            <Text style={styles.summaryLabel}>
+              {t('PaymentScreen.Shipping Method')}
+            </Text>
             <Text style={styles.summaryValue}>
-              {shippingMethodName || 'Not selected'}
+              {shippingMethodName || t('PaymentScreen.not_selected')}
             </Text>
           </View>
 
           <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, {color: 'gray'}]}>Total:</Text>
+            <Text style={[styles.summaryLabel, {color: 'gray'}]}>
+              {t('PaymentScreen.Total')}
+            </Text>
             <Text style={[styles.summaryValue, {color: 'gray'}]}>
               ${totalPrice ? totalPrice.toFixed(2) : '0.00'}
             </Text>
@@ -513,7 +538,7 @@ const PaymentScreen = () => {
 
           <View style={styles.summaryRow}>
             <Text style={[styles.summaryLabel, {fontWeight: 'bold'}]}>
-              Total After Discount:
+              {t('PaymentScreen.Total After Discount')}
             </Text>
             <Text style={[styles.summaryValue, {fontWeight: 'bold'}]}>
               ${discountedTotal ? discountedTotal.toFixed(2) : '0.00'}
@@ -522,7 +547,7 @@ const PaymentScreen = () => {
         </View>
 
         <CustomInput
-          placeholder="Enter your Promo Code"
+          placeholder={t('PaymentScreen.enter_promo_code')}
           iconType="MaterialCommunityIcons"
           iconName="brightness-percent"
           value={couponCode}
@@ -530,12 +555,16 @@ const PaymentScreen = () => {
         />
         <View style={{width: '100%', alignItems: 'center'}}>
           <CustomButton
-            text={loading ? 'Applying...' : 'Apply Promo'}
+            text={
+              loading
+                ? t('PaymentScreen.applying')
+                : t('PaymentScreen.apply promo')
+            }
             onPress={handleApplyCoupon}
             disabled={loading}
           />
         </View>
-        <Text style={styles.title}>Products</Text>
+        <Text style={styles.title}>{t('PaymentScreen.Products')}</Text>
         {cartItems.map((item, index) => (
           <View key={index} style={styles.itemRow}>
             <Image source={{uri: item.image}} style={styles.itemImg} />
@@ -547,15 +576,17 @@ const PaymentScreen = () => {
           </View>
         ))}
 
-        <Text style={styles.title}>Payment Method</Text>
+        <Text style={styles.title}>{t('PaymentScreen.Payment Method')}</Text>
         <TouchableOpacity
           style={styles.selectBtn}
           onPress={openPaymentMethodSheet}>
-          <Text>{paymentMethod || 'Choose Payment Method'}</Text>
+          <Text>{paymentMethod || t('choose payment method')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.confirmBtn} onPress={confirmPayment}>
-          <Text style={styles.confirmText}>Confirm Payment</Text>
+          <Text style={styles.confirmText}>
+            {t('PaymentScreen.Confirm Payment')}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -571,10 +602,10 @@ const PaymentScreen = () => {
             style={{height: 120, width: 120, borderRadius: 60}}
           />
           <Text style={{color: 'black', fontSize: 20, marginVertical: 10}}>
-            Order Successfully
+            {t('PaymentScreen.Order Successfully')}
           </Text>
           <CustomButton
-            text="Order Tracking"
+            text={t('PaymentScreen.Order Tracking')}
             onPress={() => navigation.navigate('MyOrders')}
           />
         </BottomSheetView>
@@ -588,7 +619,7 @@ const PaymentScreen = () => {
         enablePanDownToClose>
         <BottomSheetView style={{padding: 20}}>
           <TouchableOpacity onPress={() => confirmPaymentMethod('Cash')}>
-            <Text style={styles.option}>Cash</Text>
+            <Text style={styles.option}>{t('PaymentScreen.Cash')}</Text>
           </TouchableOpacity>
           {/* Add more payment options here if needed */}
         </BottomSheetView>

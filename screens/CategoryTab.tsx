@@ -13,6 +13,7 @@ import {getParentCategories} from '../lib/api';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../App';
+import {useTranslation} from 'react-i18next';
 
 type Category = {
   id: number;
@@ -26,6 +27,8 @@ type NavigationProp = NativeStackNavigationProp<
 >;
 
 const CategoryTab = () => {
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [categories, setCategories] = useState<Category[]>([]);
   const [filteredCategories, setFilteredCategories] = useState<Category[]>([]); // For filtered categories
   const [loading, setLoading] = useState(true);
@@ -68,11 +71,11 @@ const CategoryTab = () => {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
       {/* Search Input */}
       <TextInput
         style={styles.searchInput}
-        placeholder="Search categories..."
+        placeholder={t('CategoryTab.search_categories')}
         value={searchText}
         onChangeText={handleSearch}
       />

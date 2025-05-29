@@ -6,6 +6,8 @@ import {
   ScrollView,
   Alert,
   TextInput,
+  TouchableOpacity,
+  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -70,7 +72,10 @@ const CreateAccountScreen = ({navigation}: any) => {
       Alert.alert('Error', 'Something went wrong. Please try again.');
     }
   };
-
+  const handleGoogleLogin = () => {
+    const googleLoginUrl = 'https://api.sareh-nomow.website/api/auth/google';
+    Linking.openURL(googleLoginUrl);
+  };
   return (
     <>
       <ScrollView contentContainerStyle={styles.container}>
@@ -110,10 +115,10 @@ const CreateAccountScreen = ({navigation}: any) => {
 
         <Text style={styles.orText}>Or using other method</Text>
 
-        <View style={styles.altBtn}>
+        <TouchableOpacity style={styles.altBtn} onPress={handleGoogleLogin}>
           <Icon type="ant" name="google" size={18} />
           <Text style={styles.altBtnText}>Sign in with Google</Text>
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.altBtn}>
           <Icon type="fa" name="facebook" size={18} />
