@@ -12,13 +12,12 @@ import Icon from '../components/icon';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../App';
+import {useTranslation} from 'react-i18next';
+
 const notifications = [
   {
     id: '1',
     type: 'purchase',
-    title: 'Purchase Completed!',
-    message:
-      'You have successfully purchased 334 headphones, thank you and wait for your package to arrive ✨',
     time: '2 m ago',
     icon: 'cart-outline',
     iconType: 'Ionicons',
@@ -26,17 +25,12 @@ const notifications = [
   {
     id: '2',
     type: 'message',
-    title: 'Jerremy Send You a Message',
-    message: 'hello your package has almost arrived, are you at home now?',
     time: '2 m ago',
-    avatar: require('../assets/user.jpg'), // replace with actual image
-    reply: 'Reply the message',
+    avatar: require('../assets/user.jpg'),
   },
   {
     id: '3',
     type: 'promo',
-    title: 'Flash Sale!',
-    message: 'Get 20% discount for first transaction in this month! 😍',
     time: '2 m ago',
     icon: 'gift',
     iconType: 'Feather',
@@ -44,8 +38,6 @@ const notifications = [
   {
     id: '4',
     type: 'sent',
-    title: 'Package Sent',
-    message: 'Hi your package has been sent from new york',
     time: '10 m ago',
     icon: 'truck',
     iconType: 'Feather',
@@ -55,6 +47,7 @@ const notifications = [
 const NotificationScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const {t} = useTranslation();
 
   const renderItem = ({item}: any) => (
     <View style={styles.notificationCard}>
@@ -73,13 +66,19 @@ const NotificationScreen = () => {
 
       <View style={{flex: 1}}>
         <View style={styles.titleRow}>
-          <Text style={styles.titleText}>{item.title}</Text>
+          <Text style={styles.titleText}>
+            {t(`notificationScreen.notifications.${item.type}.title`)}
+          </Text>
           <Text style={styles.time}>{item.time}</Text>
         </View>
-        <Text style={styles.message}>{item.message}</Text>
-        {item.reply && (
+        <Text style={styles.message}>
+          {t(`notificationScreen.notifications.${item.type}.message`)}
+        </Text>
+        {item.type === 'message' && (
           <TouchableOpacity>
-            <Text style={styles.reply}>{item.reply}</Text>
+            <Text style={styles.reply}>
+              {t('notificationScreen.notifications.message.reply')}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -89,19 +88,19 @@ const NotificationScreen = () => {
   return (
     <View style={{flex: 1}}>
       <Header
-        title="Notification"
+        title={t('notificationScreen.title')}
         showBack={true}
         showImage={false}
         rightIcons={[
           {
             name: 'settings-outline',
             type: 'Ionicons',
-            onPress: () => navigation.navigate('SettingsScreen'), // add navigation to settings if needed
+            onPress: () => navigation.navigate('SettingsScreen'),
           },
         ]}
       />
       <View>
-        <Text style={styles.recent}>Recent</Text>
+        <Text style={styles.recent}>{t('notificationScreen.recent')}</Text>
 
         <FlatList
           data={notifications}
@@ -118,7 +117,6 @@ const styles = StyleSheet.create({
   recent: {
     fontSize: 16,
     fontWeight: 'bold',
-
     marginBottom: 8,
     paddingHorizontal: 16,
     color: '#1e1e1e',

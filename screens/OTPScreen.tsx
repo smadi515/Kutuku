@@ -3,8 +3,10 @@ import {View, Text, StyleSheet, Alert} from 'react-native';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import {verifyOtp} from '../lib/api';
+import {useTranslation} from 'react-i18next';
 
 const OTPScreen = ({route, navigation}: any) => {
+  const {t} = useTranslation();
   const [otp, setOtp] = useState('');
   const {email} = route.params;
 
@@ -18,29 +20,35 @@ const OTPScreen = ({route, navigation}: any) => {
       if (response && response.is_email_verified) {
         navigation.navigate('Login');
       } else {
-        Alert.alert('Error', 'Invalid OTP');
+        Alert.alert(t('otpScreen.errorTitle'), t('otpScreen.errorInvalidOtp'));
       }
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Something went wrong during verification.');
+      Alert.alert(
+        t('otpScreen.errorTitle'),
+        t('otpScreen.errorVerificationFailed'),
+      );
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Enter OTP</Text>
-      <Text style={styles.subtitle}>We sent a code to {email}</Text>
+      <Text style={styles.title}>{t('otpScreen.title')}</Text>
+      <Text style={styles.subtitle}>{t('otpScreen.subtitle', {email})}</Text>
 
       <CustomInput
-        label="OTP Code"
-        placeholder="Enter the code"
+        label={t('otpScreen.otpLabel')}
+        placeholder={t('otpScreen.otpPlaceholder')}
         iconType="feather"
         iconName="key"
         value={otp}
         onChangeText={setOtp}
       />
 
-      <CustomButton text="Verify OTP" onPress={handleVerifyOtp} />
+      <CustomButton
+        text={t('otpScreen.verifyButton')}
+        onPress={handleVerifyOtp}
+      />
     </View>
   );
 };

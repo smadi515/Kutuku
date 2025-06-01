@@ -11,14 +11,16 @@ import {
 } from 'react-native';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 import Icon from '../components/icon';
-import {getProducts} from '../lib/api'; // adjust path as needed
+import {getProducts} from '../lib/api';
+import {useTranslation} from 'react-i18next';
 
 const SearchScreen = ({navigation}: any) => {
+  const {t} = useTranslation();
+
   type Product = {
     product_id: number;
     name: string;
     image: string;
-
     price: number;
   };
 
@@ -31,24 +33,21 @@ const SearchScreen = ({navigation}: any) => {
   const snapPoints = useMemo(() => [450], []);
 
   const openFilterSheet = () => bottomSheetRef.current?.snapToIndex(0);
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(true);
         const result = await getProducts();
-        console.log('Products fetched:', result);
-
-        const transformed = result.map((product: any) => {
-          return {
-            ...product,
-            name: product.name || product.sku || 'No name',
-            description: product.description || '',
-            short_description: product.short_description || '',
-            image:
-              product.images?.[0]?.listing_image ||
-              'https://via.placeholder.com/100',
-          };
-        });
-
+        const transformed = result.map((product: any) => ({
+          ...product,
+          name: product.name || product.sku || t('search.noName'),
+          description: product.description || '',
+          short_description: product.short_description || '',
+          image:
+            product.images?.[0]?.listing_image ||
+            'https://via.placeholder.com/100',
+        }));
         setAllProducts(transformed);
       } catch (error) {
         console.error('Failed to load products:', error);
@@ -56,9 +55,9 @@ const SearchScreen = ({navigation}: any) => {
         setLoading(false);
       }
     };
-
     fetchProducts();
-  }, []);
+  }, [t]);
+
   useEffect(() => {
     const results = allProducts.filter(product => {
       if (searchText.length >= 3) {
@@ -69,6 +68,7 @@ const SearchScreen = ({navigation}: any) => {
     });
     setFilteredResults(results);
   }, [searchText, allProducts]);
+
   const handleTagPress = (term: string) => {
     setSearchText(term);
   };
@@ -99,7 +99,7 @@ const SearchScreen = ({navigation}: any) => {
         <View style={styles.searchBar}>
           <Icon type="ant" name="search1" size={20} style={{marginRight: 8}} />
           <TextInput
-            placeholder="Search"
+            placeholder={t('search.placeholder')}
             style={styles.searchInput}
             placeholderTextColor="#aaa"
             value={searchText}
@@ -113,10 +113,10 @@ const SearchScreen = ({navigation}: any) => {
 
       {/* Last Searches */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Last Search</Text>
+        <Text style={styles.sectionTitle}>{t('search.lastSearch')}</Text>
         {searchHistory.length > 0 && (
           <TouchableOpacity onPress={clearAll}>
-            <Text style={styles.clearAll}>Clear All</Text>
+            <Text style={styles.clearAll}>{t('search.clearAll')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -141,7 +141,7 @@ const SearchScreen = ({navigation}: any) => {
 
       {/* Results */}
       <Text style={[styles.sectionTitle, {marginTop: 20}]}>
-        {searchText ? 'Search Results' : 'Suggested Products'}
+        {searchText ? t('search.results') : t('search.suggestedProducts')}
       </Text>
 
       {loading ? (
@@ -152,28 +152,24 @@ const SearchScreen = ({navigation}: any) => {
           keyExtractor={item => item.product_id.toString()}
           ListEmptyComponent={() => (
             <Text style={{textAlign: 'center', marginTop: 20, color: '#888'}}>
-              No results found 😢
+              {t('search.noResults')}
             </Text>
           )}
-          renderItem={({item}) => {
-            console.log('Image URL:', item.image); // ✅ Valid inside a block
-
-            return (
-              <TouchableOpacity
-                onPress={() => handleSearchSelect(item)}
-                style={styles.popularItem}>
-                <Image
-                  source={{uri: item.image}}
-                  style={styles.popularImage}
-                  resizeMode="cover"
-                />
-                <View style={{flex: 1}}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemCount}>${item.price}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          }}
+          renderItem={({item}) => (
+            <TouchableOpacity
+              onPress={() => handleSearchSelect(item)}
+              style={styles.popularItem}>
+              <Image
+                source={{uri: item.image}}
+                style={styles.popularImage}
+                resizeMode="cover"
+              />
+              <View style={{flex: 1}}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemCount}>${item.price}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
         />
       )}
 
@@ -184,7 +180,7 @@ const SearchScreen = ({navigation}: any) => {
         snapPoints={snapPoints}
         enablePanDownToClose>
         <BottomSheetView style={{padding: 20, flex: 1}}>
-          <Text style={styles.sectionTitle}>Filter Products</Text>
+          <Text style={styles.sectionTitle}>{t('search.filterProducts')}</Text>
           {/* ... filter content here ... */}
         </BottomSheetView>
       </BottomSheet>

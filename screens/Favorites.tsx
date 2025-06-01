@@ -16,6 +16,8 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../App';
 import Icon from '../components/icon';
 import BottomSheet from '@gorhom/bottom-sheet';
+import {useTranslation} from 'react-i18next';
+
 const allProducts = [
   {
     id: '1',
@@ -38,37 +40,36 @@ const allProducts = [
     designer: 'Lisa Robber',
     price: 143.45,
   },
-  // Add the rest if needed
 ];
 
 const Favorites = () => {
+  const {t} = useTranslation();
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   const openFilterSheet = () => {
-    console.log('BottomSheet ref:', bottomSheetRef.current);
-
     bottomSheetRef.current?.snapToIndex(0);
   };
+
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const [favoriteProducts, setFavoriteProducts] = useState<any[]>([]);
   const [searchText, setSearchText] = useState('');
+
   useEffect(() => {
     const loadFavorites = async () => {
       const stored = await AsyncStorage.getItem('favorites');
       const ids = stored ? JSON.parse(stored) : [];
-
       const favItems = allProducts.filter(p => ids.includes(p.id));
       setFavoriteProducts(favItems);
     };
-
     loadFavorites();
   }, []);
 
   return (
     <View style={styles.container}>
       <Header
-        title=" my Favorites"
+        title={t('favorites.title')}
         showBack={true}
         showImage={false}
         rightIcons={[
@@ -83,7 +84,7 @@ const Favorites = () => {
         <View style={styles.searchBar}>
           <Icon type="ant" name="search1" size={20} style={{marginRight: 8}} />
           <TextInput
-            placeholder="Search"
+            placeholder={t('favorites.search_placeholder')}
             style={styles.searchInput}
             placeholderTextColor="#aaa"
             value={searchText}
@@ -96,7 +97,7 @@ const Favorites = () => {
       </View>
       {favoriteProducts.length === 0 ? (
         <ScrollView contentContainerStyle={{paddingTop: 10}}>
-          <Text style={styles.emptyText}>No favorites yet.</Text>
+          <Text style={styles.emptyText}>{t('favorites.no_favorites')}</Text>
         </ScrollView>
       ) : (
         <FlatList

@@ -16,12 +16,15 @@ import CustomButton from '../components/CustomButton';
 import Icon from '../components/icon';
 import {login} from '../lib/api';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import {useTranslation} from 'react-i18next';
 
-const CreateAccountScreen = ({navigation}: any) => {
+const LoginScreen = ({navigation}: any) => {
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [email, setEmail] = useState(__DEV__ ? 'senan.smadi515@gmail.com' : '');
   const [password, setPassword] = useState(__DEV__ ? 'Kappa4Head123' : '');
   const [forgotEmail, setForgotEmail] = useState('');
-  const bottomSheetRef = useRef<BottomSheet>(null); // Payment method selection sheet
+  const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['40%'], []);
   const openPaymentMethodSheet = () => bottomSheetRef.current?.expand();
 
@@ -32,26 +35,26 @@ const CreateAccountScreen = ({navigation}: any) => {
         {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({email}),
+          body: JSON.stringify({email: forgotEmail}),
         },
       );
 
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', 'Go to your email and change your password.');
-        setEmail('');
+        Alert.alert(t('login.success'), t('login.checkEmail'));
+        setForgotEmail('');
       } else {
-        Alert.alert('Error', data.message || 'Email does not exist.');
+        Alert.alert(t('login.error'), data.message || t('login.emailNotExist'));
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert(t('login.error'), t('login.somethingWrong'));
     }
   };
+
   const handleLogin = async () => {
     try {
       const response = await login(email, password);
-      console.log('Login response:', response);
 
       if (response?.token && response?.user) {
         const token = response.token;
@@ -65,28 +68,34 @@ const CreateAccountScreen = ({navigation}: any) => {
 
         navigation.replace('TabNavigationScreen');
       } else {
-        Alert.alert('Login Failed', response.message || 'Invalid credentials');
+        Alert.alert(
+          t('login.failed'),
+          response.message || t('login.invalidCredentials'),
+        );
       }
     } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert(t('login.error'), t('login.somethingWrong'));
     }
   };
+
   const handleGoogleLogin = () => {
     const googleLoginUrl = 'https://api.sareh-nomow.website/api/auth/google';
     Linking.openURL(googleLoginUrl);
   };
+
   return (
     <>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Login Account</Text>
-        <Text style={styles.subtitle}>
-          please login with registered account
-        </Text>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          {direction: isRTL ? 'rtl' : 'ltr'},
+        ]}>
+        <Text style={styles.title}>{t('login.title')}</Text>
+        <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
 
         <CustomInput
-          label="Email"
-          placeholder="Enter your email"
+          label={t('login.emailLabel')}
+          placeholder={t('login.emailPlaceholder')}
           iconType="feather"
           iconName="mail"
           value={email}
@@ -94,8 +103,8 @@ const CreateAccountScreen = ({navigation}: any) => {
         />
 
         <CustomInput
-          label="Password"
-          placeholder="password"
+          label={t('login.passwordLabel')}
+          placeholder={t('login.passwordPlaceholder')}
           secureTextEntry
           iconType="feather"
           iconName="lock"
@@ -104,29 +113,28 @@ const CreateAccountScreen = ({navigation}: any) => {
         />
 
         <CustomButton
-          text="Forgot Password?"
+          text={t('login.forgotPassword')}
           type="TERTIARY"
           onPress={openPaymentMethodSheet}
         />
 
         <View style={{width: '100%', alignItems: 'center'}}>
-          <CustomButton text="Sign In" onPress={handleLogin} />
+          <CustomButton text={t('login.signIn')} onPress={handleLogin} />
         </View>
 
-        <Text style={styles.orText}>Or using other method</Text>
+        <Text style={styles.orText}>{t('login.orOtherMethods')}</Text>
 
         <TouchableOpacity style={styles.altBtn} onPress={handleGoogleLogin}>
           <Icon type="ant" name="google" size={18} />
-          <Text style={styles.altBtnText}>Sign in with Google</Text>
+          <Text style={styles.altBtnText}>{t('login.google')}</Text>
         </TouchableOpacity>
 
         <View style={styles.altBtn}>
           <Icon type="fa" name="facebook" size={18} />
-          <Text style={styles.altBtnText}>Sign in with Facebook</Text>
+          <Text style={styles.altBtnText}>{t('login.facebook')}</Text>
         </View>
       </ScrollView>
 
-      {/* Inline Bottom Sheet for Forgot Password */}
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
@@ -134,14 +142,17 @@ const CreateAccountScreen = ({navigation}: any) => {
         enablePanDownToClose>
         <BottomSheetView style={{alignItems: 'center', padding: 10}}>
           <View style={styles.sheetContent}>
-            <Text style={styles.sheetTitle}>Reset Password</Text>
+            <Text style={styles.sheetTitle}>{t('login.resetPassword')}</Text>
             <TextInput
-              placeholder="Enter your email"
+              placeholder={t('login.enterEmail')}
               value={forgotEmail}
               onChangeText={setForgotEmail}
               style={styles.sheetInput}
             />
-            <CustomButton text="Submit" onPress={handleResetPassword} />
+            <CustomButton
+              text={t('login.submit')}
+              onPress={handleResetPassword}
+            />
           </View>
         </BottomSheetView>
       </BottomSheet>
@@ -200,4 +211,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CreateAccountScreen;
+export default LoginScreen;

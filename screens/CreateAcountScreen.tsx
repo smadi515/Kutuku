@@ -6,13 +6,17 @@ import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import Icon from '../components/icon';
 import {register} from '../lib/api';
+import {useTranslation} from 'react-i18next';
 
 const CreateAccountScreen = ({navigation}: any) => {
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phoneNumber, sePhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
     const clearStorage = async () => {
       await AsyncStorage.clear();
@@ -21,9 +25,9 @@ const CreateAccountScreen = ({navigation}: any) => {
 
     clearStorage();
   }, []);
-  const handleRegister = async () => {
-    setIsLoading(true); // Show loading
 
+  const handleRegister = async () => {
+    setIsLoading(true);
     try {
       setTimeout(async () => {
         const response = await register(email, password, username, phoneNumber);
@@ -36,31 +40,35 @@ const CreateAccountScreen = ({navigation}: any) => {
           response?.phoneNumber
         ) {
           await AsyncStorage.setItem('userFullName', username);
-
           navigation.navigate('OTPScreen', {email});
         } else {
-          Alert.alert('Error', response.message || 'Registration failed');
+          Alert.alert(
+            t('error'),
+            response.message || t('auth.registration_failed'),
+          );
         }
 
-        setIsLoading(false); // Hide loading after response
+        setIsLoading(false);
       }, 5000);
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert(t('error'), t('auth.generic_error'));
       setIsLoading(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>
-        Start learning with create your account
-      </Text>
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        {direction: isRTL ? 'rtl' : 'ltr'},
+      ]}>
+      <Text style={styles.title}>{t('auth.create_account')}</Text>
+      <Text style={styles.subtitle}>{t('auth.create_account_subtitle')}</Text>
 
       <CustomInput
-        label="Username"
-        placeholder="Create your username"
+        label={t('auth.username')}
+        placeholder={t('auth.username_placeholder')}
         iconType="feather"
         iconName="user"
         value={username}
@@ -68,8 +76,8 @@ const CreateAccountScreen = ({navigation}: any) => {
       />
 
       <CustomInput
-        label="Email "
-        placeholder="Enter your email"
+        label={t('auth.email')}
+        placeholder={t('auth.email_placeholder')}
         iconType="feather"
         iconName="mail"
         value={email}
@@ -77,41 +85,44 @@ const CreateAccountScreen = ({navigation}: any) => {
       />
 
       <CustomInput
-        label="Password"
-        placeholder="Create your password"
+        label={t('auth.password')}
+        placeholder={t('auth.password_placeholder')}
         secureTextEntry
         iconType="feather"
         iconName="lock"
         value={password}
         onChangeText={setPassword}
       />
+
       <CustomInput
-        label="Phone Number"
-        placeholder="Enter Phone Number"
+        label={t('auth.phone_number')}
+        placeholder={t('auth.phone_placeholder')}
         iconType="feather"
-        iconName="lock"
+        iconName="phone"
         value={phoneNumber}
         onChangeText={sePhoneNumber}
       />
 
       <View style={{width: '100%', alignItems: 'center'}}>
         <CustomButton
-          text={isLoading ? 'Creating Account...' : 'Create Account'}
+          text={
+            isLoading ? t('auth.creating_account') : t('auth.create_account')
+          }
           onPress={handleRegister}
           disabled={isLoading}
         />
       </View>
 
-      <Text style={styles.orText}>Or using other method</Text>
+      <Text style={styles.orText}>{t('auth.or_use_other')}</Text>
 
       <View style={styles.altBtn}>
         <Icon type="ant" name="google" size={18} />
-        <Text style={styles.altBtnText}>Sign Up with Google</Text>
+        <Text style={styles.altBtnText}>{t('auth.signup_google')}</Text>
       </View>
 
       <View style={styles.altBtn}>
         <Icon type="fa" name="facebook" size={18} />
-        <Text style={styles.altBtnText}>Sign Up with Facebook</Text>
+        <Text style={styles.altBtnText}>{t('auth.signup_facebook')}</Text>
       </View>
     </ScrollView>
   );

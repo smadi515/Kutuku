@@ -1,16 +1,18 @@
 import React from 'react';
 import {View, Text, StatusBar, StyleSheet} from 'react-native';
 import Header from '../components/Header';
-import Icon from '../components/icon'; // adjust the path if necessary
+import Icon from '../components/icon';
 import {useRoute, useNavigation} from '@react-navigation/native';
 import type {RouteProp} from '@react-navigation/native';
 import type {RootStackParamList} from '../App';
+import {useTranslation} from 'react-i18next';
 
 type ProfileScreenRouteProp = RouteProp<RootStackParamList, 'Profile'>;
 
 const Profile = () => {
   const route = useRoute<ProfileScreenRouteProp>();
   const navigation = useNavigation();
+  const {t} = useTranslation();
 
   const {
     fullName = 'Unknown',
@@ -23,7 +25,7 @@ const Profile = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       <Header
-        title="Profile"
+        title={t('profile.title')}
         showImage={false}
         rightIcons={[
           {
@@ -45,7 +47,9 @@ const Profile = () => {
 
         <View style={styles.infoRow}>
           <Icon name="call-outline" type="ionicon" size={20} color="purple" />
-          <Text style={styles.infoText}>{phoneNumber}</Text>
+          <Text style={styles.infoText}>
+            {t('profile.phone')}: {phoneNumber}
+          </Text>
         </View>
 
         <View style={styles.infoRow}>
@@ -56,7 +60,7 @@ const Profile = () => {
             color="purple"
           />
           <Text style={styles.infoText}>
-            {new Date(birthday).toLocaleDateString()}
+            {t('profile.birthday')}: {new Date(birthday).toLocaleDateString()}
           </Text>
         </View>
       </View>

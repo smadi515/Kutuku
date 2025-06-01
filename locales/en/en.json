@@ -147,5 +147,142 @@
     "confirmPassword": "Confirm Password",
     "confirmPasswordPlaceholder": "Confirm Your New Password",
     "changeNow": "Change Now"
+  },
+
+  "Onboarding": {
+    "screen1": {
+      "title1": "Find The Most Suitable",
+      "title2": "Outfit For You",
+      "desc1": "urna amet, suspendisse ullamcarper ac elit diam",
+      "desc2": "facilisis cursus vestibulum"
+    },
+    "screen2": {
+      "title1": "Complete collection Of",
+      "title2": "colors and Sizes",
+      "desc1": "urna amet, suspendisse ullamcarper ac elit diam",
+      "desc2": "facilisis cursus vestibulum"
+    },
+    "screen3": {
+      "title1": "Various collection Of The",
+      "title2": "Latest Products",
+      "desc1": "urna amet, suspendisse ullamcarper ac elit diam",
+      "desc2": "facilisis cursus vestibulum"
+    },
+    "createAccount": "Create Account",
+    "alreadyAccount": "Already have an account"
+  },
+  "login": {
+    "title": "Login Account",
+    "subtitle": "Please login with registered account",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter your email",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Password",
+    "forgotPassword": "Forgot Password?",
+    "signIn": "Sign In",
+    "orOtherMethods": "Or using other method",
+    "google": "Sign in with Google",
+    "facebook": "Sign in with Facebook",
+    "resetPassword": "Reset Password",
+    "enterEmail": "Enter your email",
+    "submit": "Submit"
+  },
+  "auth": {
+    "create_account": "Create Account",
+    "create_account_subtitle": "Start learning with create your account",
+    "username": "Username",
+    "username_placeholder": "Create your username",
+    "email": "Email",
+    "email_placeholder": "Enter your email",
+    "password": "Password",
+    "password_placeholder": "Create your password",
+    "phone_number": "Phone Number",
+    "phone_placeholder": "Enter Phone Number",
+    "creating_account": "Creating Account...",
+    "or_use_other": "Or using other method",
+    "signup_google": "Sign Up with Google",
+    "signup_facebook": "Sign Up with Facebook",
+    "registration_failed": "Registration failed",
+    "generic_error": "Something went wrong. Please try again.",
+    "error": "Error"
+  },
+  "favorites": {
+    "title": "My Favorites",
+    "search_placeholder": "Search",
+    "no_favorites": "No favorites yet."
+  },
+  "common": {
+    "notifications": "Notifications",
+    "filter": "Filter"
+  },
+  "profile": {
+    "title": "Profile",
+    "phone": "Phone",
+    "birthday": "Birthday"
+  },
+  "search": {
+    "placeholder_search": "Search",
+    "last_search": "Last Search",
+    "clear_all": "Clear All",
+    "search_results": "Search Results",
+    "suggested_products": "Suggested Products",
+    "no_results": "No results found 😢",
+    "filter_products": "Filter Products"
+  },
+  "productDetails": {
+    "headerTitle": "Product Details",
+    "stockIn": "In Stock",
+    "stockOut": "Out of Stock",
+    "descriptionTitle": "Description",
+    "noDescription": "No description available.",
+    "attributesTitle": "Attributes",
+    "attributeLabel": "Attribute",
+    "attributeValueNA": "N/A",
+    "addToCart": "Add to Cart"
+  },
+  "otpScreen": {
+    "title": "Enter OTP",
+    "subtitle": "We sent a code to {{email}}",
+    "otpLabel": "OTP Code",
+    "otpPlaceholder": "Enter the code",
+    "verifyButton": "Verify OTP",
+    "errorInvalidOtp": "Invalid OTP",
+    "errorVerificationFailed": "Something went wrong during verification.",
+    "errorTitle": "Error"
+  },
+  "notificationScreen": {
+    "title": "Notification",
+    "recent": "Recent",
+    "notifications": {
+      "purchase": {
+        "title": "Purchase Completed!",
+        "message": "You have successfully purchased 334 headphones, thank you and wait for your package to arrive ✨"
+      },
+      "message": {
+        "title": "Jerremy Send You a Message",
+        "message": "hello your package has almost arrived, are you at home now?",
+        "reply": "Reply the message"
+      },
+      "promo": {
+        "title": "Flash Sale!",
+        "message": "Get 20% discount for first transaction in this month! 😍"
+      },
+      "sent": {
+        "title": "Package Sent",
+        "message": "Hi your package has been sent from New York"
+      }
+    }
+  },
+  "myorder": {
+    "title": "My Order",
+    "history": "History",
+    "noCurrentOrders": "No current orders.",
+    "color": "Color",
+    "qty": "Qty",
+    "onProgress": "On Progress",
+    "detail": "Detail",
+    "tracking": "Tracking",
+    "retry": "Retry",
+    "fetchError": "Failed to fetch orders"
   }
 }

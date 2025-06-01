@@ -9,18 +9,20 @@ import {
   Dimensions,
 } from 'react-native';
 import CustomButton from '../components/CustomButton';
+import {useTranslation} from 'react-i18next';
 
 const {width} = Dimensions.get('window');
 
 const OnboardingFlow: React.FC = ({navigation}: any) => {
+  const {t} = useTranslation();
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       scrollRef.current?.scrollTo({x: width, animated: false});
-    }, 100); // wait 100ms
+    }, 100);
 
-    return () => clearTimeout(timer); // clean up
+    return () => clearTimeout(timer);
   }, []);
 
   const handleNext = () => {
@@ -35,62 +37,56 @@ const OnboardingFlow: React.FC = ({navigation}: any) => {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{flexDirection: 'row-reverse'}}>
-        {/* First screen */}
+        {/* Screen 3 */}
         <View style={[styles.logoContainer, {width}]}>
           <Image
             source={require('../assets/Maskgroup1.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.textStyle}>Various collection Of The</Text>
-          <Text style={styles.textStyle}>Latest Products</Text>
-          <Text style={styles.subText}>
-            urna amet,suspendisse ullamcarper ac elit diam
-          </Text>
-          <Text style={styles.subText}>facillsis cursus vestibulum</Text>
+          <Text style={styles.textStyle}>{t('Onboarding.screen3.title1')}</Text>
+          <Text style={styles.textStyle}>{t('Onboarding.screen3.title2')}</Text>
+          <Text style={styles.subText}>{t('Onboarding.screen3.desc1')}</Text>
+          <Text style={styles.subText}>{t('Onboarding.screen3.desc2')}</Text>
         </View>
 
-        {/* Second screen — this will show first */}
+        {/* Screen 2 */}
         <View style={[styles.logoContainer, {width}]}>
           <Image
             source={require('../assets/Maskgroup1.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.textStyle}>Complete collection Of</Text>
-          <Text style={styles.textStyle}>colors and Sizes</Text>
-          <Text style={styles.subText}>
-            urna amet,suspendisse ullamcarper ac elit diam
-          </Text>
-          <Text style={styles.subText}>facillsis cursus vestibulum</Text>
+          <Text style={styles.textStyle}>{t('Onboarding.screen2.title1')}</Text>
+          <Text style={styles.textStyle}>{t('Onboarding.screen2.title2')}</Text>
+          <Text style={styles.subText}>{t('Onboarding.screen2.desc1')}</Text>
+          <Text style={styles.subText}>{t('Onboarding.screen2.desc2')}</Text>
         </View>
 
+        {/* Screen 1 */}
         <View style={[styles.logoContainer, {width}]}>
           <Image
             source={require('../assets/Maskgroup2.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.textStyle}>Find The Most Suitable</Text>
-          <Text style={styles.textStyle}>Outfit For You </Text>
-          <Text style={styles.subText}>
-            urna amet,suspendisse ullamcarper ac elit diam
-          </Text>
-          <Text style={styles.subText}>facillsis cursus vestibulum</Text>
+          <Text style={styles.textStyle}>{t('Onboarding.screen1.title1')}</Text>
+          <Text style={styles.textStyle}>{t('Onboarding.screen1.title2')}</Text>
+          <Text style={styles.subText}>{t('Onboarding.screen1.desc1')}</Text>
+          <Text style={styles.subText}>{t('Onboarding.screen1.desc2')}</Text>
         </View>
       </ScrollView>
 
-      {/* Buttons */}
       <View style={styles.buttonContainer}>
         <CustomButton
           type="PRIMARY"
           onPress={handleNext}
-          text="Create Account"
+          text={t('Onboarding.createAccount')}
         />
         <CustomButton
           onPress={() => navigation.navigate('Login')}
           type="TERTIARY"
-          text="already have an account"
+          text={t('Onboarding.alreadyAccount')}
         />
       </View>
     </SafeAreaView>

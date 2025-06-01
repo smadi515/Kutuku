@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   StyleSheet,
@@ -9,15 +9,16 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Header from '../components/Header';
+import {useTranslation} from 'react-i18next';
 
-const API_ORDERS_URL = 'https://your-api.com/api/orders'; // <-- replace with your actual orders API URL
+const API_ORDERS_URL = 'https://your-api.com/api/orders';
 
 type OrderItem = {
   title: string;
   quantity: number;
   price: number;
   color?: string;
-  image: string; // image URL string
+  image: string;
 };
 
 type Order = {
@@ -26,6 +27,7 @@ type Order = {
 };
 
 const MyOrders = () => {
+  const {t} = useTranslation();
   const [activeTab, setActiveTab] = useState<'MyOrder' | 'History'>('MyOrder');
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -35,34 +37,20 @@ const MyOrders = () => {
     setLoading(true);
     setError(null);
     try {
-      // Use your actual auth token if required
-      // const token = await AsyncStorage.getItem('token');
-
-      const response = await fetch(
-        API_ORDERS_URL /*, {
-        headers: { Authorization: `Bearer ${token}` }
-      }*/,
-      );
+      const response = await fetch(API_ORDERS_URL);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch orders');
+        throw new Error(t('myorder.fetchError'));
       }
 
       const data = await response.json();
-
-      // Assuming your API returns the order in a similar structure:
-      // { items: [...], status: '...' }
       setOrder(data);
     } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+      setError(err.message || t('myorder.fetchError'));
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
 
   if (loading) {
     return (
@@ -77,7 +65,7 @@ const MyOrders = () => {
       <View style={[styles.container, styles.center]}>
         <Text style={{color: 'red', marginBottom: 10}}>{error}</Text>
         <TouchableOpacity onPress={fetchOrders} style={styles.retryBtn}>
-          <Text style={{color: '#fff'}}>Retry</Text>
+          <Text style={{color: '#fff'}}>{t('myorder.retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -85,7 +73,7 @@ const MyOrders = () => {
 
   return (
     <View style={styles.container}>
-      <Header showImage={false} title="MyOrder" showBack={true} />
+      <Header showImage={false} title={t('myorder.title')} showBack={true} />
       <ScrollView>
         <View style={styles.tabSwitch}>
           <TouchableOpacity onPress={() => setActiveTab('MyOrder')}>
@@ -93,7 +81,7 @@ const MyOrders = () => {
               style={
                 activeTab === 'MyOrder' ? styles.activeTab : styles.inactiveTab
               }>
-              My Order
+              {t('myorder.title')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setActiveTab('History')}>
@@ -101,7 +89,7 @@ const MyOrders = () => {
               style={
                 activeTab === 'History' ? styles.activeTab : styles.inactiveTab
               }>
-              History
+              {t('myorder.history')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -118,14 +106,16 @@ const MyOrders = () => {
                 <View style={styles.itemDetails}>
                   <Text style={styles.itemTitle}>{item.title}</Text>
                   <Text style={styles.itemSub}>
-                    Color: {item.color || 'N/A'}
+                    {t('myorder.color')}: {item.color || 'N/A'}
                   </Text>
-                  <Text style={styles.itemSub}>Qty: {item.quantity}</Text>
+                  <Text style={styles.itemSub}>
+                    {t('myorder.qty')}: {item.quantity}
+                  </Text>
                 </View>
                 <View style={styles.rightSide}>
                   <View style={styles.statusBox}>
                     <Text style={styles.statusText}>
-                      {order.status || 'On Progress'}
+                      {order.status || t('myorder.onProgress')}
                     </Text>
                   </View>
                   <Text style={styles.priceText}>
@@ -136,17 +126,17 @@ const MyOrders = () => {
             ))}
             <View style={styles.buttonRow}>
               <TouchableOpacity style={styles.detailBtn}>
-                <Text>Detail</Text>
+                <Text>{t('myorder.detail')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.trackingBtn}>
-                <Text style={{color: '#fff'}}>Tracking</Text>
+                <Text style={{color: '#fff'}}>{t('myorder.tracking')}</Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : (
           activeTab === 'MyOrder' && (
             <Text style={{textAlign: 'center', marginTop: 20}}>
-              No current orders.
+              {t('myorder.noCurrentOrders')}
             </Text>
           )
         )}

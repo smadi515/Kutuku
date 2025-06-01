@@ -15,6 +15,8 @@ import Icon from '../components/icon';
 import Header from '../components/Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getCustomerCart, createCart, addItemToCart} from '../lib/api';
+import {useTranslation} from 'react-i18next';
+
 type ProductDescription = {
   name?: string;
   description?: string;
@@ -40,6 +42,8 @@ type Product = {
   description_data?: ProductDescription;
 };
 const ProductsDetails = () => {
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'ProductsDetails'>>();
@@ -128,9 +132,9 @@ const ProductsDetails = () => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
       <Header
-        title="Product Details"
+        title={t('productDetails.headerTitle')}
         showBack={true}
         showImage={false}
         rightIcons={[
@@ -173,25 +177,35 @@ const ProductsDetails = () => {
 
         <Text style={styles.priceText}>${product.price?.toFixed(2)}</Text>
         <Text style={styles.stockText}>
-          {product.stock ? 'In Stock' : 'Out of Stock'}
+          {product.stock
+            ? t('productDetails.stockIn')
+            : t('productDetails.stockOut')}
         </Text>
 
-        <Text style={styles.sectionTitle}>Description</Text>
+        <Text style={styles.sectionTitle}>
+          {t('productDetails.descriptionTitle')}
+        </Text>
         <Text style={styles.descriptionText}>
-          {product.description?.description || 'No description available.'}
+          {product.description?.description ||
+            t('productDetails.noDescription')}
         </Text>
 
         {/* Attributes Section */}
         {product.attributes && product.attributes.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Attributes</Text>
+            <Text style={styles.sectionTitle}>
+              {t('productDetails.attributesTitle')}
+            </Text>
             {product.attributes.map((attr: any, index: number) => (
               <View key={index} style={styles.attributeRow}>
                 <Text style={styles.attributeLabel}>
-                  {attr.attribute?.attribute_name || 'Attribute'}:
+                  {attr.attribute?.attribute_name ||
+                    t('productDetails.attributeLabel')}
+                  :
                 </Text>
                 <Text style={styles.attributeValue}>
-                  {attr.option?.option_text || 'N/A'}
+                  {attr.option?.option_text ||
+                    t('productDetails.attributeValueNA')}
                 </Text>
               </View>
             ))}
@@ -201,7 +215,9 @@ const ProductsDetails = () => {
         <TouchableOpacity
           style={styles.cartButton}
           onPress={() => handleAddToCart(product)}>
-          <Text style={styles.cartButtonText}>Add to Cart</Text>
+          <Text style={styles.cartButtonText}>
+            {t('productDetails.addToCart')}
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
