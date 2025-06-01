@@ -1,24 +1,33 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, StatusBar, StyleSheet} from 'react-native';
 import Header from '../components/Header';
 import Icon from '../components/icon';
-import {useRoute, useNavigation} from '@react-navigation/native';
-import type {RouteProp} from '@react-navigation/native';
-import type {RootStackParamList} from '../App';
 import {useTranslation} from 'react-i18next';
-
-type ProfileScreenRouteProp = RouteProp<RootStackParamList, 'Profile'>;
+import {fetchUserProfile} from '../lib/api'; // adjust path if needed
+import {useNavigation} from '@react-navigation/native';
 
 const Profile = () => {
-  const route = useRoute<ProfileScreenRouteProp>();
   const navigation = useNavigation();
-  const {t} = useTranslation();
 
-  const {
-    fullName = 'Unknown',
-    birthday = new Date().toISOString(),
-    phoneNumber = 'Unknown',
-  } = route.params || {};
+  const {t} = useTranslation();
+  const [fullName, setFullName] = useState('Unknown');
+  const [birthday, setBirthday] = useState(new Date().toISOString());
+  const [phoneNumber, setPhoneNumber] = useState('Unknown');
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const user = await fetchUserProfile();
+        setFullName(user.full_name || 'Unknown');
+        setBirthday(user.birthday || new Date().toISOString());
+        setPhoneNumber(user.phone_number || 'Unknown');
+      } catch (error) {
+        console.error('Failed to load user profile:', error);
+      }
+    };
+
+    loadUserData();
+  }, []);
 
   return (
     <View style={styles.container}>

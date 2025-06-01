@@ -5,13 +5,8 @@ import CustomButton from '../components/CustomButton';
 import CustomInput from '../components/CustomInput';
 import Header from '../components/Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import type {RootStackParamList} from '../App';
-const EditProfile = () => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
+const EditProfile = () => {
   const [fullName, setFullName] = useState('');
   const [birthday, setBirthday] = useState(new Date());
   const [isNewsletterAccepted, setIsNewsletterAccepted] = useState(false);
@@ -184,12 +179,6 @@ const EditProfile = () => {
         setInitialNewsletter(isNewsletterAccepted);
         setInitialPhoneNumber(phoneNumber);
         setFormChanged(false);
-
-        navigation.navigate('Profile', {
-          fullName: fullName,
-          birthday: birthday.toISOString(),
-          phoneNumber: phoneNumber,
-        });
       } else {
         console.log('API Error Response:', data);
         Alert.alert('Error: ' + (data.message || 'Something went wrong.'));

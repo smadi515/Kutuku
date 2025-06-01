@@ -226,8 +226,10 @@
     "clear_all": "Clear All",
     "search_results": "Search Results",
     "suggested_products": "Suggested Products",
+    "results": "results",
     "no_results": "No results found 😢",
-    "filter_products": "Filter Products"
+    "filter_products": "Filter Products",
+    "no_Name": "noName"
   },
   "productDetails": {
     "headerTitle": "Product Details",
@@ -283,6 +285,14 @@
     "detail": "Detail",
     "tracking": "Tracking",
     "retry": "Retry",
-    "fetchError": "Failed to fetch orders"
+    "fetchError": "Failed to fetch orders",
+    "order_number": "Order Number",
+    "status": "Status",
+    "payment_method": "Payment Method",
+    "shipping_method": "Shipping Method",
+    "total_amount": "Total Amount",
+    "items": "Items",
+    "name": "Name",
+    "no_details": "No details available"
   }
 }

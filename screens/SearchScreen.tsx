@@ -41,7 +41,7 @@ const SearchScreen = ({navigation}: any) => {
         const result = await getProducts();
         const transformed = result.map((product: any) => ({
           ...product,
-          name: product.name || product.sku || t('search.noName'),
+          name: product.name || product.sku || t('search.no_Name'),
           description: product.description || '',
           short_description: product.short_description || '',
           image:
@@ -99,7 +99,7 @@ const SearchScreen = ({navigation}: any) => {
         <View style={styles.searchBar}>
           <Icon type="ant" name="search1" size={20} style={{marginRight: 8}} />
           <TextInput
-            placeholder={t('search.placeholder')}
+            placeholder={t('search.placeholder_search')}
             style={styles.searchInput}
             placeholderTextColor="#aaa"
             value={searchText}
@@ -113,10 +113,10 @@ const SearchScreen = ({navigation}: any) => {
 
       {/* Last Searches */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{t('search.lastSearch')}</Text>
+        <Text style={styles.sectionTitle}>{t('search.last_search')}</Text>
         {searchHistory.length > 0 && (
           <TouchableOpacity onPress={clearAll}>
-            <Text style={styles.clearAll}>{t('search.clearAll')}</Text>
+            <Text style={styles.clearAll}>{t('search.clear_All')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -141,7 +141,7 @@ const SearchScreen = ({navigation}: any) => {
 
       {/* Results */}
       <Text style={[styles.sectionTitle, {marginTop: 20}]}>
-        {searchText ? t('search.results') : t('search.suggestedProducts')}
+        {searchText ? t('search.results') : t('search.suggested_products')}
       </Text>
 
       {loading ? (
@@ -152,7 +152,7 @@ const SearchScreen = ({navigation}: any) => {
           keyExtractor={item => item.product_id.toString()}
           ListEmptyComponent={() => (
             <Text style={{textAlign: 'center', marginTop: 20, color: '#888'}}>
-              {t('search.noResults')}
+              {t('search.search_results')}
             </Text>
           )}
           renderItem={({item}) => (
@@ -180,7 +180,7 @@ const SearchScreen = ({navigation}: any) => {
         snapPoints={snapPoints}
         enablePanDownToClose>
         <BottomSheetView style={{padding: 20, flex: 1}}>
-          <Text style={styles.sectionTitle}>{t('search.filterProducts')}</Text>
+          <Text style={styles.sectionTitle}>{t('search.filter_Products')}</Text>
           {/* ... filter content here ... */}
         </BottomSheetView>
       </BottomSheet>

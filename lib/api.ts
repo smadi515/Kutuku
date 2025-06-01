@@ -454,3 +454,35 @@ export const applyCoupon = async (
     throw error;
   }
 };
+
+export const fetchUserProfile = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) throw new Error('Token not found');
+
+    const response = await fetch(
+      `https://api.sareh-nomow.xyz/api/auth/verify-token`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch user profile');
+    }
+
+    const data = await response.json();
+
+    if (data.valid && data.user) {
+      return data.user;
+    } else {
+      throw new Error('Invalid token or user not found');
+    }
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    throw error;
+  }
+};

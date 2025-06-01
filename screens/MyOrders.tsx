@@ -32,7 +32,8 @@ type Order = {
 };
 
 const MyOrders = () => {
-  const {t} = useTranslation();
+  const {t, i18n} = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -178,42 +179,51 @@ const MyOrders = () => {
         snapPoints={snapPoints}
         enablePanDownToClose>
         <BottomSheetView style={{alignItems: 'center', padding: 10}}>
-          <View style={styles.sheetContent}>
+          <View
+            style={[styles.sheetContent, {direction: isRTL ? 'rtl' : 'ltr'}]}>
             {selectedOrder ? (
               <>
                 <Text style={{fontWeight: 'bold', fontSize: 16}}>
-                  Order Number:
+                  {t('myorder.order_number')}:
                 </Text>
                 <Text>{selectedOrder.order_number}</Text>
 
-                <Text style={{fontWeight: 'bold', marginTop: 10}}>Status:</Text>
+                <Text style={{fontWeight: 'bold', marginTop: 10}}>
+                  {t('myorder.status')}:
+                </Text>
                 <Text>{selectedOrder.status}</Text>
 
                 <Text style={{fontWeight: 'bold', marginTop: 10}}>
-                  Payment Method:
+                  {t('myorder.payment_method')}:
                 </Text>
                 <Text>{selectedOrder.payment_method_name || 'N/A'}</Text>
 
                 <Text style={{fontWeight: 'bold', marginTop: 10}}>
-                  Shipping Method:
+                  {t('myorder.shipping_method')}:
                 </Text>
                 <Text>{selectedOrder.shipping_method_name || 'N/A'}</Text>
 
                 <Text style={{fontWeight: 'bold', marginTop: 10}}>
-                  Total Amount:
+                  {t('myorder.total_amount')}:
                 </Text>
                 <Text>${selectedOrder.product_price.toFixed(2)}</Text>
 
-                <Text style={{fontWeight: 'bold', marginTop: 10}}>Items:</Text>
+                <Text style={{fontWeight: 'bold', marginTop: 10}}>
+                  {t('myorder.items')}:
+                </Text>
                 {selectedOrder.items.map((item, idx) => (
                   <View key={idx} style={{marginBottom: 8}}>
-                    <Text>Name: {item.product_name}</Text>
-                    <Text>Qty: {item.qty}</Text>
+                    <Text>
+                      {t('myorder.name')}: {item.product_name}
+                    </Text>
+                    <Text>
+                      {t('myorder.qty')}: {item.qty}
+                    </Text>
                   </View>
                 ))}
               </>
             ) : (
-              <Text>No details available</Text>
+              <Text>{t('myorder.no_details')}</Text>
             )}
           </View>
         </BottomSheetView>
