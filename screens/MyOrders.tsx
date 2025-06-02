@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import Header from '../components/Header';
 import {useTranslation} from 'react-i18next';
@@ -20,6 +21,7 @@ type OrderItem = {
   qty: number;
   product_image: string;
   color?: string;
+  product_id: number;
 };
 
 type Order = {
@@ -40,9 +42,37 @@ const MyOrders = () => {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['40%'], []);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [rating, setRating] = useState(0);
+  const [reviewText, setReviewText] = useState('');
+  const openOrderDetail = () => bottomSheetRef.current?.expand();
+  const openOrderReview = () => bottomSheetRef.current?.expand();
+  const handleSubmitReview = async () => {
+    if (!selectedOrder || selectedOrder.items.length === 0) return;
+    const productId = selectedOrder.items[0].product_id; // adjust if needed
 
-  const openPaymentMethodSheet = () => bottomSheetRef.current?.expand();
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch('https://api.sareh-nomow.xyz/api/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          rating,
+          review_text: reviewText,
+        }),
+      });
+      console.log('productId', productId);
 
+      const result = await response.json();
+      console.log('Review submitted:', result);
+      bottomSheetRef.current?.close();
+    } catch (error) {
+      console.error('Error submitting review:', error);
+    }
+  };
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -76,6 +106,7 @@ const MyOrders = () => {
           qty: item.qty,
           product_image: item.product_image,
           color: item.color,
+          product_id: item.product_id,
         })),
         status: order.status,
         order_number: order.order_number,
@@ -157,12 +188,17 @@ const MyOrders = () => {
                   style={styles.detailBtn}
                   onPress={() => {
                     setSelectedOrder(order);
-                    openPaymentMethodSheet();
+                    openOrderDetail();
                   }}>
                   <Text>{t('myorder.detail')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.trackingBtn}>
-                  <Text style={{color: '#fff'}}>{t('myorder.tracking')}</Text>
+                <TouchableOpacity
+                  style={styles.trackingBtn}
+                  onPress={() => {
+                    setSelectedOrder(order);
+                    openOrderReview();
+                  }}>
+                  <Text style={{color: '#fff'}}>{t('myorder.Review')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -226,6 +262,65 @@ const MyOrders = () => {
               <Text>{t('myorder.no_details')}</Text>
             )}
           </View>
+        </BottomSheetView>
+      </BottomSheet>
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose>
+        <BottomSheetView style={{alignItems: 'center', padding: 20}}>
+          <Text style={{fontSize: 16, fontWeight: 'bold', marginBottom: 10}}>
+            {t('myorder.leaveReview')}
+          </Text>
+
+          {/* Star Rating */}
+          <View style={{flexDirection: 'row', marginBottom: 15}}>
+            {[1, 2, 3, 4, 5].map(num => (
+              <TouchableOpacity key={num} onPress={() => setRating(num)}>
+                <Text
+                  style={{
+                    fontSize: 30,
+                    color: num <= rating ? 'gold' : 'gray',
+                  }}>
+                  ★
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Review Text */}
+          <TextInput
+            style={{
+              width: '100%',
+              borderColor: '#ccc',
+              borderWidth: 1,
+              borderRadius: 8,
+              padding: 10,
+              marginBottom: 15,
+              textAlignVertical: 'top',
+            }}
+            multiline
+            numberOfLines={4}
+            placeholder={t('myorder.writeReview')}
+            value={reviewText}
+            onChangeText={setReviewText}
+          />
+
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={{
+              backgroundColor: '#6A5AE0',
+              padding: 12,
+              borderRadius: 8,
+              width: '100%',
+              alignItems: 'center',
+            }}
+            onPress={handleSubmitReview}>
+            <Text style={{color: '#fff', fontWeight: 'bold'}}>
+              {t('myorder.submitReview')}
+            </Text>
+          </TouchableOpacity>
         </BottomSheetView>
       </BottomSheet>
     </View>

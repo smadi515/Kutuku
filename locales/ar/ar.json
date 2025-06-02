@@ -292,6 +292,11 @@
     "total_amount": "المبلغ الإجمالي",
     "items": "العناصر",
     "name": "الاسم",
-    "no_details": "لا توجد تفاصيل"
+    "no_details": "لا توجد تفاصيل",
+    "Review": " تقييم للطلب",
+    "fetchError": "fetchError",
+    "leaveReview": "أترك المراجعة",
+    "writeReview": "أكتب المراجعة",
+    "submitReview": "أرسل المراجعة"
   }
 }

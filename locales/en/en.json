@@ -293,6 +293,11 @@
     "total_amount": "Total Amount",
     "items": "Items",
     "name": "Name",
-    "no_details": "No details available"
+    "no_details": "No details available",
+    "Review": "Review",
+    "fetchError": "fetchError",
+    "leaveReview": "leaveReview",
+    "writeReview": "writeReview",
+    "submitReview": "submitReview"
   }
 }
