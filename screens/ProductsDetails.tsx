@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,16 @@ import Header from '../components/Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getCustomerCart, createCart, addItemToCart} from '../lib/api';
 import {useTranslation} from 'react-i18next';
+import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+interface Review {
+  review_id: number;
+  customer: {
+    first_name: string;
+    last_name: string;
+  };
+  rating: number;
+  review_text: string;
+}
 
 type ProductDescription = {
   name?: string;
@@ -48,11 +58,17 @@ const ProductsDetails = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'ProductsDetails'>>();
   const {product_id} = route.params;
+  const bottomSheetRef = useRef<BottomSheet>(null);
+
+  const snapPoints = useMemo(() => ['40%'], []);
+  const OpenRatingProduct = () => bottomSheetRef.current?.expand();
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [averageRating, setAverageRating] = useState<number | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+
   useEffect(() => {
     const fetchProductData = async () => {
       try {
@@ -67,6 +83,7 @@ const ProductsDetails = () => {
           `https://api.sareh-nomow.website/api/reviews/product/${product_id}`,
         );
         const reviews = await reviewsRes.json();
+        setReviews(reviews);
 
         if (Array.isArray(reviews) && reviews.length > 0) {
           const totalRating = reviews.reduce(
@@ -174,104 +191,151 @@ const ProductsDetails = () => {
   };
 
   return (
-    <ScrollView style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
-      <Header
-        title={t('productDetails.headerTitle')}
-        showBack={true}
-        showImage={false}
-        rightIcons={[
-          {
-            name: 'cart-outline',
-            type: 'Ionicons',
-            onPress: () => navigation.navigate('CartScreen'),
-          },
-        ]}
-      />
-
-      {/* Image Slider */}
+    <View style={{flex: 1}}>
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.imageScroll}>
-        {product.images?.map((image: any, index: number) => (
-          <Image
-            key={index}
-            source={{uri: image.single_image}}
-            style={styles.productImage}
-            resizeMode="cover"
-          />
-        ))}
-      </ScrollView>
+        style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
+        <Header
+          title={t('productDetails.headerTitle')}
+          showBack={true}
+          showImage={false}
+          rightIcons={[
+            {
+              name: 'cart-outline',
+              type: 'Ionicons',
+              onPress: () => navigation.navigate('CartScreen'),
+            },
+          ]}
+        />
 
-      <View style={styles.detailsContainer}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>{product.description?.name}</Text>
-          <View style={styles.quantityContainer}>
-            <TouchableOpacity onPress={decreaseQuantity}>
-              <Icon name="minus" type="ant" size={16} color="#333" />
-            </TouchableOpacity>
-            <Text style={styles.quantityText}>{quantity}</Text>
-            <TouchableOpacity onPress={increaseQuantity}>
-              <Icon name="plus" type="ant" size={16} color="#333" />
-            </TouchableOpacity>
-          </View>
-        </View>
+        {/* Image Slider */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.imageScroll}>
+          {product.images?.map((image: any, index: number) => (
+            <Image
+              key={index}
+              source={{uri: image.single_image}}
+              style={styles.productImage}
+              resizeMode="cover"
+            />
+          ))}
+        </ScrollView>
 
-        <Text style={styles.priceText}>${product.price?.toFixed(2)}</Text>
-        <Text style={styles.stockText}>
-          {product.stock
-            ? t('productDetails.stockIn')
-            : t('productDetails.stockOut')}
-        </Text>
-        <View style={styles.ratingContainer}>
-          {averageRating ? (
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              {renderStars(averageRating)}
-              <Text style={styles.ratingText}> {averageRating}</Text>
+        <View style={styles.detailsContainer}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{product.description?.name}</Text>
+            <View style={styles.quantityContainer}>
+              <TouchableOpacity onPress={decreaseQuantity}>
+                <Icon name="minus" type="ant" size={16} color="#333" />
+              </TouchableOpacity>
+              <Text style={styles.quantityText}>{quantity}</Text>
+              <TouchableOpacity onPress={increaseQuantity}>
+                <Icon name="plus" type="ant" size={16} color="#333" />
+              </TouchableOpacity>
             </View>
-          ) : (
-            <Text style={styles.ratingText}>No reviews yet</Text>
-          )}
-        </View>
-        <Text style={styles.sectionTitle}>
-          {t('productDetails.descriptionTitle')}
-        </Text>
-        <Text style={styles.descriptionText}>
-          {product.description?.description ||
-            t('productDetails.noDescription')}
-        </Text>
+          </View>
 
-        {/* Attributes Section */}
-        {product.attributes && product.attributes.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>
-              {t('productDetails.attributesTitle')}
-            </Text>
-            {product.attributes.map((attr: any, index: number) => (
-              <View key={index} style={styles.attributeRow}>
-                <Text style={styles.attributeLabel}>
-                  {attr.attribute?.attribute_name ||
-                    t('productDetails.attributeLabel')}
-                  :
-                </Text>
-                <Text style={styles.attributeValue}>
-                  {attr.option?.option_text ||
-                    t('productDetails.attributeValueNA')}
-                </Text>
-              </View>
-            ))}
-          </>
-        )}
-
-        <TouchableOpacity
-          style={styles.cartButton}
-          onPress={() => handleAddToCart(product)}>
-          <Text style={styles.cartButtonText}>
-            {t('productDetails.addToCart')}
+          <Text style={styles.priceText}>${product.price?.toFixed(2)}</Text>
+          <Text style={styles.stockText}>
+            {product.stock
+              ? t('productDetails.stockIn')
+              : t('productDetails.stockOut')}
           </Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <TouchableOpacity onPress={OpenRatingProduct}>
+            <View style={styles.ratingContainer}>
+              {averageRating ? (
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  {renderStars(averageRating)}
+                  <Text style={styles.ratingText}> {averageRating}</Text>
+                </View>
+              ) : (
+                <Text style={styles.ratingText}>No reviews yet</Text>
+              )}
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>
+            {t('productDetails.descriptionTitle')}
+          </Text>
+          <Text style={styles.descriptionText}>
+            {product.description?.description ||
+              t('productDetails.noDescription')}
+          </Text>
+
+          {/* Attributes Section */}
+          {product.attributes && product.attributes.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>
+                {t('productDetails.attributesTitle')}
+              </Text>
+              {product.attributes.map((attr: any, index: number) => (
+                <View key={index} style={styles.attributeRow}>
+                  <Text style={styles.attributeLabel}>
+                    {attr.attribute?.attribute_name ||
+                      t('productDetails.attributeLabel')}
+                    :
+                  </Text>
+                  <Text style={styles.attributeValue}>
+                    {attr.option?.option_text ||
+                      t('productDetails.attributeValueNA')}
+                  </Text>
+                </View>
+              ))}
+            </>
+          )}
+
+          <TouchableOpacity
+            style={styles.cartButton}
+            onPress={() => handleAddToCart(product)}>
+            <Text style={styles.cartButtonText}>
+              {t('productDetails.addToCart')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose>
+        <BottomSheetView style={{paddingHorizontal: 20}}>
+          <Text style={{fontSize: 18, fontWeight: 'bold', marginBottom: 10}}>
+            Product Reviews
+          </Text>
+          {reviews.length === 0 ? (
+            <Text>No reviews yet.</Text>
+          ) : (
+            reviews.map(review => (
+              <View key={review.review_id} style={{marginBottom: 15}}>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <View
+                    style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: 15,
+                      backgroundColor: '#ccc',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginRight: 10,
+                    }}></View>
+                </View>
+                <View style={{flexDirection: 'row', marginVertical: 5}}>
+                  {renderStars(review.rating)}
+                </View>
+                {review.review_text ? (
+                  <Text style={{fontSize: 14}}>{review.review_text}</Text>
+                ) : (
+                  <Text
+                    style={{fontSize: 14, fontStyle: 'italic', color: '#888'}}>
+                    No comment
+                  </Text>
+                )}
+              </View>
+            ))
+          )}
+        </BottomSheetView>
+      </BottomSheet>
+    </View>
   );
 };
 
