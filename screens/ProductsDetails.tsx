@@ -52,20 +52,41 @@ const ProductsDetails = () => {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-
+  const [averageRating, setAverageRating] = useState<number | null>(null);
   useEffect(() => {
-    console.log('Fetching product details for ID:', product_id);
-    fetch(`http://192.168.100.13:3250/api/products/${product_id}`)
-      .then(res => res.json())
-      .then(data => {
-        console.log('Product data:', data);
+    const fetchProductData = async () => {
+      try {
+        const res = await fetch(
+          `http://192.168.100.13:3250/api/products/${product_id}`,
+        );
+        const data = await res.json();
         setProduct(data);
+
+        // Fetch reviews and calculate average rating
+        const reviewsRes = await fetch(
+          `https://api.sareh-nomow.website/api/reviews/product/${product_id}`,
+        );
+        const reviews = await reviewsRes.json();
+
+        if (Array.isArray(reviews) && reviews.length > 0) {
+          const totalRating = reviews.reduce(
+            (sum, review) => sum + review.rating,
+            0,
+          );
+          const avg = totalRating / reviews.length;
+          setAverageRating(Number(avg.toFixed(1)));
+        } else {
+          setAverageRating(null);
+        }
+
         setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching product details:', err);
+      } catch (err) {
+        console.error('Error fetching product or reviews:', err);
         setLoading(false);
-      });
+      }
+    };
+
+    fetchProductData();
   }, [product_id]);
 
   const increaseQuantity = () => setQuantity(prev => prev + 1);
@@ -130,6 +151,27 @@ const ProductsDetails = () => {
   if (!product) {
     return <Text style={{padding: 20}}>Product not found</Text>;
   }
+  const renderStars = (rating: number) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <Icon
+          key={i}
+          name={
+            i <= rating
+              ? 'star'
+              : i - 0.5 <= rating
+              ? 'star-half-full'
+              : 'star-outline'
+          }
+          type="MaterialCommunityIcons"
+          size={20}
+          color="#FFD700"
+        />,
+      );
+    }
+    return stars;
+  };
 
   return (
     <ScrollView style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
@@ -181,7 +223,16 @@ const ProductsDetails = () => {
             ? t('productDetails.stockIn')
             : t('productDetails.stockOut')}
         </Text>
-
+        <View style={styles.ratingContainer}>
+          {averageRating ? (
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              {renderStars(averageRating)}
+              <Text style={styles.ratingText}> {averageRating}</Text>
+            </View>
+          ) : (
+            <Text style={styles.ratingText}>No reviews yet</Text>
+          )}
+        </View>
         <Text style={styles.sectionTitle}>
           {t('productDetails.descriptionTitle')}
         </Text>
@@ -225,6 +276,17 @@ const ProductsDetails = () => {
 };
 
 const styles = StyleSheet.create({
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  ratingText: {
+    fontSize: 16,
+    marginLeft: 6,
+    color: '#444',
+    fontWeight: '500',
+  },
   container: {flex: 1, backgroundColor: '#fff'},
   imageScroll: {
     marginBottom: 20,

@@ -30,6 +30,11 @@ interface Address {
   street: string;
   city: string;
   country: string;
+  fullAddress: string;
+  shippingMethods: {
+    name: string;
+    cost: number;
+  }[];
 }
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'PaymentScreen'>;
