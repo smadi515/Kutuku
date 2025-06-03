@@ -14,7 +14,12 @@ import {RootStackParamList} from '../App';
 import Icon from '../components/icon';
 import Header from '../components/Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {getCustomerCart, createCart, addItemToCart} from '../lib/api';
+import {
+  getCustomerCart,
+  createCart,
+  addItemToCart,
+  getProductById,
+} from '../lib/api';
 import {useTranslation} from 'react-i18next';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 interface Review {
@@ -72,15 +77,11 @@ const ProductsDetails = () => {
   useEffect(() => {
     const fetchProductData = async () => {
       try {
-        const res = await fetch(
-          `http://192.168.100.13:3250/api/products/${product_id}`,
-        );
-        const data = await res.json();
+        const data = await getProductById(product_id);
         setProduct(data);
 
-        // Fetch reviews and calculate average rating
         const reviewsRes = await fetch(
-          `https://api.sareh-nomow.website/api/reviews/product/${product_id}`,
+          `https://api.sareh-nomow.xyz/api/reviews/product/${product_id}`,
         );
         const reviews = await reviewsRes.json();
         setReviews(reviews);
@@ -90,8 +91,7 @@ const ProductsDetails = () => {
             (sum, review) => sum + review.rating,
             0,
           );
-          const avg = totalRating / reviews.length;
-          setAverageRating(Number(avg.toFixed(1)));
+          setAverageRating(Number((totalRating / reviews.length).toFixed(1)));
         } else {
           setAverageRating(null);
         }
@@ -105,7 +105,6 @@ const ProductsDetails = () => {
 
     fetchProductData();
   }, [product_id]);
-
   const increaseQuantity = () => setQuantity(prev => prev + 1);
   const decreaseQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
@@ -235,8 +234,9 @@ const ProductsDetails = () => {
               </TouchableOpacity>
             </View>
           </View>
-
-          <Text style={styles.priceText}>${product.price?.toFixed(2)}</Text>
+          <Text style={styles.priceText}>
+            {product.price ? `$${product.price.toFixed(2)}` : 'N/A'}
+          </Text>
           <Text style={styles.stockText}>
             {product.stock
               ? t('productDetails.stockIn')
@@ -258,10 +258,10 @@ const ProductsDetails = () => {
             {t('productDetails.descriptionTitle')}
           </Text>
           <Text style={styles.descriptionText}>
-            {product.description?.description ||
-              t('productDetails.noDescription')}
+            {product.short_description ||
+              product.description ||
+              'No description available'}
           </Text>
-
           {/* Attributes Section */}
           {product.attributes && product.attributes.length > 0 && (
             <>
@@ -283,7 +283,6 @@ const ProductsDetails = () => {
               ))}
             </>
           )}
-
           <TouchableOpacity
             style={styles.cartButton}
             onPress={() => handleAddToCart(product)}>

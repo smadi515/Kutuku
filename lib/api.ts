@@ -70,7 +70,7 @@ export const getProducts = async (categoryId?: number, brandId?: number) => {
 
     const queryString = query.length > 0 ? `?${query.join('&')}` : '';
     const response = await fetch(
-      `https://api.sareh-nomow.website/api/products${queryString}`,
+      `https://api.sareh-nomow.xyz/api/products${queryString}`,
     );
     const json = await response.json();
     return json.data;
@@ -83,7 +83,7 @@ export const getProducts = async (categoryId?: number, brandId?: number) => {
 export const getProductById = async (productId: number) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.website/api/products/${productId}`,
+      `https://api.sareh-nomow.xyz/api/products/${productId}`,
     );
     const json = await response.json();
     return json;
