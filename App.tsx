@@ -34,6 +34,14 @@ import AddressScreen from './screens/AddressScreen';
 import OTPScreen from './screens/OTPScreen';
 import EditAddressScreen from './screens/EditAddressScreen';
 import Home from './screens/HomeScreen';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
+
+GoogleSignin.configure({
+  webClientId:
+    '1088217967971-6bta2dea5scfouec3ng7qpjfkkedmbhq.apps.googleusercontent.com',
+  // from Google Console (Web type)
+  offlineAccess: true,
+});
 // Prevent RTL layout
 I18nManager.allowRTL(false);
 I18nManager.forceRTL(false);

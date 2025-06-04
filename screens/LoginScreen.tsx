@@ -7,14 +7,13 @@ import {
   Alert,
   TextInput,
   TouchableOpacity,
-  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import Icon from '../components/icon';
-import {login} from '../lib/api';
+import {login, signInWithGoogle} from '../lib/api';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 import {useTranslation} from 'react-i18next';
 
@@ -78,11 +77,6 @@ const LoginScreen = ({navigation}: any) => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    const googleLoginUrl = 'https://api.sareh-nomow.website/api/auth/google';
-    Linking.openURL(googleLoginUrl);
-  };
-
   return (
     <>
       <ScrollView
@@ -124,7 +118,7 @@ const LoginScreen = ({navigation}: any) => {
 
         <Text style={styles.orText}>{t('login.orOtherMethods')}</Text>
 
-        <TouchableOpacity style={styles.altBtn} onPress={handleGoogleLogin}>
+        <TouchableOpacity style={styles.altBtn} onPress={signInWithGoogle}>
           <Icon type="ant" name="google" size={18} />
           <Text style={styles.altBtnText}>{t('login.google')}</Text>
         </TouchableOpacity>

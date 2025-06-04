@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
 
 // ================= AUTH =================
 export const login = async (email: string, password: string) => {
@@ -85,8 +86,20 @@ export const getProductById = async (productId: number) => {
     const response = await fetch(
       `https://api.sareh-nomow.xyz/api/products/${productId}`,
     );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch product (status: ${response.status})`);
+    }
+
     const json = await response.json();
-    return json;
+    const product = json?.data?.[0];
+
+    if (!product) {
+      throw new Error('Product not found in response');
+    }
+
+    console.log('Fetched product:', product);
+    return product;
   } catch (error) {
     console.error('getProductById error:', error);
     throw error;
@@ -484,5 +497,17 @@ export const fetchUserProfile = async () => {
   } catch (error) {
     console.error('Error fetching user profile:', error);
     throw error;
+  }
+};
+
+export const signInWithGoogle = async () => {
+  try {
+    await GoogleSignin.hasPlayServices(); // Ensure device has Google Play Services
+    const userInfo = await GoogleSignin.signIn();
+    console.log('Google user info:', userInfo);
+
+    // 👉 Send userInfo.idToken to your backend API for verification or login
+  } catch (error) {
+    console.error('Google Sign-In error:', error);
   }
 };

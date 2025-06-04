@@ -76,35 +76,39 @@ const ProductsDetails = () => {
 
   useEffect(() => {
     const fetchProductData = async () => {
+      setLoading(true);
       try {
+        // Fetch product
         const data = await getProductById(product_id);
         setProduct(data);
 
-        const reviewsRes = await fetch(
+        // Fetch reviews
+        const response = await fetch(
           `https://api.sareh-nomow.xyz/api/reviews/product/${product_id}`,
         );
-        const reviews = await reviewsRes.json();
+        if (!response.ok) throw new Error('Failed to fetch reviews');
+
+        const reviews = await response.json();
         setReviews(reviews);
 
+        // Calculate average rating
         if (Array.isArray(reviews) && reviews.length > 0) {
-          const totalRating = reviews.reduce(
-            (sum, review) => sum + review.rating,
-            0,
-          );
-          setAverageRating(Number((totalRating / reviews.length).toFixed(1)));
+          const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+          const average = total / reviews.length;
+          setAverageRating(Number(average.toFixed(1)));
         } else {
           setAverageRating(null);
         }
-
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching product or reviews:', err);
+      } catch (error) {
+        console.error('Error fetching product or reviews:', error);
+      } finally {
         setLoading(false);
       }
     };
 
     fetchProductData();
   }, [product_id]);
+
   const increaseQuantity = () => setQuantity(prev => prev + 1);
   const decreaseQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
@@ -258,9 +262,7 @@ const ProductsDetails = () => {
             {t('productDetails.descriptionTitle')}
           </Text>
           <Text style={styles.descriptionText}>
-            {product.short_description ||
-              product.description ||
-              'No description available'}
+            <Text>{product.description?.short_description}</Text>
           </Text>
           {/* Attributes Section */}
           {product.attributes && product.attributes.length > 0 && (
