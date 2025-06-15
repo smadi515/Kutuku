@@ -3,7 +3,7 @@ import {GoogleSignin} from '@react-native-google-signin/google-signin';
 
 // ================= AUTH =================
 export const login = async (email: string, password: string) => {
-  const apiUrl = 'https://api.sareh-nomow.website/api/auth/login';
+  const apiUrl = 'https://api.sareh-nomow.xyz/api/auth/login';
 
   const response = await fetch(apiUrl, {
     method: 'POST',
@@ -23,7 +23,7 @@ export const register = async (
   name: string,
   phoneNumber: string,
 ) => {
-  const apiUrl = 'https://api.sareh-nomow.website/api/auth/register';
+  const apiUrl = 'https://api.sareh-nomow.xyz/api/auth/register';
 
   try {
     const response = await fetch(apiUrl, {
@@ -48,7 +48,7 @@ export const register = async (
 };
 
 export const verifyOtp = async (email: string, otp: string) => {
-  const apiUrl = 'https://api.sareh-nomow.website/api/auth/verify-otp';
+  const apiUrl = 'https://api.sareh-nomow.xyz/api/auth/verify-otp';
 
   const response = await fetch(apiUrl, {
     method: 'POST',
@@ -110,7 +110,7 @@ export const getProductById = async (productId: number) => {
 export const getParentCategories = async () => {
   try {
     const response = await fetch(
-      'https://api.sareh-nomow.website/api/categories?parentId=null',
+      'https://api.sareh-nomow.xyz/api/categories?parentId=null',
     );
     const json = await response.json();
 
@@ -128,7 +128,7 @@ export const getParentCategories = async () => {
 export const getSubcategories = async (parentId: number) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.website/api/categories?parentId=${parentId}`,
+      `https://api.sareh-nomow.xyz/api/categories?parentId=${parentId}`,
     );
     const json = await response.json();
 
@@ -146,7 +146,7 @@ export const getSubcategories = async (parentId: number) => {
 // ================= BRANDS =================
 export const getBrands = async () => {
   try {
-    const response = await fetch('https://api.sareh-nomow.website/api/brands');
+    const response = await fetch('https://api.sareh-nomow.xyz/api/brands');
     const json = await response.json();
 
     return json.data.map((brand: any) => ({
@@ -162,7 +162,7 @@ export const getBrands = async () => {
 
 // ================= ADDRESS =================
 export const createAddress = async (addressData: any, token: string) => {
-  const apiUrl = 'https://api.sareh-nomow.website/api/addresses';
+  const apiUrl = 'https://api.sareh-nomow.xyz/api/addresses';
 
   try {
     const response = await fetch(apiUrl, {
@@ -190,7 +190,7 @@ export const createAddress = async (addressData: any, token: string) => {
 export const getCustomerCart = async (token: string) => {
   try {
     const response = await fetch(
-      'https://api.sareh-nomow.website/api/carts/customer',
+      'https://api.sareh-nomow.xyz/api/carts/customer',
       {
         method: 'GET',
         headers: {
@@ -207,7 +207,7 @@ export const getCustomerCart = async (token: string) => {
 
     if (!cart) {
       const createResponse = await fetch(
-        'https://api.sareh-nomow.website/api/carts',
+        'https://api.sareh-nomow.xyz/api/carts',
         {
           method: 'POST',
           headers: {
@@ -237,7 +237,7 @@ export const getCustomerCart = async (token: string) => {
 };
 export const createCart = async (token: string) => {
   try {
-    const response = await fetch('https://api.sareh-nomow.website/api/carts', {
+    const response = await fetch('https://api.sareh-nomow.xyz/api/carts', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -269,7 +269,7 @@ export const addItemToCart = async (
 ) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.website/api/carts/${cartId}/items`,
+      `https://api.sareh-nomow.xyz/api/carts/add-items`,
       {
         method: 'POST',
         headers: {
@@ -300,7 +300,7 @@ export const addItemToCart = async (
 export const getCartItems = async (token: string) => {
   try {
     const response = await fetch(
-      'https://api.sareh-nomow.website/api/carts/customer',
+      'https://api.sareh-nomow.xyz/api/carts/customer',
       {
         method: 'GET',
         headers: {
@@ -327,7 +327,7 @@ export const deleteCartItem = async (
 ) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.website/api/carts/${cart_id}/items/${cart_item_id}`,
+      `https://api.sareh-nomow.xyz/api/carts/items/${cart_item_id}`,
       {
         method: 'DELETE',
         headers: {
@@ -354,15 +354,12 @@ export const updateCartItemQuantity = async (
   cartId: number,
   quantity: number,
 ) => {
-  console.log(
-    `PUT https://api.sareh-nomow.website/api/carts/${cartId}/items/${cartItemId}`,
-    {
-      qty: quantity,
-    },
-  );
+  console.log(`PUT https://api.sareh-nomow.xyz/api/carts/items/${cartItemId}`, {
+    qty: quantity,
+  });
 
   const response = await fetch(
-    `https://api.sareh-nomow.website/api/carts/${cartId}/items/${cartItemId}`,
+    `https://api.sareh-nomow.xyz/api/carts/items/${cartItemId}`,
     {
       method: 'PUT',
       headers: {
@@ -416,7 +413,7 @@ export const addOrUpdateCartItem = async (
     );
   } else {
     const response = await fetch(
-      `https://api.sareh-nomow.website/api/carts/${cart_id}/items`,
+      `https://api.sareh-nomow.xyz/api/carts/${cart_id}/items`,
       {
         method: 'POST',
         headers: {
@@ -444,7 +441,7 @@ export const applyCoupon = async (
 ) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.website/api/coupons/apply`,
+      `https://api.sareh-nomow.xyz/api/coupons/apply`,
       {
         method: 'POST',
         headers: {

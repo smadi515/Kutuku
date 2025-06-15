@@ -21,6 +21,7 @@ import {
 } from '../lib/api';
 import BrandTab from './BrandTab';
 import {useTranslation} from 'react-i18next';
+import CollectionSection from '../components/CollectionSection';
 
 type LocalCartItem = {
   id: string;
@@ -321,14 +322,18 @@ const HomeScreen = ({navigation}: any) => {
           keyExtractor={item => item.product_id.toString()}
           numColumns={2}
           ListHeaderComponent={
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                {t('HomeScreen.newArrivals')}
-              </Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('StoreScreen')}>
-                <Text style={styles.seeAll}>{t('HomeScreen.SeeAll')}</Text>
-              </TouchableOpacity>
+            <View>
+              <CollectionSection />
+
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>
+                  {t('HomeScreen.newArrivals')}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('StoreScreen')}>
+                  <Text style={styles.seeAll}>{t('HomeScreen.SeeAll')}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           }
           renderItem={({item}) => (

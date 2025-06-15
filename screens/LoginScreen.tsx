@@ -30,13 +30,14 @@ const LoginScreen = ({navigation}: any) => {
   const handleResetPassword = async () => {
     try {
       const response = await fetch(
-        'https://api.sareh-nomow.website/api/auth/password-reset/request',
+        'https://api.sareh-nomow.xyz/api/auth/password-reset/request',
         {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({email: forgotEmail}),
         },
       );
+      console.log('email', email);
 
       const data = await response.json();
 

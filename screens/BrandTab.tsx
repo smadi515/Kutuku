@@ -76,15 +76,18 @@ const BrandTab = () => {
 
       {/* Brands List */}
       <ScrollView contentContainerStyle={styles.brandsContainer}>
-        {filteredBrands.map(brand => (
-          <BrandCard
-            key={brand.id}
-            id={brand.id}
-            name={brand.name}
-            image={brand.image}
-            onPress={handleBrandPress}
-          />
-        ))}
+        {filteredBrands.map(brand => {
+          if (!brand.image) return null; // Skip if image is missing
+          return (
+            <BrandCard
+              key={brand.id}
+              id={brand.id}
+              name={brand.name}
+              image={brand.image}
+              onPress={handleBrandPress}
+            />
+          );
+        })}
       </ScrollView>
     </View>
   );
