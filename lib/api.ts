@@ -63,11 +63,18 @@ export const verifyOtp = async (email: string, otp: string) => {
 };
 
 // ================= PRODUCTS =================
-export const getProducts = async (categoryId?: number, brandId?: number) => {
+
+export const getProducts = async (
+  lang: string,
+  categoryId?: number,
+  brandId?: number,
+) => {
   try {
     let query = [];
+
     if (categoryId) query.push(`categoryId=${categoryId}`);
     if (brandId) query.push(`brandId=${brandId}`);
+    query.push(`lang=${lang}`);
 
     const queryString = query.length > 0 ? `?${query.join('&')}` : '';
     const response = await fetch(

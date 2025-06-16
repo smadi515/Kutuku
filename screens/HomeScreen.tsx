@@ -74,10 +74,11 @@ const HomeScreen = ({navigation}: any) => {
   const [loading, setLoading] = useState(true);
   const {t, i18n} = useTranslation();
   const isRTL = i18n.language === 'ar';
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const result = await getProducts();
+        const result = await getProducts(i18n.language); // pass language here
         const transformed = result.map((product: Product) => {
           const mainImage =
             product.images?.find((img: ProductImage) => img.is_main) ||
@@ -108,7 +109,7 @@ const HomeScreen = ({navigation}: any) => {
     };
 
     fetchProducts();
-  }, []);
+  }, [i18n.language]);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -323,7 +324,11 @@ const HomeScreen = ({navigation}: any) => {
           numColumns={2}
           ListHeaderComponent={
             <View>
-              <CollectionSection />
+              <CollectionSection
+                isFavorite={id => favorites.includes(id.toString())}
+                onPressFavorite={id => toggleFavorite(id.toString())}
+                onPressCart={() => handleAddToCart}
+              />
 
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>

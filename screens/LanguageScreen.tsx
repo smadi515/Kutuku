@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -6,49 +6,86 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import Icon from '../components/icon';
 import Header from '../components/Header';
 import {useTranslation} from 'react-i18next';
 
-type Language = 'en' | 'ar';
+type Language = 'en' | 'ar' | string; // you can widen this if you add more languages dynamically
 
-const languages = [
-  {
-    code: 'en',
-    name: 'English',
-    flag: require('../assets/usa.png'),
-  },
-  {
-    code: 'ar',
-    name: 'Arabic',
-    flag: require('../assets/ksa.png'),
-  },
-];
+type LanguageItem = {
+  id: number;
+  languageCode: string;
+  languageName: string;
+  isActive: boolean;
+  flagUrl?: string | null;
+};
 
 const LanguageScreen = () => {
   const {t, i18n} = useTranslation();
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
-    i18n.language as Language,
-  );
 
+  const [languages, setLanguages] = useState<LanguageItem[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
+    i18n.language,
+  );
+  const [loading, setLoading] = useState(true);
+
+  const fetchLanguages = React.useCallback(async () => {
+    try {
+      const response = await fetch('https://api.sareh-nomow.xyz/api/languages');
+      const json = await response.json();
+      if (json.data && Array.isArray(json.data)) {
+        // Optionally filter active languages only
+        const activeLanguages = json.data.filter(
+          (lang: LanguageItem) => lang.isActive,
+        );
+        setLanguages(activeLanguages);
+      } else {
+        Alert.alert(t('language_screen.error_fetching_languages'));
+      }
+    } catch (error) {
+      Alert.alert(t('language_screen.error_fetching_languages'));
+      console.error('Failed to fetch languages:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    fetchLanguages();
+  }, [fetchLanguages]);
   const handleSelect = (code: Language) => {
     setSelectedLanguage(code);
     i18n.changeLanguage(code);
   };
 
-  const renderItem = ({item}: {item: (typeof languages)[0]}) => {
-    const isSelected = item.code === selectedLanguage;
+  const renderItem = ({item}: {item: LanguageItem}) => {
+    const isSelected = item.languageCode === selectedLanguage;
     return (
       <TouchableOpacity
-        onPress={() => handleSelect(item.code as Language)}
+        onPress={() => handleSelect(item.languageCode)}
         style={[
           styles.languageItem,
           isSelected && styles.languageItemSelected,
         ]}>
         <View style={styles.languageInfo}>
-          <Image source={item.flag} style={styles.flag} />
-          <Text style={styles.languageText}>{item.name}</Text>
+          {item.flagUrl ? (
+            <Image source={{uri: item.flagUrl}} style={styles.flag} />
+          ) : (
+            <Image
+              source={
+                item.languageCode === 'en'
+                  ? require('../assets/usa.png')
+                  : item.languageCode === 'ar'
+                  ? require('../assets/ksa.png')
+                  : require('../assets/placeholder_flag.png') // optional placeholder image
+              }
+              style={styles.flag}
+            />
+          )}
+          <Text style={styles.languageText}>{item.languageName}</Text>
         </View>
         {isSelected && (
           <Icon
@@ -62,6 +99,14 @@ const LanguageScreen = () => {
       </TouchableOpacity>
     );
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="purple" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -81,8 +126,13 @@ const LanguageScreen = () => {
         <FlatList
           data={languages}
           renderItem={renderItem}
-          keyExtractor={item => item.code}
+          keyExtractor={item => item.languageCode}
           contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={{textAlign: 'center', marginTop: 20}}>
+              {t('language_screen.no_languages')}
+            </Text>
+          }
         />
       </View>
     </View>
@@ -93,6 +143,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   list: {
     marginTop: 20,

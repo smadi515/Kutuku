@@ -7,10 +7,15 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  Platform,
+  ToastAndroid,
+  Alert,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import type {RootStackParamList} from '../App';
+import Icon from './icon';
+import {useTranslation} from 'react-i18next';
 
 type ProductDetailsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -30,6 +35,9 @@ type Product = {
   price: number;
   description: ProductDescription;
   images: ProductImage[];
+  inventory: {
+    stock_availability: boolean;
+  };
 };
 
 type ProductItem = {
@@ -44,20 +52,35 @@ type Collection = {
   image: string;
   products: ProductItem[];
 };
+type CollectionSectionProps = {
+  isFavorite: (productId: number) => boolean;
+  onPressFavorite: (productId: number) => void;
+  onPressCart: (item: ProductItem) => void;
+};
+const CollectionSection: React.FC<CollectionSectionProps> = ({
+  onPressFavorite,
+  onPressCart,
+  isFavorite,
+}) => {
+  const showOutOfStockMessage = () => {
+    const message = 'This product is out of stock.';
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      Alert.alert('Out of Stock', message);
+    }
+  };
 
-const CollectionSection = () => {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
-
-  useEffect(() => {
-    fetchCollections();
-  }, []);
+  const {i18n} = useTranslation();
 
   const fetchCollections = async () => {
     try {
+      const lang = i18n.language || 'en'; // fallback if language is missing
       const response = await fetch(
-        'https://api.sareh-nomow.xyz/api/collections',
+        `https://api.sareh-nomow.xyz/api/collections?lang=${lang}`,
       );
       const data = await response.json();
       setCollections(data.collections || []);
@@ -67,10 +90,21 @@ const CollectionSection = () => {
       setLoading(false);
     }
   };
-
+  useEffect(() => {
+    fetchCollections();
+  });
   const renderProduct = ({item}: {item: ProductItem}) => {
     const {product_id, product} = item;
-    const {description, price, images} = product;
+    const {description, price, images, inventory} = product;
+    const stockAvailability = inventory.stock_availability;
+
+    const handleCartPress = () => {
+      if (!stockAvailability) {
+        showOutOfStockMessage();
+        return;
+      }
+      onPressCart(item);
+    };
 
     return (
       <TouchableOpacity
@@ -78,13 +112,46 @@ const CollectionSection = () => {
           navigation.navigate('ProductsDetails', {product_id});
         }}
         style={styles.productCard}>
-        <Image
-          source={{uri: images[0]?.origin_image}}
-          style={styles.productImage}
-        />
+        <View style={styles.imageWrapper}>
+          <Image
+            source={{uri: images[0]?.origin_image}}
+            style={styles.productImage}
+          />
+          <TouchableOpacity
+            style={styles.heartIcon}
+            onPress={() => onPressFavorite(product_id)}>
+            <Icon
+              name={isFavorite(product_id) ? 'heart' : 'hearto'}
+              type="ant"
+              size={16}
+              color={isFavorite(product_id) ? 'red' : '#777'}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.cartIcon} onPress={handleCartPress}>
+            <Icon name="shoppingcart" type="ant" size={16} color="#333" />
+          </TouchableOpacity>
+        </View>
+
         <Text style={styles.productName}>{description.name}</Text>
         <Text style={styles.productPrice}>${price}</Text>
-        <Text style={styles.productShort}>{description.short_description}</Text>
+        <Text style={styles.productShort}>
+          {description.short_description || 'No description available'}
+        </Text>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            marginTop: 4,
+          }}>
+          <Text style={styles.productPrice}>${price.toFixed(2)}</Text>
+          {!inventory.stock_availability && (
+            <>
+              <Text>|</Text>
+              <Text style={{color: 'red'}}>Out of stock</Text>
+            </>
+          )}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -116,6 +183,27 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     paddingHorizontal: 12,
   },
+  imageWrapper: {
+    position: 'relative',
+  },
+  heartIcon: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#fff',
+    padding: 4,
+    borderRadius: 20,
+    elevation: 2,
+  },
+  cartIcon: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: '#fff',
+    padding: 4,
+    borderRadius: 20,
+    elevation: 2,
+  },
   collectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -135,7 +223,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   productPrice: {
-    color: 'green',
+    color: 'black',
   },
   productShort: {
     fontSize: 12,
