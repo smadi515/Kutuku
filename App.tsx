@@ -72,7 +72,7 @@ export type RootStackParamList = {
     birthday: string;
     phoneNumber: string;
   };
-  StoreScreen: {categoryId?: number; brandId?: number};
+  StoreScreen: {categoryId?: number; brandId?: number; collectionId?: number};
   ChangePassword: undefined;
   MyOrders: undefined;
   SettingsScreen: undefined;

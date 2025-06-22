@@ -32,6 +32,7 @@ type NavigationProp = NativeStackNavigationProp<
 type ProductImage = {
   is_main: boolean;
   listing_image: string;
+  origin_image: string; // ✅ add this
 };
 
 type ProductDescription = {
@@ -101,7 +102,9 @@ const StoreScreen = () => {
 
         const transformed = result.map((product: Product) => {
           const mainImage =
-            product.images?.find(img => img.is_main) || product.images?.[0];
+            product.images?.find((img: ProductImage) => img.is_main) ||
+            product.images?.[0];
+
           let desc: ProductDescription = {};
           if (
             typeof product.description === 'object' &&
@@ -112,7 +115,7 @@ const StoreScreen = () => {
 
           return {
             ...product,
-            image: mainImage?.listing_image || '',
+            image: mainImage?.origin_image || '',
             name: desc.name || 'No name',
             description: desc.description || '',
             short_description: desc.short_description || '',

@@ -80,6 +80,7 @@ export const getProducts = async (
     const response = await fetch(
       `https://api.sareh-nomow.xyz/api/products${queryString}`,
     );
+
     const json = await response.json();
     return json.data;
   } catch (error) {
@@ -87,11 +88,16 @@ export const getProducts = async (
     throw error;
   }
 };
-
-export const getProductById = async (productId: number) => {
+export const getProductById = async (productId: number, lang: string) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.xyz/api/products/${productId}`,
+      `https://api.sareh-nomow.xyz/api/products/${productId}?lang=${lang}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept-Language': lang, // this enables language translation
+        },
+      },
     );
 
     if (!response.ok) {

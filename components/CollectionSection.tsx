@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
-  Platform,
-  ToastAndroid,
-  Alert,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import type {RootStackParamList} from '../App';
-import Icon from './icon';
 import {useTranslation} from 'react-i18next';
 
 type ProductDetailsScreenNavigationProp = StackNavigationProp<
@@ -50,35 +46,19 @@ type Collection = {
   name: string;
   code: string;
   image: string;
+  type: string;
   products: ProductItem[];
 };
-type CollectionSectionProps = {
-  isFavorite: (productId: number) => boolean;
-  onPressFavorite: (productId: number) => void;
-  onPressCart: (item: ProductItem) => void;
-};
-const CollectionSection: React.FC<CollectionSectionProps> = ({
-  onPressFavorite,
-  onPressCart,
-  isFavorite,
-}) => {
-  const showOutOfStockMessage = () => {
-    const message = 'This product is out of stock.';
-    if (Platform.OS === 'android') {
-      ToastAndroid.show(message, ToastAndroid.SHORT);
-    } else {
-      Alert.alert('Out of Stock', message);
-    }
-  };
 
+const CollectionSection = () => {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
   const {i18n} = useTranslation();
 
-  const fetchCollections = async () => {
+  const fetchCollections = useCallback(async () => {
     try {
-      const lang = i18n.language || 'en'; // fallback if language is missing
+      const lang = i18n.language || 'en';
       const response = await fetch(
         `https://api.sareh-nomow.xyz/api/collections?lang=${lang}`,
       );
@@ -89,22 +69,17 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [i18n.language]);
+
   useEffect(() => {
     fetchCollections();
-  });
+  }, [fetchCollections]);
+  // ← Add empty dependency array
+
   const renderProduct = ({item}: {item: ProductItem}) => {
     const {product_id, product} = item;
     const {description, price, images, inventory} = product;
     const stockAvailability = inventory.stock_availability;
-
-    const handleCartPress = () => {
-      if (!stockAvailability) {
-        showOutOfStockMessage();
-        return;
-      }
-      onPressCart(item);
-    };
 
     return (
       <TouchableOpacity
@@ -117,42 +92,51 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
             source={{uri: images[0]?.origin_image}}
             style={styles.productImage}
           />
-          <TouchableOpacity
-            style={styles.heartIcon}
-            onPress={() => onPressFavorite(product_id)}>
-            <Icon
-              name={isFavorite(product_id) ? 'heart' : 'hearto'}
-              type="ant"
-              size={16}
-              color={isFavorite(product_id) ? 'red' : '#777'}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.cartIcon} onPress={handleCartPress}>
-            <Icon name="shoppingcart" type="ant" size={16} color="#333" />
-          </TouchableOpacity>
         </View>
-
         <Text style={styles.productName}>{description.name}</Text>
         <Text style={styles.productPrice}>${price}</Text>
         <Text style={styles.productShort}>
           {description.short_description || 'No description available'}
         </Text>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 4,
-            marginTop: 4,
-          }}>
+        <View style={styles.stockRow}>
           <Text style={styles.productPrice}>${price.toFixed(2)}</Text>
-          {!inventory.stock_availability && (
+          {!stockAvailability && (
             <>
-              <Text>|</Text>
+              <Text> | </Text>
               <Text style={{color: 'red'}}>Out of stock</Text>
             </>
           )}
         </View>
       </TouchableOpacity>
+    );
+  };
+
+  const bannerCollections = collections.filter(c => c.type === 'banner');
+
+  const renderBanner = () => {
+    return (
+      <FlatList
+        data={bannerCollections}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={item => item.collection_id.toString()}
+        renderItem={({item}) => (
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('StoreScreen', {
+                collectionId: item.collection_id,
+              })
+            }
+            style={styles.bannerContainer}>
+            <Image
+              source={{uri: item.image}}
+              style={styles.bannerImage}
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
+        )}
+        contentContainerStyle={{paddingHorizontal: 12, marginTop: 16}}
+      />
     );
   };
 
@@ -162,6 +146,7 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
 
   return (
     <View>
+      {renderBanner()}
       {collections.map(collection => (
         <View key={collection.collection_id} style={styles.collectionContainer}>
           <Text style={styles.collectionTitle}>{collection.name}</Text>
@@ -183,27 +168,6 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     paddingHorizontal: 12,
   },
-  imageWrapper: {
-    position: 'relative',
-  },
-  heartIcon: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: '#fff',
-    padding: 4,
-    borderRadius: 20,
-    elevation: 2,
-  },
-  cartIcon: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: '#fff',
-    padding: 4,
-    borderRadius: 20,
-    elevation: 2,
-  },
   collectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -212,6 +176,9 @@ const styles = StyleSheet.create({
   productCard: {
     marginRight: 12,
     width: 160,
+  },
+  imageWrapper: {
+    position: 'relative',
   },
   productImage: {
     width: '100%',
@@ -228,6 +195,25 @@ const styles = StyleSheet.create({
   productShort: {
     fontSize: 12,
     color: 'gray',
+  },
+  stockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  bannerContainer: {
+    height: 180,
+    width: 320,
+    marginRight: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 3,
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
   },
 });
 

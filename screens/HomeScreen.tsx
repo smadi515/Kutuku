@@ -41,6 +41,7 @@ type ProductDescription = {
 type ProductImage = {
   is_main: boolean;
   listing_image: string;
+  origin_image: string; // ✅ add this
 };
 
 type Product = {
@@ -83,6 +84,7 @@ const HomeScreen = ({navigation}: any) => {
           const mainImage =
             product.images?.find((img: ProductImage) => img.is_main) ||
             product.images?.[0];
+
           let desc: ProductDescription = {};
           if (
             typeof product.description === 'object' &&
@@ -93,7 +95,7 @@ const HomeScreen = ({navigation}: any) => {
 
           return {
             ...product,
-            image: mainImage?.listing_image || '',
+            image: mainImage?.origin_image || '', // ✅ updated here
             name: desc.name || 'No name',
             description: desc.description || '',
             short_description: desc.short_description || '',
@@ -324,11 +326,7 @@ const HomeScreen = ({navigation}: any) => {
           numColumns={2}
           ListHeaderComponent={
             <View>
-              <CollectionSection
-                isFavorite={id => favorites.includes(id.toString())}
-                onPressFavorite={id => toggleFavorite(id.toString())}
-                onPressCart={() => handleAddToCart}
-              />
+              <CollectionSection />
 
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>

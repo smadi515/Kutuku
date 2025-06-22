@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -94,7 +95,7 @@ const ProductsDetails = () => {
       setLoading(true);
       try {
         // Fetch product
-        const data = await getProductById(product_id);
+        const data = await getProductById(product_id, i18n.language);
         setProduct(data);
 
         // Fetch reviews
@@ -122,13 +123,18 @@ const ProductsDetails = () => {
     };
 
     fetchProductData();
-  }, [product_id]);
+  }, [product_id, i18n.language]);
 
   const increaseQuantity = () => setQuantity(prev => prev + 1);
   const decreaseQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
   const handleAddToCart = async (item: Product) => {
     try {
+      if (!item.inventory?.stock_availability) {
+        Alert.alert('Out of Stock', 'This product is currently out of stock.');
+        return;
+      }
+
       console.log('Starting handleAddToCart for product:', item.product_id);
 
       const token = await AsyncStorage.getItem('token');
@@ -154,7 +160,6 @@ const ProductsDetails = () => {
 
       const backendCartItems: BackendCartItem[] = cart.items || [];
 
-      // Sync cart_item_ids into parsedCart
       parsedCart.forEach(localItem => {
         const backendItem = backendCartItems.find(
           bItem => bItem.product_id.toString() === localItem.id,
@@ -169,7 +174,6 @@ const ProductsDetails = () => {
       );
 
       if (existingItemIndex !== -1) {
-        // Update quantity
         const existingItem = parsedCart[existingItemIndex];
         const newQuantity = existingItem.quantity + quantity;
 
@@ -188,7 +192,6 @@ const ProductsDetails = () => {
         parsedCart[existingItemIndex].quantity = newQuantity;
         console.log('Updated existing item quantity:', newQuantity);
       } else {
-        // Add new item
         const backendResponse = await addItemToCart(
           token,
           cart.cart_id,
@@ -218,6 +221,7 @@ const ProductsDetails = () => {
       console.error('Error in handleAddToCart:', error);
     }
   };
+
   if (loading) {
     return (
       <ActivityIndicator size="large" color="purple" style={{marginTop: 40}} />
@@ -251,22 +255,20 @@ const ProductsDetails = () => {
 
   return (
     <View style={{flex: 1}}>
+      <Header
+        title={t('productDetails.headerTitle')}
+        showBack={true}
+        showImage={false}
+        rightIcons={[
+          {
+            name: 'cart-outline',
+            type: 'Ionicons',
+            onPress: () => navigation.navigate('CartScreen'),
+          },
+        ]}
+      />
       <ScrollView
         style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
-        <Header
-          title={t('productDetails.headerTitle')}
-          showBack={true}
-          showImage={false}
-          rightIcons={[
-            {
-              name: 'cart-outline',
-              type: 'Ionicons',
-              onPress: () => navigation.navigate('CartScreen'),
-            },
-          ]}
-        />
-
-        {/* Image Slider */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -274,7 +276,7 @@ const ProductsDetails = () => {
           {product.images?.map((image: any, index: number) => (
             <Image
               key={index}
-              source={{uri: image.single_image}}
+              source={{uri: image.origin_image}}
               style={styles.productImage}
               resizeMode="cover"
             />
@@ -298,7 +300,7 @@ const ProductsDetails = () => {
             {product.price ? `$${product.price.toFixed(2)}` : 'N/A'}
           </Text>
           <Text style={styles.stockText}>
-            {product.stock
+            {product.inventory?.stock_availability
               ? t('productDetails.stockIn')
               : t('productDetails.stockOut')}
           </Text>
