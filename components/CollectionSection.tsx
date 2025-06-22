@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -56,6 +56,9 @@ const CollectionSection = () => {
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
   const {i18n} = useTranslation();
 
+  const bannerRef = useRef<FlatList>(null);
+  const currentBannerIndex = useRef(0);
+
   const fetchCollections = useCallback(async () => {
     try {
       const lang = i18n.language || 'en';
@@ -74,7 +77,21 @@ const CollectionSection = () => {
   useEffect(() => {
     fetchCollections();
   }, [fetchCollections]);
-  // ← Add empty dependency array
+
+  // Auto-scroll banner
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const banners = collections.filter(c => c.type === 'banner');
+      if (!banners.length) return;
+      currentBannerIndex.current =
+        (currentBannerIndex.current + 1) % banners.length;
+      bannerRef.current?.scrollToIndex({
+        index: currentBannerIndex.current,
+        animated: true,
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [collections]);
 
   const renderProduct = ({item}: {item: ProductItem}) => {
     const {product_id, product} = item;
@@ -83,9 +100,7 @@ const CollectionSection = () => {
 
     return (
       <TouchableOpacity
-        onPress={() => {
-          navigation.navigate('ProductsDetails', {product_id});
-        }}
+        onPress={() => navigation.navigate('ProductsDetails', {product_id})}
         style={styles.productCard}>
         <View style={styles.imageWrapper}>
           <Image
@@ -111,14 +126,21 @@ const CollectionSection = () => {
     );
   };
 
+  if (loading) {
+    return <ActivityIndicator size="large" style={{marginTop: 20}} />;
+  }
+
   const bannerCollections = collections.filter(c => c.type === 'banner');
 
-  const renderBanner = () => {
-    return (
+  return (
+    <View>
+      {/* Banner Section */}
       <FlatList
+        ref={bannerRef}
         data={bannerCollections}
         horizontal
         showsHorizontalScrollIndicator={false}
+        pagingEnabled
         keyExtractor={item => item.collection_id.toString()}
         renderItem={({item}) => (
           <TouchableOpacity
@@ -137,28 +159,24 @@ const CollectionSection = () => {
         )}
         contentContainerStyle={{paddingHorizontal: 12, marginTop: 16}}
       />
-    );
-  };
 
-  if (loading) {
-    return <ActivityIndicator size="large" style={{marginTop: 20}} />;
-  }
-
-  return (
-    <View>
-      {renderBanner()}
-      {collections.map(collection => (
-        <View key={collection.collection_id} style={styles.collectionContainer}>
-          <Text style={styles.collectionTitle}>{collection.name}</Text>
-          <FlatList
-            data={collection.products}
-            keyExtractor={item => item.product_id.toString()}
-            renderItem={renderProduct}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-      ))}
+      {/* Other Collections */}
+      {collections
+        .filter(collection => collection.type !== 'banner')
+        .map(collection => (
+          <View
+            key={collection.collection_id}
+            style={styles.collectionContainer}>
+            <Text style={styles.collectionTitle}>{collection.name}</Text>
+            <FlatList
+              data={collection.products}
+              keyExtractor={item => item.product_id.toString()}
+              renderItem={renderProduct}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+        ))}
     </View>
   );
 };

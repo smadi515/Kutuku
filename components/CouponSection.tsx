@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {View, Text, TextInput, Button, StyleSheet} from 'react-native';
-import {getOrCreateCartId} from '../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type CouponSectionProps = {
@@ -29,7 +28,6 @@ const CouponSection: React.FC<CouponSectionProps> = ({
       }
 
       // Get or create the cart ID
-      const cartId = await getOrCreateCartId(token);
 
       const response = await fetch(
         'https://api.sareh-nomow.xyz/api/coupons/apply',
@@ -40,7 +38,6 @@ const CouponSection: React.FC<CouponSectionProps> = ({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            cart_id: cartId,
             coupon_code: coupon,
           }),
         },
