@@ -95,10 +95,16 @@ const StoreScreen = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const result = await getProducts(
-          selectedSubcategoryId || categoryId,
-          brandId,
-        );
+        const categoryIdStr =
+          selectedSubcategoryId !== null
+            ? selectedSubcategoryId.toString()
+            : categoryId !== undefined
+            ? categoryId.toString()
+            : undefined;
+
+        const brandIdVal = brandId;
+
+        const result = await getProducts(categoryIdStr!, brandIdVal);
 
         const transformed = result.map((product: Product) => {
           const mainImage =

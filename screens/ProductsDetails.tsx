@@ -320,7 +320,7 @@ const ProductsDetails = () => {
             {t('productDetails.descriptionTitle')}
           </Text>
           <Text style={styles.descriptionText}>
-            <Text>{product.description?.short_description}</Text>
+            <Text>{product.description?.description}</Text>
           </Text>
           {/* Attributes Section */}
           {product.attributes && product.attributes.length > 0 && (

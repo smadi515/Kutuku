@@ -1,5 +1,5 @@
 // CartScreen.tsx
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -42,6 +42,7 @@ type CartItem = {
 type ProductImage = {
   is_main: boolean;
   listing_image: string;
+  origin_image: string; // ✅ add this
 };
 
 type CartApiItem = {
@@ -67,11 +68,7 @@ const CartScreen = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   console.log(navigation);
 
-  useEffect(() => {
-    loadCartItems();
-  }, []);
-
-  const loadCartItems = async () => {
+  const loadCartItems = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
@@ -81,7 +78,7 @@ const CartScreen = () => {
       }
 
       const cart = await getCustomerCart(token);
-      console.log('Fetched Cart:', cart); // <-- DEBUG HERE
+      console.log('Fetched Cart:', cart);
 
       if (!cart || !cart.items) {
         setCartItems([]);
@@ -91,10 +88,9 @@ const CartScreen = () => {
 
       setCartId(cart.cart_id || null);
 
-      // Enrich cart items with product details
       const enrichedItems = await Promise.all(
         (cart.items as CartApiItem[]).map(async (item: CartApiItem) => {
-          const product = await getProductById(item.product_id);
+          const product = await getProductById(item.product_id, i18n.language);
           const mainImage =
             product.images?.find((img: ProductImage) => img.is_main) ||
             product.images?.[0];
@@ -117,7 +113,9 @@ const CartScreen = () => {
             quantity,
             price: item.price ?? product.price ?? 0,
             title: product.name || desc.name || 'No title',
-            image: mainImage ? {uri: mainImage.listing_image} : undefined,
+            image: mainImage?.origin_image
+              ? {uri: mainImage.origin_image}
+              : undefined,
             selected: false,
             selectedColor: undefined,
           } as CartItem;
@@ -130,7 +128,11 @@ const CartScreen = () => {
       setCartItems([]);
       setCartId(null);
     }
-  };
+  }, [i18n.language]); // 👈 include only what's necessary
+
+  useEffect(() => {
+    loadCartItems();
+  }, [loadCartItems]);
 
   const updateItemQty = async (productId: number, change: number) => {
     try {
