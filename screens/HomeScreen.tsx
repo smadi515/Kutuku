@@ -7,6 +7,8 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  useColorScheme,
+  Switch,
 } from 'react-native';
 import Icon from '../components/icon';
 import ProductCard from '../components/ProductCard';
@@ -21,6 +23,7 @@ import {
 import BrandTab from './BrandTab';
 import {useTranslation} from 'react-i18next';
 import CollectionSection from '../components/CollectionSection';
+import Toast from 'react-native-toast-message';
 
 type LocalCartItem = {
   id: string;
@@ -74,7 +77,28 @@ const HomeScreen = ({navigation}: any) => {
   const [loading, setLoading] = useState(true);
   const {t, i18n} = useTranslation();
   const isRTL = i18n.language === 'ar';
+  const systemScheme = useColorScheme();
+  const [theme, setTheme] = useState<'light' | 'dark'>(
+    systemScheme === 'dark' ? 'dark' : 'light',
+  );
 
+  useEffect(() => {
+    const loadTheme = async () => {
+      const savedTheme = await AsyncStorage.getItem('theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        setTheme(savedTheme);
+      }
+    };
+    loadTheme();
+  }, []);
+
+  const toggleTheme = async () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    await AsyncStorage.setItem('theme', newTheme);
+  };
+
+  const isDark = theme === 'dark';
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -148,16 +172,21 @@ const HomeScreen = ({navigation}: any) => {
 
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        console.warn('User not logged in');
+        Toast.show({
+          type: 'error',
+          text1: 'Please log in',
+          text2: 'You must be logged in to add to cart.',
+        });
         return;
       }
 
       let cart = await getCustomerCart(token);
       if (!cart || !cart.cart_id) {
-      }
-
-      if (!cart || !cart.cart_id) {
-        console.error('Failed to get or create cart');
+        Toast.show({
+          type: 'error',
+          text1: 'Cart Error',
+          text2: 'Could not fetch or create a cart.',
+        });
         return;
       }
 
@@ -168,7 +197,6 @@ const HomeScreen = ({navigation}: any) => {
 
       const backendCartItems: BackendCartItem[] = cart.items || [];
 
-      // Sync cart_item_ids into parsedCart
       parsedCart.forEach(localItem => {
         const backendItem = backendCartItems.find(
           bItem => bItem.product_id.toString() === localItem.id,
@@ -183,12 +211,15 @@ const HomeScreen = ({navigation}: any) => {
       );
 
       if (existingItemIndex !== -1) {
-        // Update quantity
         const existingItem = parsedCart[existingItemIndex];
         const newQuantity = existingItem.quantity + quantity;
 
         if (!existingItem.cart_item_id) {
-          console.error('Cannot update: cart_item_id is missing');
+          Toast.show({
+            type: 'error',
+            text1: 'Update Failed',
+            text2: 'Item missing cart_item_id.',
+          });
           return;
         }
 
@@ -200,9 +231,13 @@ const HomeScreen = ({navigation}: any) => {
         );
 
         parsedCart[existingItemIndex].quantity = newQuantity;
-        console.log('Updated existing item quantity:', newQuantity);
+
+        Toast.show({
+          type: 'success',
+          text1: 'Cart Updated',
+          text2: `${item.name} quantity updated.`,
+        });
       } else {
-        // Add new item
         const backendResponse = await addItemToCart(
           token,
           item.product_id.toString(),
@@ -220,13 +255,23 @@ const HomeScreen = ({navigation}: any) => {
         };
 
         parsedCart.push(newItem);
-        console.log('Added new item to cart:', newItem);
-      }
-      await AsyncStorage.setItem('cart', JSON.stringify(parsedCart));
 
+        Toast.show({
+          type: 'success',
+          text1: 'Added to Cart',
+          text2: `${item.name} has been added.`,
+        });
+      }
+
+      await AsyncStorage.setItem('cart', JSON.stringify(parsedCart));
       navigation.navigate('CartScreen');
     } catch (error) {
       console.error('Error in handleAddToCart:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong while adding to cart.',
+      });
     }
   };
 
@@ -251,16 +296,28 @@ const HomeScreen = ({navigation}: any) => {
     );
   }
   return (
-    <View style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
+    <View
+      style={[
+        styles.container,
+        {direction: isRTL ? 'rtl' : 'ltr'},
+        {backgroundColor: isDark ? '#000' : '#f7f7f7'},
+      ]}>
       {/* Top Bar */}
       <View style={styles.topBar}>
+        <Switch
+          value={isDark}
+          onValueChange={toggleTheme}
+          thumbColor={isDark ? '#fff' : '#000'}
+          trackColor={{false: '#ccc', true: 'purple'}}
+          style={{marginLeft: 10}}
+        />
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <Image
             source={require('../assets/Maskgroup4.png')}
             style={styles.avatar}
           />
           <View style={{marginLeft: 10}}>
-            <Text>
+            <Text style={{color: isDark ? '#fff' : '#000'}}>
               {t('HomeScreen.hi')} {firstName || 'Guest'}
             </Text>
             <Text style={styles.subText}>{t('HomeScreen.letsGoShopping')}</Text>

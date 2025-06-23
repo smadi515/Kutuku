@@ -35,6 +35,7 @@ import OTPScreen from './screens/OTPScreen';
 import EditAddressScreen from './screens/EditAddressScreen';
 import Home from './screens/HomeScreen';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
+import Toast from 'react-native-toast-message';
 
 GoogleSignin.configure({
   webClientId:
@@ -167,6 +168,7 @@ const App = () => {
           <Stack.Screen name="SearchScreen" component={SearchScreen} />
         </Stack.Navigator>
       </NavigationContainer>
+      <Toast />
     </GestureHandlerRootView>
   );
 };
