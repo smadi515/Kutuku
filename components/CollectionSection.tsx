@@ -12,6 +12,7 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import type {RootStackParamList} from '../App';
 import {useTranslation} from 'react-i18next';
+import {getParentCategories} from '../lib/api';
 
 type ProductDetailsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -49,16 +50,37 @@ type Collection = {
   type: string;
   products: ProductItem[];
 };
+type Category = {
+  id: number;
+  name: string;
+  image: string;
+};
 
 const CollectionSection = () => {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
   const {i18n} = useTranslation();
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const bannerRef = useRef<FlatList>(null);
   const currentBannerIndex = useRef(0);
+  const renderCategory = ({item}: {item: Category}) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate('StoreScreen', {categoryId: item.id})}>
+      <Image source={{uri: item.image}} style={styles.image} />
+      <Text style={styles.name}>{item.name}</Text>
+    </TouchableOpacity>
+  );
+  useEffect(() => {
+    const loadCategories = async () => {
+      const data = await getParentCategories();
+      setCategories(data);
+    };
 
+    loadCategories();
+  }, []);
   const fetchCollections = useCallback(async () => {
     try {
       const lang = i18n.language || 'en';
@@ -159,6 +181,17 @@ const CollectionSection = () => {
         )}
         contentContainerStyle={{paddingHorizontal: 12, marginTop: 16}}
       />
+      <View>
+        <Text style={styles.title}>Categories</Text>
+        <FlatList
+          data={categories}
+          keyExtractor={item => item.id.toString()}
+          renderItem={renderCategory}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{paddingHorizontal: 12}}
+        />
+      </View>
 
       {/* Other Collections */}
       {collections
@@ -184,6 +217,27 @@ const CollectionSection = () => {
 const styles = StyleSheet.create({
   collectionContainer: {
     marginVertical: 16,
+    paddingHorizontal: 12,
+  },
+  image: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    marginBottom: 6,
+  },
+  card: {
+    alignItems: 'center',
+    marginRight: 12,
+    width: 100,
+  },
+  name: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 12,
     paddingHorizontal: 12,
   },
   collectionTitle: {

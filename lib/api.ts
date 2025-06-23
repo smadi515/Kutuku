@@ -248,35 +248,9 @@ export const getCustomerCart = async (token: string) => {
     return null;
   }
 };
-export const createCart = async (token: string) => {
-  try {
-    const response = await fetch('https://api.sareh-nomow.xyz/api/carts', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json', // <-- Add this
-      },
-    });
-    console.log('Token passed to createCart:', token);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      console.error('createCart API error response:', errorData);
-      throw new Error('Failed to create cart');
-    }
-
-    const data = await response.json();
-    console.log('Cart created successfully:', data);
-    return data;
-  } catch (error) {
-    console.error('createCart error:', error);
-    return null;
-  }
-};
 
 export const addItemToCart = async (
   token: string,
-  cartId: number,
   productId: string | number,
   quantity: number,
 ) => {
@@ -367,8 +341,11 @@ export const updateCartItemQuantity = async (
   cartId: number,
   quantity: number,
 ) => {
+  const qty = Number(quantity); // force convert to number
+
   console.log(`PUT https://api.sareh-nomow.xyz/api/carts/items/${cartItemId}`, {
-    qty: quantity,
+    qty,
+    type: typeof qty,
   });
 
   const response = await fetch(
@@ -379,7 +356,7 @@ export const updateCartItemQuantity = async (
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({qty: quantity}),
+      body: JSON.stringify({qty}), // always number
     },
   );
 

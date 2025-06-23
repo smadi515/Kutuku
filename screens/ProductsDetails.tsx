@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -17,7 +16,6 @@ import Header from '../components/Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getCustomerCart,
-  createCart,
   addItemToCart,
   getProductById,
   updateCartItemQuantity,
@@ -130,11 +128,6 @@ const ProductsDetails = () => {
 
   const handleAddToCart = async (item: Product) => {
     try {
-      if (!item.inventory?.stock_availability) {
-        Alert.alert('Out of Stock', 'This product is currently out of stock.');
-        return;
-      }
-
       console.log('Starting handleAddToCart for product:', item.product_id);
 
       const token = await AsyncStorage.getItem('token');
@@ -145,7 +138,6 @@ const ProductsDetails = () => {
 
       let cart = await getCustomerCart(token);
       if (!cart || !cart.cart_id) {
-        cart = await createCart(token);
       }
 
       if (!cart || !cart.cart_id) {
@@ -160,6 +152,7 @@ const ProductsDetails = () => {
 
       const backendCartItems: BackendCartItem[] = cart.items || [];
 
+      // Sync cart_item_ids into parsedCart
       parsedCart.forEach(localItem => {
         const backendItem = backendCartItems.find(
           bItem => bItem.product_id.toString() === localItem.id,
@@ -170,10 +163,11 @@ const ProductsDetails = () => {
       });
 
       const existingItemIndex = parsedCart.findIndex(
-        cartItem => cartItem.id === item.product_id.toString(),
+        cartItem => cartItem.id.toString() === item.product_id.toString(),
       );
 
       if (existingItemIndex !== -1) {
+        // Update quantity
         const existingItem = parsedCart[existingItemIndex];
         const newQuantity = existingItem.quantity + quantity;
 
@@ -192,9 +186,9 @@ const ProductsDetails = () => {
         parsedCart[existingItemIndex].quantity = newQuantity;
         console.log('Updated existing item quantity:', newQuantity);
       } else {
+        // Add new item
         const backendResponse = await addItemToCart(
           token,
-          cart.cart_id,
           item.product_id.toString(),
           quantity,
         );
@@ -212,9 +206,7 @@ const ProductsDetails = () => {
         parsedCart.push(newItem);
         console.log('Added new item to cart:', newItem);
       }
-
       await AsyncStorage.setItem('cart', JSON.stringify(parsedCart));
-      console.log('Cart saved to AsyncStorage:', parsedCart);
 
       navigation.navigate('CartScreen');
     } catch (error) {

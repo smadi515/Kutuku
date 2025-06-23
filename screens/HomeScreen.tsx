@@ -15,10 +15,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getProducts,
   getCustomerCart,
-  createCart,
   addItemToCart,
   updateCartItemQuantity,
-  getParentCategories,
 } from '../lib/api';
 import BrandTab from './BrandTab';
 import {useTranslation} from 'react-i18next';
@@ -38,16 +36,11 @@ type ProductDescription = {
   description?: string;
   short_description?: string;
 };
-type Category = {
-  id: number;
-  name: string;
-  image: string;
-};
 
 type ProductImage = {
   is_main: boolean;
   listing_image: string;
-  origin_image: string; // ✅ add this
+  origin_image: string;
 };
 
 type Product = {
@@ -73,8 +66,6 @@ type BackendCartItem = {
 };
 
 const HomeScreen = ({navigation}: any) => {
-  const [categories, setCategories] = useState<Category[]>([]);
-
   const [quantity] = useState(1); // No need to change quantity for now
   const [firstName, setFirstName] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
@@ -83,14 +74,7 @@ const HomeScreen = ({navigation}: any) => {
   const [loading, setLoading] = useState(true);
   const {t, i18n} = useTranslation();
   const isRTL = i18n.language === 'ar';
-  useEffect(() => {
-    const loadCategories = async () => {
-      const data = await getParentCategories();
-      setCategories(data);
-    };
 
-    loadCategories();
-  }, []);
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -170,7 +154,6 @@ const HomeScreen = ({navigation}: any) => {
 
       let cart = await getCustomerCart(token);
       if (!cart || !cart.cart_id) {
-        cart = await createCart(token);
       }
 
       if (!cart || !cart.cart_id) {
@@ -196,7 +179,7 @@ const HomeScreen = ({navigation}: any) => {
       });
 
       const existingItemIndex = parsedCart.findIndex(
-        cartItem => cartItem.id === item.product_id.toString(),
+        cartItem => cartItem.id.toString() === item.product_id.toString(),
       );
 
       if (existingItemIndex !== -1) {
@@ -222,7 +205,6 @@ const HomeScreen = ({navigation}: any) => {
         // Add new item
         const backendResponse = await addItemToCart(
           token,
-          cart.cart_id,
           item.product_id.toString(),
           quantity,
         );
@@ -240,9 +222,7 @@ const HomeScreen = ({navigation}: any) => {
         parsedCart.push(newItem);
         console.log('Added new item to cart:', newItem);
       }
-
       await AsyncStorage.setItem('cart', JSON.stringify(parsedCart));
-      console.log('Cart saved to AsyncStorage:', parsedCart);
 
       navigation.navigate('CartScreen');
     } catch (error) {
@@ -264,14 +244,7 @@ const HomeScreen = ({navigation}: any) => {
       console.error('Error updating favorites:', error);
     }
   };
-  const renderCategory = ({item}: {item: Category}) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate('StoreScreen', {categoryId: item.id})}>
-      <Image source={{uri: item.image}} style={styles.image} />
-      <Text style={styles.name}>{item.name}</Text>
-    </TouchableOpacity>
-  );
+
   if (loading) {
     return (
       <ActivityIndicator size="large" color="purple" style={{marginTop: 20}} />
@@ -348,17 +321,6 @@ const HomeScreen = ({navigation}: any) => {
           numColumns={2}
           ListHeaderComponent={
             <View>
-              <View>
-                <Text style={styles.title}>Categories</Text>
-                <FlatList
-                  data={categories}
-                  keyExtractor={item => item.id.toString()}
-                  renderItem={renderCategory}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{paddingHorizontal: 12}}
-                />
-              </View>
               <CollectionSection />
 
               <View style={styles.sectionHeader}>
