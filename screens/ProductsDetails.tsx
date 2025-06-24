@@ -357,16 +357,7 @@ const ProductsDetails = () => {
             reviews.map(review => (
               <View key={review.review_id} style={{marginBottom: 15}}>
                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                  <View
-                    style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: 15,
-                      backgroundColor: '#ccc',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginRight: 10,
-                    }}></View>
+                  <View style={styles.reviewstyle}></View>
                 </View>
                 <View style={{flexDirection: 'row', marginVertical: 5}}>
                   {renderStars(review.rating)}
@@ -393,6 +384,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 8,
+  },
+  reviewstyle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#ccc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
   },
   ratingText: {
     fontSize: 16,

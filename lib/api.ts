@@ -376,6 +376,7 @@ export const updateCartItemQuantity = async (
 };
 
 // ================= HELPER =================
+
 export default function buildUrlWithQueryParams(
   apiUrl: string,
   queryParams: any,
@@ -388,6 +389,7 @@ export default function buildUrlWithQueryParams(
 
   return `${apiUrl}?${queryString}`;
 }
+
 export const addOrUpdateCartItem = async (
   token: string,
   cart_id: number,
