@@ -328,7 +328,7 @@ const MyOrders = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#f7f7f7'},
+  container: {flex: 1, backgroundColor: '#F5F0FF', paddingTop: 10},
   sheetContent: {
     padding: 20,
   },

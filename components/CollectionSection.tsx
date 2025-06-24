@@ -155,7 +155,7 @@ const CollectionSection = () => {
   const bannerCollections = collections.filter(c => c.type === 'banner');
 
   return (
-    <View>
+    <View style={{flex: 1, backgroundColor: '#F5F0FF'}}>
       {/* Banner Section */}
       <FlatList
         ref={bannerRef}

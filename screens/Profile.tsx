@@ -4,11 +4,8 @@ import Header from '../components/Header';
 import Icon from '../components/icon';
 import {useTranslation} from 'react-i18next';
 import {fetchUserProfile} from '../lib/api'; // adjust path if needed
-import {useNavigation} from '@react-navigation/native';
 
 const Profile = () => {
-  const navigation = useNavigation();
-
   const {t} = useTranslation();
   const [fullName, setFullName] = useState('Unknown');
   const [birthday, setBirthday] = useState(new Date().toISOString());
@@ -33,17 +30,7 @@ const Profile = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      <Header
-        title={t('profile.title')}
-        showImage={false}
-        rightIcons={[
-          {
-            name: 'settings-outline',
-            type: 'ionicon',
-            onPress: () => navigation.navigate('SettingsScreen'),
-          },
-        ]}
-      />
+      <Header title={t('profile.title')} showImage={false} />
 
       <View style={styles.card}>
         <Icon

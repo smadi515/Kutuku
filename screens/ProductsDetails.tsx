@@ -22,6 +22,7 @@ import {
 } from '../lib/api';
 import {useTranslation} from 'react-i18next';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import Toast from 'react-native-toast-message';
 interface Review {
   review_id: number;
   customer: {
@@ -128,8 +129,6 @@ const ProductsDetails = () => {
 
   const handleAddToCart = async (item: Product) => {
     try {
-      console.log('Starting handleAddToCart for product:', item.product_id);
-
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         console.warn('User not logged in');
@@ -137,9 +136,6 @@ const ProductsDetails = () => {
       }
 
       let cart = await getCustomerCart(token);
-      if (!cart || !cart.cart_id) {
-      }
-
       if (!cart || !cart.cart_id) {
         console.error('Failed to get or create cart');
         return;
@@ -152,7 +148,6 @@ const ProductsDetails = () => {
 
       const backendCartItems: BackendCartItem[] = cart.items || [];
 
-      // Sync cart_item_ids into parsedCart
       parsedCart.forEach(localItem => {
         const backendItem = backendCartItems.find(
           bItem => bItem.product_id.toString() === localItem.id,
@@ -167,12 +162,11 @@ const ProductsDetails = () => {
       );
 
       if (existingItemIndex !== -1) {
-        // Update quantity
         const existingItem = parsedCart[existingItemIndex];
         const newQuantity = existingItem.quantity + quantity;
 
         if (!existingItem.cart_item_id) {
-          console.error('Cannot update: cart_item_id is missing');
+          console.error('Missing cart_item_id');
           return;
         }
 
@@ -184,9 +178,7 @@ const ProductsDetails = () => {
         );
 
         parsedCart[existingItemIndex].quantity = newQuantity;
-        console.log('Updated existing item quantity:', newQuantity);
       } else {
-        // Add new item
         const backendResponse = await addItemToCart(
           token,
           item.product_id.toString(),
@@ -204,13 +196,18 @@ const ProductsDetails = () => {
         };
 
         parsedCart.push(newItem);
-        console.log('Added new item to cart:', newItem);
       }
-      await AsyncStorage.setItem('cart', JSON.stringify(parsedCart));
 
+      await AsyncStorage.setItem('cart', JSON.stringify(parsedCart));
       navigation.navigate('CartScreen');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in handleAddToCart:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Add to Cart Failed',
+        text2: 'The quantity must not be greater',
+        position: 'top',
+      });
     }
   };
 
@@ -246,7 +243,7 @@ const ProductsDetails = () => {
   };
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{flex: 1, backgroundColor: '#F5F0FF'}}>
       <Header
         title={t('productDetails.headerTitle')}
         showBack={true}
@@ -291,6 +288,7 @@ const ProductsDetails = () => {
           <Text style={styles.priceText}>
             {product.price ? `$${product.price.toFixed(2)}` : 'N/A'}
           </Text>
+          <Text style={styles.stockText}>qty:{product.inventory?.qty}</Text>
           <Text style={styles.stockText}>
             {product.inventory?.stock_availability
               ? t('productDetails.stockIn')

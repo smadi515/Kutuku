@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
+import Toast from 'react-native-toast-message';
 
 // ================= AUTH =================
 export const login = async (email: string, password: string) => {
@@ -363,7 +364,12 @@ export const updateCartItemQuantity = async (
   if (!response.ok) {
     const errorText = await response.text();
     console.error('Failed to update cart item:', errorText);
-    throw new Error(`Failed to update cart item. Status: ${response.status}`);
+    Toast.show({
+      type: 'error',
+      text1: 'Quantity is not available',
+      text2: 'The quantity must not be greater',
+      position: 'top',
+    });
   }
 
   return await response.json();

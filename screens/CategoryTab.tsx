@@ -101,6 +101,7 @@ const CategoryTab = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
+    backgroundColor: '#F5F0FF',
   },
   searchInput: {
     height: 40,

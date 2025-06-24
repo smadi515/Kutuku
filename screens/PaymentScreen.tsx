@@ -389,7 +389,7 @@ const PaymentScreen = () => {
     <View
       style={{
         flex: 1,
-        backgroundColor: '#F9F9F9',
+        backgroundColor: '#F5F0FF',
       }}>
       <Header
         title={t('PaymentScreen.payment')}

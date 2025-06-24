@@ -1,11 +1,11 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import MyOrders from './MyOrders';
-import Favorites from './Favorites';
 import Profile from './Profile';
 import Home from '../screens/HomeScreen'; // Make sure path is correct
 import Icon from '../components/icon'; // Make sure path is correct
 import {useTranslation} from 'react-i18next';
+import SettingsScreen from './SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -33,8 +33,8 @@ const TabNavigationScreen = () => {
               iconName = 'shopping-bag';
               type = 'feather';
               break;
-            case 'Favorites':
-              iconName = 'heart';
+            case 'SettingsScreen':
+              iconName = 'settings';
               type = 'feather';
               break;
             case 'Profile':
@@ -57,14 +57,14 @@ const TabNavigationScreen = () => {
         options={{tabBarLabel: t('TabNavigationScreen.my_orders')}}
       />
       <Tab.Screen
-        name="Favorites"
-        component={Favorites}
-        options={{tabBarLabel: t('TabNavigationScreen.favorites')}}
-      />
-      <Tab.Screen
         name="Profile"
         component={Profile}
         options={{tabBarLabel: t('TabNavigationScreen.profile')}}
+      />
+      <Tab.Screen
+        name="SettingsScreen"
+        component={SettingsScreen}
+        options={{tabBarLabel: t('TabNavigationScreen.Settings')}}
       />
     </Tab.Navigator>
   );

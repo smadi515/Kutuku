@@ -307,7 +307,7 @@ const CartScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F9F9F9'},
+  container: {flex: 1, backgroundColor: '#F5F0FF', paddingTop: 10},
   empty: {textAlign: 'center', marginTop: 20, color: '#777'},
   itemContainer: {
     flexDirection: 'row',
