@@ -1,16 +1,25 @@
 import React from 'react';
-import {View, TextInput, StyleSheet, Text} from 'react-native';
-import Icon from './icon'; // adjust if path is different
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+} from 'react-native';
+import Icon from './icon'; // adjust the import path as needed
 
 interface CustomInputProps {
   label?: string;
   placeholder?: string;
   iconType?: string;
   iconName?: string;
+  rightIconType?: string;
+  rightIconName?: string;
   secureTextEntry?: boolean;
   onChangeText?: (text: string) => void;
+  onRightIconPress?: () => void;
   value?: string;
-  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad'; // or just `string`
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
 }
 
 const CustomInput: React.FC<CustomInputProps> = ({
@@ -18,16 +27,21 @@ const CustomInput: React.FC<CustomInputProps> = ({
   placeholder,
   iconType,
   iconName,
+  rightIconType,
+  rightIconName,
   secureTextEntry,
   onChangeText,
+  onRightIconPress,
   value,
   keyboardType,
 }) => {
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.label}>{label}</Text>
+      {label && <Text style={styles.label}>{label}</Text>}
       <View style={styles.inputContainer}>
-        <Icon type={iconType} name={iconName} size={20} color="#888" />
+        {iconName && (
+          <Icon type={iconType} name={iconName} size={20} color="#888" />
+        )}
         <TextInput
           value={value}
           placeholder={placeholder}
@@ -37,6 +51,16 @@ const CustomInput: React.FC<CustomInputProps> = ({
           style={styles.input}
           placeholderTextColor="#aaa"
         />
+        {rightIconName && (
+          <TouchableOpacity onPress={onRightIconPress}>
+            <Icon
+              type={rightIconType}
+              name={rightIconName}
+              size={18}
+              color="#888"
+            />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

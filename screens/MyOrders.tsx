@@ -104,7 +104,9 @@ const MyOrders = () => {
         items: order.items.map((item: any) => ({
           product_name: item.product_name,
           qty: item.qty,
-          product_image: item.product_image,
+          product_image:
+            item.product?.images?.find((img: any) => img.is_main)
+              ?.origin_image ?? null,
           color: item.color,
           product_id: item.product_id,
         })),
@@ -114,6 +116,7 @@ const MyOrders = () => {
         payment_method_name: order.payment_method_name,
         shipping_method_name: order.shipping_method_name,
       }));
+      console.log('formattedOrders', formattedOrders);
 
       setOrders(formattedOrders);
       console.log('formattedOrders', formattedOrders);

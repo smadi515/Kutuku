@@ -268,14 +268,6 @@ const PaymentScreen = () => {
   const handleApplyCoupon = async () => {
     console.log('Apply Coupon Pressed');
 
-    if (!cartId) {
-      const errMsg =
-        'No active cart found. Please add items to your cart first.';
-      console.warn(errMsg);
-      setError(errMsg);
-      return;
-    }
-
     if (!couponCode.trim()) {
       const errMsg = 'Please enter a coupon code';
       console.warn(errMsg);
@@ -290,7 +282,12 @@ const PaymentScreen = () => {
       console.log('Token:', token);
       if (!token) throw new Error('User not authenticated');
 
-      console.log('Sending apply coupon request...');
+      const payload = {
+        couponCode: couponCode.trim(),
+      };
+
+      console.log('Sending apply coupon request with payload:', payload);
+
       const applyResponse = await fetch(
         'https://api.sareh-nomow.xyz/api/coupons/apply',
         {
@@ -299,10 +296,7 @@ const PaymentScreen = () => {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            couponCode: couponCode.trim(),
-            cartId,
-          }),
+          body: JSON.stringify(payload),
         },
       );
 
@@ -352,6 +346,51 @@ const PaymentScreen = () => {
       setLoading(false);
     }
   };
+  const removeCoupon = async () => {
+    if (!cartId || !couponCode.trim) {
+      setError('Missing cart or coupon ID');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) throw new Error('User not authenticated');
+
+      const payload = {
+        cartId: cartId,
+      };
+      console.log('Removing coupon with payload:', payload);
+
+      const response = await fetch(
+        'https://api.sareh-nomow.xyz/api/coupons/remove',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to remove coupon');
+      }
+
+      setDiscountedTotal(null);
+      setError('');
+      setCouponCode('');
+      console.log('Coupon removed successfully');
+    } catch (err: any) {
+      setError(err.message || 'Error removing coupon');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const deleteAddress = async (id: string) => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -555,9 +594,13 @@ const PaymentScreen = () => {
           placeholder={t('PaymentScreen.enter_promo_code')}
           iconType="MaterialCommunityIcons"
           iconName="brightness-percent"
+          rightIconType="MaterialIcons"
+          rightIconName={couponCode.trim() ? 'close' : undefined}
+          onRightIconPress={removeCoupon}
           value={couponCode}
           onChangeText={setCouponCode}
         />
+
         <View style={{width: '100%', alignItems: 'center'}}>
           <CustomButton
             text={

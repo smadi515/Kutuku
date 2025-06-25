@@ -11,21 +11,20 @@ import {
 } from 'react-native';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 import Icon from '../components/icon';
-import {getProducts} from '../lib/api';
 import {useTranslation} from 'react-i18next';
+import {searchProducts} from '../lib/api';
 
 const SearchScreen = ({navigation}: any) => {
-  const {t} = useTranslation();
+  const {t, i18n} = useTranslation();
 
   type Product = {
     product_id: number;
+    price: number;
     name: string;
     image: string;
-    price: number;
   };
 
   const [filteredResults, setFilteredResults] = useState<Product[]>([]);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [searchText, setSearchText] = useState('');
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -33,41 +32,43 @@ const SearchScreen = ({navigation}: any) => {
   const snapPoints = useMemo(() => [450], []);
 
   const openFilterSheet = () => bottomSheetRef.current?.snapToIndex(0);
-
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchSearchResults = async () => {
+      if (searchText.length < 3) {
+        setFilteredResults([]);
+        return;
+      }
+
       try {
         setLoading(true);
-        const result = await getProducts();
-        const transformed = result.map((product: any) => ({
-          ...product,
-          name: product.name || product.sku || t('search.no_Name'),
-          description: product.description || '',
-          short_description: product.short_description || '',
-          image:
-            product.images?.[0]?.listing_image ||
-            'https://via.placeholder.com/100',
-        }));
-        setAllProducts(transformed);
+        console.log('Searching for:', searchText);
+
+        const results = await searchProducts(i18n.language, searchText);
+        console.log('Raw API response:', results);
+        const transformed = results.map((product: any) => {
+          console.log('Product:', product);
+          return {
+            product_id: product.product_id,
+            price: product.price,
+            name: product.description?.name ?? 'No name',
+            image:
+              product.images?.find((img: any) => img.is_main)?.origin_image ??
+              product.images?.[0]?.origin_image ??
+              'https://via.placeholder.com/100',
+          };
+        });
+        setFilteredResults(transformed);
       } catch (error) {
-        console.error('Failed to load products:', error);
+        console.error('Search failed:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
-  }, [t]);
 
-  useEffect(() => {
-    const results = allProducts.filter(product => {
-      if (searchText.length >= 3) {
-        return product.name?.toLowerCase().includes(searchText.toLowerCase());
-      } else {
-        return allProducts;
-      }
-    });
-    setFilteredResults(results);
-  }, [searchText, allProducts]);
+    const delayDebounce = setTimeout(fetchSearchResults, 500); // debounce
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchText, i18n.language, t]); // ✅ include `t` here
 
   const handleTagPress = (term: string) => {
     setSearchText(term);
@@ -116,7 +117,7 @@ const SearchScreen = ({navigation}: any) => {
         <Text style={styles.sectionTitle}>{t('search.last_search')}</Text>
         {searchHistory.length > 0 && (
           <TouchableOpacity onPress={clearAll}>
-            <Text style={styles.clearAll}>{t('search.clear_All')}</Text>
+            <Text style={styles.clearAll}>{t('search.clear_all')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -148,7 +149,7 @@ const SearchScreen = ({navigation}: any) => {
         <ActivityIndicator size="large" color="#6A5ACD" />
       ) : (
         <FlatList
-          data={searchText ? filteredResults : allProducts.slice(0, 10)}
+          data={searchText.length >= 3 ? filteredResults : []}
           keyExtractor={item => item.product_id.toString()}
           ListEmptyComponent={() => (
             <Text style={{textAlign: 'center', marginTop: 20, color: '#888'}}>
@@ -181,7 +182,6 @@ const SearchScreen = ({navigation}: any) => {
         enablePanDownToClose>
         <BottomSheetView style={{padding: 20, flex: 1}}>
           <Text style={styles.sectionTitle}>{t('search.filter_Products')}</Text>
-          {/* ... filter content here ... */}
         </BottomSheetView>
       </BottomSheet>
     </View>

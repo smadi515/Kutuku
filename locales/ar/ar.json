@@ -275,6 +275,7 @@
     }
   },
   "myorder": {
+    "review": "مراجعة",
     "title": "طلباتي",
     "history": "السجل",
     "noCurrentOrders": "لا توجد طلبات حالية.",

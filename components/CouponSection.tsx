@@ -27,7 +27,11 @@ const CouponSection: React.FC<CouponSectionProps> = ({
         return;
       }
 
-      // Get or create the cart ID
+      const payload = {
+        coupon_code: coupon.trim(), // trim to avoid issues
+      };
+
+      console.log('Applying coupon with payload:', JSON.stringify(payload));
 
       const response = await fetch(
         'https://api.sareh-nomow.xyz/api/coupons/apply',
@@ -37,31 +41,29 @@ const CouponSection: React.FC<CouponSectionProps> = ({
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            coupon_code: coupon,
-          }),
+          body: JSON.stringify(payload),
         },
       );
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to apply coupon');
+        setError(result.message || 'Failed to apply coupon');
         setLoading(false);
         return;
       }
 
-      const result = await response.json();
-      // Assuming result contains the updated cart info including new total
-      if (result && result.data && result.data.grand_total) {
+      if (result?.data?.grand_total) {
         setDiscountedTotal(result.data.grand_total);
-        // Optionally update parent cart state
         if (onUpdateCart) onUpdateCart(result.data);
       }
     } catch (error: any) {
       setError(error.message || 'Error applying coupon');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    console.log(coupon);
+
+    console.log('Coupon code applied:', coupon);
   };
 
   return (

@@ -20,7 +20,6 @@ import {
   getProducts,
   getSubcategories,
   getCustomerCart,
-  createCart,
   addItemToCart,
 } from '../lib/api';
 
@@ -150,7 +149,6 @@ const StoreScreen = () => {
       // 1. Ensure customer cart exists
       let cart = await getCustomerCart(token);
       if (!cart || !cart.cart_id) {
-        cart = await createCart(token);
       }
 
       if (!cart || !cart.cart_id) {
@@ -161,7 +159,6 @@ const StoreScreen = () => {
       // 2. Add item to backend cart
       const backendResponse = await addItemToCart(
         token,
-        cart.cart_id,
         item.product_id.toString(),
         quantity,
       );

@@ -277,6 +277,7 @@
     }
   },
   "myorder": {
+    "review": "Review",
     "title": "My Order",
     "history": "History",
     "noCurrentOrders": "No current orders.",

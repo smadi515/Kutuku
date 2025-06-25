@@ -432,11 +432,7 @@ export const addOrUpdateCartItem = async (
   }
 };
 
-export const applyCoupon = async (
-  cartId: number,
-  couponCode: string,
-  token: string,
-) => {
+export const applyCoupon = async (couponCode: string, token: string) => {
   try {
     const response = await fetch(
       `https://api.sareh-nomow.xyz/api/coupons/apply`,
@@ -447,7 +443,6 @@ export const applyCoupon = async (
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          cart_id: cartId,
           coupon_code: couponCode,
         }),
       },
@@ -504,5 +499,22 @@ export const signInWithGoogle = async () => {
     // 👉 Send userInfo.idToken to your backend API for verification or login
   } catch (error) {
     console.error('Google Sign-In error:', error);
+  }
+};
+
+export const searchProducts = async (lang: string, query: string) => {
+  try {
+    const response = await fetch(
+      `https://api.sareh-nomow.xyz/api/products/search?lang=${lang}&q=${encodeURIComponent(
+        query,
+      )}`,
+    );
+    if (!response.ok) throw new Error('Failed to search');
+    const json = await response.json();
+    console.log('✅ Fixed response:', json);
+    return json.data || [];
+  } catch (error) {
+    console.error('Search API error:', error);
+    return [];
   }
 };
