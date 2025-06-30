@@ -17,7 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getCustomerCart,
   addItemToCart,
-  getProductById,
+  getProductByUrlKey,
   updateCartItemQuantity,
 } from '../lib/api';
 import {useTranslation} from 'react-i18next';
@@ -78,6 +78,7 @@ const ProductsDetails = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'ProductsDetails'>>();
   const {product_id} = route.params;
+  const urlKey = route.params.url_key;
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   const snapPoints = useMemo(() => ['40%'], []);
@@ -94,7 +95,7 @@ const ProductsDetails = () => {
       setLoading(true);
       try {
         // Fetch product
-        const data = await getProductById(product_id, i18n.language);
+        const data = await getProductByUrlKey(urlKey, i18n.language);
         setProduct(data);
 
         // Fetch reviews
@@ -122,7 +123,7 @@ const ProductsDetails = () => {
     };
 
     fetchProductData();
-  }, [product_id, i18n.language]);
+  }, [urlKey, product_id, i18n.language]);
 
   const increaseQuantity = () => setQuantity(prev => prev + 1);
   const decreaseQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));

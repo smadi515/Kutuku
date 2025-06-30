@@ -7,8 +7,6 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  useColorScheme,
-  Switch,
 } from 'react-native';
 import Icon from '../components/icon';
 import ProductCard from '../components/ProductCard';
@@ -34,38 +32,76 @@ type LocalCartItem = {
   image: {uri?: string};
   cart_item_id: number | null;
 };
+
 type ProductDescription = {
-  name?: string;
-  description?: string;
-  short_description?: string;
+  product_description_id: number;
+  product_description_product_id: number;
+  name: string;
+  description: string;
+  short_description: string | null;
+  url_key: string;
+  meta_title: string;
+  meta_description: string;
+  meta_keywords: string;
+  created_at: string;
+  updated_at: string;
 };
 
 type ProductImage = {
-  is_main: boolean;
-  listing_image: string;
+  product_image_id: number;
+  product_image_product_id: number;
   origin_image: string;
+  thumb_image: string | null;
+  listing_image: string | null;
+  single_image: string | null;
+  is_main: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+type ProductInventory = {
+  product_inventory_id: number;
+  product_inventory_product_id: number;
+  qty: number;
+  manage_stock: boolean;
+  stock_availability: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 type Product = {
   product_id: number;
-  name: string;
-  short_description: string;
-  description: string;
+  uuid: string;
+  type: string;
+  variant_group_id: number | null;
+  visibility: boolean;
+  group_id: number;
+  sku: string;
   price: number;
-  inventory?: {
-    stock_availability: boolean;
-    qty: number;
-    manage_stock: boolean;
-  };
-  images?: ProductImage[];
-  image?: string;
-  description_data?: ProductDescription;
+  old_price: number | null;
+  is_digital: boolean;
+  weight: number;
+  tax_class: string | null;
+  status: boolean;
+  created_at: string;
+  updated_at: string;
+  category_id: number;
+  brand_id: number;
+  description: ProductDescription;
+  images: ProductImage[];
+  inventory: ProductInventory;
+  // Optional: category and brand objects
+  category?: any;
+  brand?: any;
+  attributes?: any[];
+  reviews?: any[];
+  meanRating?: number | null;
 };
+
 type BackendCartItem = {
   product_id: number | string;
   cart_item_id: number;
   quantity: number;
-  // add other relevant fields if you have them
 };
 
 const HomeScreen = ({navigation}: any) => {
@@ -77,28 +113,8 @@ const HomeScreen = ({navigation}: any) => {
   const [loading, setLoading] = useState(true);
   const {t, i18n} = useTranslation();
   const isRTL = i18n.language === 'ar';
-  const systemScheme = useColorScheme();
-  const [theme, setTheme] = useState<'light' | 'dark'>(
-    systemScheme === 'dark' ? 'dark' : 'light',
-  );
+  console.log('products', products);
 
-  useEffect(() => {
-    const loadTheme = async () => {
-      const savedTheme = await AsyncStorage.getItem('theme');
-      if (savedTheme === 'light' || savedTheme === 'dark') {
-        setTheme(savedTheme);
-      }
-    };
-    loadTheme();
-  }, []);
-
-  const toggleTheme = async () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    await AsyncStorage.setItem('theme', newTheme);
-  };
-
-  const isDark = theme === 'dark';
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -108,17 +124,23 @@ const HomeScreen = ({navigation}: any) => {
             product.images?.find((img: ProductImage) => img.is_main) ||
             product.images?.[0];
 
-          let desc: ProductDescription = {};
-          if (
-            typeof product.description === 'object' &&
-            product.description !== null
-          ) {
-            desc = product.description;
-          }
+          const desc: ProductDescription = product.description ?? {
+            product_description_id: 0,
+            product_description_product_id: 0,
+            name: '',
+            description: '',
+            short_description: '',
+            url_key: '',
+            meta_title: '',
+            meta_description: '',
+            meta_keywords: '',
+            created_at: '',
+            updated_at: '',
+          };
 
           return {
             ...product,
-            image: mainImage?.origin_image || '', // ✅ updated here
+            image: mainImage?.origin_image || '',
             name: desc.name || 'No name',
             description: desc.description || '',
             short_description: desc.short_description || '',
@@ -235,7 +257,7 @@ const HomeScreen = ({navigation}: any) => {
         Toast.show({
           type: 'success',
           text1: 'Cart Updated',
-          text2: `${item.name} quantity updated.`,
+          text2: `${item.description.name} has been added.`,
         });
       } else {
         const backendResponse = await addItemToCart(
@@ -246,11 +268,13 @@ const HomeScreen = ({navigation}: any) => {
 
         const newItem: LocalCartItem = {
           id: item.product_id.toString(),
-          title: item.name,
+          title: item.description.name,
           price: item.price,
           quantity: quantity,
           selected: true,
-          image: {uri: item.image ?? ''},
+          image: {
+            uri: item.images?.find(img => img.is_main)?.origin_image ?? '',
+          },
           cart_item_id: backendResponse?.cart_item_id || null,
         };
 
@@ -259,7 +283,7 @@ const HomeScreen = ({navigation}: any) => {
         Toast.show({
           type: 'success',
           text1: 'Added to Cart',
-          text2: `${item.name} has been added.`,
+          text2: `${item.description.name} quantity updated.`,
         });
       }
 
@@ -300,24 +324,17 @@ const HomeScreen = ({navigation}: any) => {
       style={[
         styles.container,
         {direction: isRTL ? 'rtl' : 'ltr'},
-        {backgroundColor: isDark ? '#000' : '#f7f7f7'},
+        {backgroundColor: '#f7f7f7'},
       ]}>
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <Switch
-          value={isDark}
-          onValueChange={toggleTheme}
-          thumbColor={isDark ? '#fff' : '#000'}
-          trackColor={{false: '#ccc', true: 'purple'}}
-          style={{marginLeft: 10}}
-        />
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <Image
             source={require('../assets/Maskgroup4.png')}
             style={styles.avatar}
           />
           <View style={{marginLeft: 10}}>
-            <Text style={{color: isDark ? '#fff' : '#000'}}>
+            <Text style={{color: 'black'}}>
               {t('HomeScreen.hi')} {firstName || 'Guest'}
             </Text>
             <Text style={styles.subText}>{t('HomeScreen.letsGoShopping')}</Text>
@@ -391,20 +408,30 @@ const HomeScreen = ({navigation}: any) => {
               </View>
             </View>
           }
-          renderItem={({item}) => (
-            <ProductCard
-              title={item.name}
-              designer={item.short_description}
-              price={item.price}
-              image={item.image ?? ''}
-              isFavorite={favorites.includes(item.product_id.toString())}
-              onPressFavorite={() => toggleFavorite(item.product_id.toString())}
-              onPressCart={() => handleAddToCart(item)}
-              stock_availability={item.inventory?.stock_availability ?? false}
-              description={item.description}
-              product_id={item.product_id}
-            />
-          )}
+          renderItem={({item}) => {
+            const {description, product_id, price, images, inventory} = item;
+            const urlKey = description?.url_key || '';
+            const title = description?.name || '';
+            const designer = description?.short_description || '';
+            const desc = description?.description || '';
+            const image = images?.find(img => img.is_main)?.origin_image || '';
+
+            return (
+              <ProductCard
+                product_id={product_id}
+                urlKey={urlKey}
+                title={title}
+                designer={designer}
+                price={price}
+                image={image}
+                description={desc}
+                stock_availability={inventory?.stock_availability ?? false}
+                isFavorite={favorites.includes(product_id.toString())}
+                onPressFavorite={() => toggleFavorite(product_id.toString())}
+                onPressCart={() => handleAddToCart(item)}
+              />
+            );
+          }}
           columnWrapperStyle={styles.row}
           contentContainerStyle={{paddingHorizontal: 8}}
         />

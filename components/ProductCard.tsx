@@ -26,6 +26,7 @@ type ColorOption = {
 
 type ProductCardProps = {
   product_id: number;
+  urlKey: string;
   title: string;
   designer: string;
   price: number;
@@ -39,7 +40,6 @@ type ProductCardProps = {
 };
 
 const ProductCard: React.FC<ProductCardProps> = ({
-  product_id,
   title,
   designer,
   price,
@@ -49,8 +49,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
   isFavorite,
   onPressFavorite,
   onPressCart,
+  urlKey,
 }) => {
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
+  console.log('ProductCard rendered with urlKey:', urlKey);
 
   const showOutOfStockMessage = () => {
     const message = 'This product is out of stock.';
@@ -72,9 +74,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <TouchableOpacity
       activeOpacity={0.8}
-      onPress={() => {
-        navigation.navigate('ProductsDetails', {product_id});
-      }}
+      onPress={() => navigation.navigate('ProductsDetails', {url_key: urlKey})}
       style={styles.card}>
       <View style={styles.imageWrapper}>
         <Image

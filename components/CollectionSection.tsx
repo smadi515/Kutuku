@@ -22,6 +22,7 @@ type ProductDetailsScreenNavigationProp = StackNavigationProp<
 type ProductDescription = {
   name: string;
   short_description: string;
+  url_key: string;
 };
 
 type ProductImage = {
@@ -85,7 +86,7 @@ const CollectionSection = () => {
     try {
       const lang = i18n.language || 'en';
       const response = await fetch(
-        `https://api.sareh-nomow.xyz/api/collections?lang=${lang}`,
+        `https://api.sareh-nomow.website/api/client/v1/collections?lang=${lang}`,
       );
       const data = await response.json();
       setCollections(data.collections || []);
@@ -116,33 +117,39 @@ const CollectionSection = () => {
   }, [collections]);
 
   const renderProduct = ({item}: {item: ProductItem}) => {
-    const {product_id, product} = item;
+    const {product} = item;
     const {description, price, images, inventory} = product;
     const stockAvailability = inventory.stock_availability;
+    const urlKey = product?.description?.url_key || '';
+
+    const imageUri = images[0]?.origin_image || '';
 
     return (
       <TouchableOpacity
-        onPress={() => navigation.navigate('ProductsDetails', {product_id})}
+        onPress={() =>
+          navigation.navigate('ProductsDetails', {url_key: urlKey})
+        }
         style={styles.productCard}>
-        <View style={styles.imageWrapper}>
+        <View style={styles.cardContainer}>
           <Image
-            source={{uri: images[0]?.origin_image}}
+            source={{uri: imageUri}}
             style={styles.productImage}
+            resizeMode="cover"
           />
-        </View>
-        <Text style={styles.productName}>{description.name}</Text>
-        <Text style={styles.productPrice}>${price}</Text>
-        <Text style={styles.productShort}>
-          {description.short_description || 'No description available'}
-        </Text>
-        <View style={styles.stockRow}>
-          <Text style={styles.productPrice}>${price.toFixed(2)}</Text>
-          {!stockAvailability && (
-            <>
-              <Text> | </Text>
-              <Text style={{color: 'red'}}>Out of stock</Text>
-            </>
-          )}
+          <View style={styles.productInfo}>
+            <Text style={styles.productName} numberOfLines={1}>
+              {description.name}
+            </Text>
+            <Text style={styles.productShort} numberOfLines={2}>
+              {description.short_description || 'No description'}
+            </Text>
+            <View style={styles.priceRow}>
+              <Text style={styles.productPrice}>${price.toFixed(2)}</Text>
+              {!stockAvailability && (
+                <Text style={styles.outOfStock}>Out of stock</Text>
+              )}
+            </View>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -215,6 +222,19 @@ const CollectionSection = () => {
 };
 
 const styles = StyleSheet.create({
+  cardContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: {width: 0, height: 2},
+    shadowRadius: 6,
+  },
+  productInfo: {
+    padding: 10,
+  },
   collectionContainer: {
     marginVertical: 16,
     paddingHorizontal: 12,
@@ -258,15 +278,30 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   productName: {
-    marginTop: 6,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
   },
   productPrice: {
-    color: 'black',
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#2a9d8f',
+  },
+  outOfStock: {
+    fontSize: 12,
+    color: 'red',
+    fontWeight: '500',
   },
   productShort: {
     fontSize: 12,
-    color: 'gray',
+    color: '#666',
+    marginTop: 4,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
   },
   stockRow: {
     flexDirection: 'row',

@@ -4,7 +4,7 @@ import Toast from 'react-native-toast-message';
 
 // ================= AUTH =================
 export const login = async (email: string, password: string) => {
-  const apiUrl = 'https://api.sareh-nomow.xyz/api/auth/login';
+  const apiUrl = 'https://api.sareh-nomow.website/api/client/v1/auth/login';
 
   const response = await fetch(apiUrl, {
     method: 'POST',
@@ -24,7 +24,7 @@ export const register = async (
   name: string,
   phoneNumber: string,
 ) => {
-  const apiUrl = 'https://api.sareh-nomow.xyz/api/auth/register';
+  const apiUrl = 'https://api.sareh-nomow.website/api/client/v1/auth/register';
 
   try {
     const response = await fetch(apiUrl, {
@@ -49,7 +49,8 @@ export const register = async (
 };
 
 export const verifyOtp = async (email: string, otp: string) => {
-  const apiUrl = 'https://api.sareh-nomow.xyz/api/auth/verify-otp';
+  const apiUrl =
+    'https://api.sareh-nomow.website/api/client/v1/auth/verify-otp';
 
   const response = await fetch(apiUrl, {
     method: 'POST',
@@ -79,7 +80,7 @@ export const getProducts = async (
 
     const queryString = query.length > 0 ? `?${query.join('&')}` : '';
     const response = await fetch(
-      `https://api.sareh-nomow.xyz/api/products${queryString}`,
+      `https://api.sareh-nomow.website/api/client/v1/products${queryString}`,
     );
 
     const json = await response.json();
@@ -89,10 +90,42 @@ export const getProducts = async (
     throw error;
   }
 };
+export const getProductByUrlKey = async (urlKey: string, lang: string) => {
+  console.log(`Fetching product with url_key: ${urlKey} and lang: ${lang}`);
+
+  try {
+    const response = await fetch(
+      `https://api.sareh-nomow.website/api/client/v1/products/by-url/${urlKey}?lang=${lang}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept-Language': lang,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch product (status: ${response.status})`);
+    }
+
+    const json = await response.json();
+    const product = json?.data?.[0];
+
+    if (!product) {
+      throw new Error('Product not found in response');
+    }
+
+    console.log('Fetched product by url_key:', product);
+    return product;
+  } catch (error) {
+    console.error('getProductByUrlKey error:', error);
+    throw error;
+  }
+};
 export const getProductById = async (productId: number, lang: string) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.xyz/api/products/${productId}?lang=${lang}`,
+      `https://api.sareh-nomow.website/api/client/v1/products/${productId}?lang=${lang}`,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +133,6 @@ export const getProductById = async (productId: number, lang: string) => {
         },
       },
     );
-
     if (!response.ok) {
       throw new Error(`Failed to fetch product (status: ${response.status})`);
     }
@@ -119,12 +151,11 @@ export const getProductById = async (productId: number, lang: string) => {
     throw error;
   }
 };
-
 // ================= CATEGORIES =================
 export const getParentCategories = async () => {
   try {
     const response = await fetch(
-      'https://api.sareh-nomow.xyz/api/categories?parentId=null',
+      'https://api.sareh-nomow.website/api/client/v1/categories?parentId=null',
     );
     const json = await response.json();
 
@@ -142,7 +173,7 @@ export const getParentCategories = async () => {
 export const getSubcategories = async (parentId: number) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.xyz/api/categories?parentId=${parentId}`,
+      `https://api.sareh-nomow.website/api/client/v1/categories?parentId=${parentId}`,
     );
     const json = await response.json();
 
@@ -160,7 +191,9 @@ export const getSubcategories = async (parentId: number) => {
 // ================= BRANDS =================
 export const getBrands = async () => {
   try {
-    const response = await fetch('https://api.sareh-nomow.xyz/api/brands');
+    const response = await fetch(
+      'https://api.sareh-nomow.website/api/client/v1/brands',
+    );
     const json = await response.json();
 
     return json.data.map((brand: any) => ({
@@ -176,7 +209,7 @@ export const getBrands = async () => {
 
 // ================= ADDRESS =================
 export const createAddress = async (addressData: any, token: string) => {
-  const apiUrl = 'https://api.sareh-nomow.xyz/api/addresses';
+  const apiUrl = 'https://api.sareh-nomow.website/api/client/v1/addresses';
 
   try {
     const response = await fetch(apiUrl, {
@@ -204,7 +237,7 @@ export const createAddress = async (addressData: any, token: string) => {
 export const getCustomerCart = async (token: string) => {
   try {
     const response = await fetch(
-      'https://api.sareh-nomow.xyz/api/carts/customer',
+      'https://api.sareh-nomow.website/api/client/v1/carts/customer',
       {
         method: 'GET',
         headers: {
@@ -221,7 +254,7 @@ export const getCustomerCart = async (token: string) => {
 
     if (!cart) {
       const createResponse = await fetch(
-        'https://api.sareh-nomow.xyz/api/carts',
+        'https://api.sareh-nomow.website/api/client/v1/carts',
         {
           method: 'POST',
           headers: {
@@ -257,7 +290,7 @@ export const addItemToCart = async (
 ) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.xyz/api/carts/add-items`,
+      `https://api.sareh-nomow.website/api/client/v1/carts/add-items`,
       {
         method: 'POST',
         headers: {
@@ -288,7 +321,7 @@ export const addItemToCart = async (
 export const getCartItems = async (token: string) => {
   try {
     const response = await fetch(
-      'https://api.sareh-nomow.xyz/api/carts/customer',
+      'https://api.sareh-nomow.website/api/client/v1/carts/customer',
       {
         method: 'GET',
         headers: {
@@ -315,7 +348,7 @@ export const deleteCartItem = async (
 ) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.xyz/api/carts/items/${cart_item_id}`,
+      `https://api.sareh-nomow.website/api/client/v1/carts/items/${cart_item_id}`,
       {
         method: 'DELETE',
         headers: {
@@ -344,13 +377,16 @@ export const updateCartItemQuantity = async (
 ) => {
   const qty = Number(quantity); // force convert to number
 
-  console.log(`PUT https://api.sareh-nomow.xyz/api/carts/items/${cartItemId}`, {
-    qty,
-    type: typeof qty,
-  });
+  console.log(
+    `PUT https://api.sareh-nomow.website/api/client/v1/carts/items/${cartItemId}`,
+    {
+      qty,
+      type: typeof qty,
+    },
+  );
 
   const response = await fetch(
-    `https://api.sareh-nomow.xyz/api/carts/items/${cartItemId}`,
+    `https://api.sareh-nomow.website/api/client/v1/carts/items/${cartItemId}`,
     {
       method: 'PUT',
       headers: {
@@ -411,7 +447,7 @@ export const addOrUpdateCartItem = async (
     );
   } else {
     const response = await fetch(
-      `https://api.sareh-nomow.xyz/api/carts/${cart_id}/items`,
+      `https://api.sareh-nomow.website/api/client/v1/carts/${cart_id}/items`,
       {
         method: 'POST',
         headers: {
@@ -435,7 +471,7 @@ export const addOrUpdateCartItem = async (
 export const applyCoupon = async (couponCode: string, token: string) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.xyz/api/coupons/apply`,
+      `https://api.sareh-nomow.website/api/client/v1/coupons/apply`,
       {
         method: 'POST',
         headers: {
@@ -464,7 +500,7 @@ export const fetchUserProfile = async () => {
     if (!token) throw new Error('Token not found');
 
     const response = await fetch(
-      `https://api.sareh-nomow.xyz/api/auth/verify-token`,
+      `https://api.sareh-nomow.website/api/client/v1/auth/verify-token`,
       {
         method: 'GET',
         headers: {
@@ -505,7 +541,7 @@ export const signInWithGoogle = async () => {
 export const searchProducts = async (lang: string, query: string) => {
   try {
     const response = await fetch(
-      `https://api.sareh-nomow.xyz/api/products/search?lang=${lang}&q=${encodeURIComponent(
+      `https://api.sareh-nomow.website/api/client/v1/products/search?lang=${lang}&q=${encodeURIComponent(
         query,
       )}`,
     );

@@ -14,7 +14,8 @@ import {useTranslation} from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 
-const API_ORDERS_URL = 'https://api.sareh-nomow.website/api/orders/user';
+const API_ORDERS_URL =
+  'https://api.sareh-nomow.website/api/client/v1/orders/user';
 
 type OrderItem = {
   product_name: string;
@@ -52,18 +53,21 @@ const MyOrders = () => {
 
     try {
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch('https://api.sareh-nomow.xyz/api/reviews', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        'https://api.sareh-nomow.website/api/client/v1/reviews',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            product_id: productId,
+            rating,
+            review_text: reviewText,
+          }),
         },
-        body: JSON.stringify({
-          product_id: productId,
-          rating,
-          review_text: reviewText,
-        }),
-      });
+      );
       console.log('productId', productId);
 
       const result = await response.json();
@@ -92,6 +96,7 @@ const MyOrders = () => {
       if (!response.ok) {
         throw new Error(t('myorder.fetchError'));
       }
+      console.log('response', response);
 
       const data = await response.json();
       console.log('Orders API response:', data);
@@ -153,7 +158,7 @@ const MyOrders = () => {
 
   return (
     <View style={styles.container}>
-      <Header showImage={false} title={t('myorder.title')} showBack={true} />
+      <Header showImage={false} title={t('myorder.title')} />
       <ScrollView>
         {orders.length > 0 ? (
           orders.map((order, orderIndex) => (
