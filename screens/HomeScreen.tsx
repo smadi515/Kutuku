@@ -103,11 +103,17 @@ type BackendCartItem = {
   cart_item_id: number;
   quantity: number;
 };
+type ExtendedProduct = Product & {
+  image: string;
+  name: string;
+  description: string;
+  short_description: string;
+};
 
 const HomeScreen = ({navigation}: any) => {
   const [quantity] = useState(1); // No need to change quantity for now
   const [firstName, setFirstName] = useState('');
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ExtendedProduct[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('Home');
   const [loading, setLoading] = useState(true);
@@ -118,36 +124,19 @@ const HomeScreen = ({navigation}: any) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const result = await getProducts(i18n.language); // pass language here
-        const transformed = result.map((product: Product) => {
-          const mainImage =
-            product.images?.find((img: ProductImage) => img.is_main) ||
-            product.images?.[0];
+        const result = await getProducts(i18n.language);
 
-          const desc: ProductDescription = product.description ?? {
-            product_description_id: 0,
-            product_description_product_id: 0,
-            name: '',
-            description: '',
-            short_description: '',
-            url_key: '',
-            meta_title: '',
-            meta_description: '',
-            meta_keywords: '',
-            created_at: '',
-            updated_at: '',
-          };
+        // Filter out products missing essential data
+        const filtered = result.filter(
+          (product: Product) =>
+            product.description &&
+            product.description.name &&
+            product.description.url_key &&
+            product.images &&
+            product.images.length > 0,
+        );
 
-          return {
-            ...product,
-            image: mainImage?.origin_image || '',
-            name: desc.name || 'No name',
-            description: desc.description || '',
-            short_description: desc.short_description || '',
-          };
-        });
-
-        setProducts(transformed);
+        setProducts(filtered);
       } catch (error) {
         console.error('Failed to load products:', error);
       } finally {
@@ -410,11 +399,15 @@ const HomeScreen = ({navigation}: any) => {
           }
           renderItem={({item}) => {
             const {description, product_id, price, images, inventory} = item;
+
             const urlKey = description?.url_key || '';
-            const title = description?.name || '';
-            const designer = description?.short_description || '';
-            const desc = description?.description || '';
-            const image = images?.find(img => img.is_main)?.origin_image || '';
+            const title = description?.name || 'Unnamed Product';
+            const designer = item.brand?.name || 'No brand';
+            const desc = description?.description || 'No description available';
+            const image =
+              images?.find((img: ProductImage) => img.is_main)?.origin_image ||
+              images?.[0]?.origin_image ||
+              'https://via.placeholder.com/150';
 
             return (
               <ProductCard

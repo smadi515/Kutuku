@@ -70,19 +70,22 @@ export const getProducts = async (
   lang: string,
   categoryId?: number,
   brandId?: number,
+  page?: number,
+  limit?: number,
 ) => {
   try {
     let query = [];
 
     if (categoryId) query.push(`categoryId=${categoryId}`);
     if (brandId) query.push(`brandId=${brandId}`);
-    query.push(`lang=${lang}`);
+    if (lang) query.push(`lang=${lang}`);
+    if (page) query.push(`page=${page}`);
+    if (limit) query.push(`limit=${limit}`);
 
-    const queryString = query.length > 0 ? `?${query.join('&')}` : '';
+    const queryString = query.length ? `?${query.join('&')}` : '';
     const response = await fetch(
       `https://api.sareh-nomow.website/api/client/v1/products${queryString}`,
     );
-
     const json = await response.json();
     return json.data;
   } catch (error) {
@@ -90,6 +93,7 @@ export const getProducts = async (
     throw error;
   }
 };
+
 export const getProductByUrlKey = async (urlKey: string, lang: string) => {
   console.log(`Fetching product with url_key: ${urlKey} and lang: ${lang}`);
 

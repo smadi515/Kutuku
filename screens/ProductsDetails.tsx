@@ -97,6 +97,7 @@ const ProductsDetails = () => {
         // Fetch product
         const data = await getProductByUrlKey(urlKey, i18n.language);
         setProduct(data);
+        console.log('Fetched product:', data);
 
         // Fetch reviews
         const response = await fetch(
@@ -106,6 +107,7 @@ const ProductsDetails = () => {
 
         const reviews = await response.json();
         setReviews(reviews);
+        console.log('response', reviews);
 
         // Calculate average rating
         if (Array.isArray(reviews) && reviews.length > 0) {

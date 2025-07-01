@@ -8,6 +8,7 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  Button,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -38,6 +39,11 @@ type ProductDescription = {
   name?: string;
   description?: string;
   short_description?: string;
+  url_key?: string;
+};
+type ExtendedProduct = Product & {
+  urlKey: string;
+  brandName: string;
 };
 type Product = {
   product_id: number;
@@ -68,15 +74,25 @@ const StoreScreen = () => {
 
   const categoryId = route.params?.categoryId;
   const brandId = route.params?.brandId;
-
-  const [products, setProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<ExtendedProduct[]>([]);
+  const [, setProducts] = useState<ExtendedProduct[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [subcategories, setSubcategories] = useState<Category[]>([]);
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<
     number | null
   >(null);
+  const [page, setPage] = useState(1);
 
+  const PAGE_SIZE = 10;
+  const displayedProducts = allProducts.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
+
+  const totalPages = Math.ceil(allProducts.length / PAGE_SIZE);
   useEffect(() => {
     const fetchSubcategories = async () => {
       if (!categoryId) return;
@@ -105,31 +121,41 @@ const StoreScreen = () => {
 
         const result = await getProducts(categoryIdStr!, brandIdVal);
 
-        const transformed = result.map((product: Product) => {
+        const transformed = result.map((product: any) => {
           const mainImage =
             product.images?.find((img: ProductImage) => img.is_main) ||
             product.images?.[0];
+          console.log('Transformed product:', product);
 
-          let desc: ProductDescription = {};
-          if (
-            typeof product.description === 'object' &&
-            product.description !== null
-          ) {
-            desc = product.description;
-          }
+          const desc: ProductDescription =
+            typeof product.description === 'object'
+              ? product.description
+              : {
+                  name: '',
+                  description: '',
+                  short_description: '',
+                  url_key: '',
+                };
 
           return {
             ...product,
             image: mainImage?.origin_image || '',
             name: desc.name || 'No name',
-            description: desc.description || '',
+            description: desc.description || 'No description available',
             short_description: desc.short_description || '',
+            urlKey: desc.url_key || '',
+            brandName: product.brand?.name || '',
           };
         });
 
-        setProducts(transformed);
+        setAllProducts(transformed);
+        setProducts(transformed.slice(0, PAGE_SIZE));
+        setHasMore(transformed.length > PAGE_SIZE);
       } catch (error) {
         console.error('Failed to load products:', error);
+        setAllProducts([]);
+        setProducts([]);
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
@@ -137,6 +163,24 @@ const StoreScreen = () => {
 
     fetchData();
   }, [selectedSubcategoryId, categoryId, brandId]);
+  const loadMore = () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+
+    setTimeout(() => {
+      setProducts(prevProducts => {
+        const nextProducts = allProducts.slice(
+          prevProducts.length,
+          prevProducts.length + PAGE_SIZE,
+        );
+        if (nextProducts.length < PAGE_SIZE) {
+          setHasMore(false); // no more products to load
+        }
+        return [...prevProducts, ...nextProducts];
+      });
+      setLoadingMore(false);
+    }, 500); // optional delay
+  };
 
   const handleAddToCart = async (item: Product) => {
     try {
@@ -211,7 +255,6 @@ const StoreScreen = () => {
           },
         ]}
       />
-
       {/* Subcategory Filter */}
       {categoryId && subcategories.length > 0 && (
         <ScrollView
@@ -260,7 +303,6 @@ const StoreScreen = () => {
           ))}
         </ScrollView>
       )}
-
       {/* Products List */}
       {loading ? (
         <ActivityIndicator
@@ -270,27 +312,53 @@ const StoreScreen = () => {
         />
       ) : (
         <FlatList
-          data={products}
+          data={displayedProducts}
           numColumns={2}
           keyExtractor={item => item.product_id.toString()}
           columnWrapperStyle={styles.productRow}
           contentContainerStyle={{padding: 16}}
           renderItem={({item}) => (
             <ProductCard
+              product_id={item.product_id}
+              urlKey={item.urlKey}
               title={item.name}
-              designer={item.short_description}
+              designer={item.brandName}
               price={item.price}
               image={item.image ?? ''}
+              description={item.description}
+              stock_availability={item.inventory?.stock_availability ?? false}
               isFavorite={favorites.includes(item.product_id.toString())}
               onPressFavorite={() => toggleFavorite(item.product_id.toString())}
               onPressCart={() => handleAddToCart(item)}
-              stock_availability={item.inventory?.stock_availability ?? false}
-              description={item.description}
-              product_id={item.product_id}
             />
           )}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? <ActivityIndicator size="small" /> : null
+          }
         />
       )}
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          padding: 16,
+        }}>
+        <Button
+          title="Previous"
+          onPress={() => setPage(p => Math.max(p - 1, 1))}
+          disabled={page === 1}
+        />
+        <Text>
+          Page {page} of {totalPages}
+        </Text>
+        <Button
+          title="Next"
+          onPress={() => setPage(p => Math.min(p + 1, totalPages))}
+          disabled={page === totalPages}
+        />
+      </View>
     </View>
   );
 };
