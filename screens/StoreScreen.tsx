@@ -74,8 +74,8 @@ const StoreScreen = () => {
 
   const categoryId = route.params?.categoryId;
   const brandId = route.params?.brandId;
-  const [allProducts, setAllProducts] = useState<ExtendedProduct[]>([]);
-  const [, setProducts] = useState<ExtendedProduct[]>([]);
+  const [products, setProducts] = useState<ExtendedProduct[]>([]);
+
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -87,12 +87,7 @@ const StoreScreen = () => {
   const [page, setPage] = useState(1);
 
   const PAGE_SIZE = 10;
-  const displayedProducts = allProducts.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
-  );
 
-  const totalPages = Math.ceil(allProducts.length / PAGE_SIZE);
   useEffect(() => {
     const fetchSubcategories = async () => {
       if (!categoryId) return;
@@ -110,22 +105,21 @@ const StoreScreen = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const categoryIdStr =
-          selectedSubcategoryId !== null
-            ? selectedSubcategoryId.toString()
-            : categoryId !== undefined
-            ? categoryId.toString()
-            : undefined;
+        const categoryIdNum =
+          selectedSubcategoryId !== null ? selectedSubcategoryId : categoryId;
 
-        const brandIdVal = brandId;
-
-        const result = await getProducts(categoryIdStr!, brandIdVal);
+        const result = await getProducts(
+          'en', // or i18n.language
+          categoryIdNum,
+          brandId,
+          page,
+          PAGE_SIZE,
+        );
 
         const transformed = result.map((product: any) => {
           const mainImage =
             product.images?.find((img: ProductImage) => img.is_main) ||
             product.images?.[0];
-          console.log('Transformed product:', product);
 
           const desc: ProductDescription =
             typeof product.description === 'object'
@@ -148,12 +142,10 @@ const StoreScreen = () => {
           };
         });
 
-        setAllProducts(transformed);
-        setProducts(transformed.slice(0, PAGE_SIZE));
-        setHasMore(transformed.length > PAGE_SIZE);
+        setProducts(transformed);
+        setHasMore(transformed.length === PAGE_SIZE); // assume more pages if full
       } catch (error) {
         console.error('Failed to load products:', error);
-        setAllProducts([]);
         setProducts([]);
         setHasMore(false);
       } finally {
@@ -162,24 +154,59 @@ const StoreScreen = () => {
     };
 
     fetchData();
-  }, [selectedSubcategoryId, categoryId, brandId]);
-  const loadMore = () => {
+  }, [page, selectedSubcategoryId, categoryId, brandId]);
+
+  const loadMore = async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
 
-    setTimeout(() => {
-      setProducts(prevProducts => {
-        const nextProducts = allProducts.slice(
-          prevProducts.length,
-          prevProducts.length + PAGE_SIZE,
-        );
-        if (nextProducts.length < PAGE_SIZE) {
-          setHasMore(false); // no more products to load
-        }
-        return [...prevProducts, ...nextProducts];
+    try {
+      const categoryIdNum =
+        selectedSubcategoryId !== null ? selectedSubcategoryId : categoryId;
+
+      const result = await getProducts(
+        'en', // or your current language
+        categoryIdNum,
+        brandId,
+        page + 1, // next page
+        PAGE_SIZE,
+      );
+
+      const transformed = result.map((product: any) => {
+        const mainImage =
+          product.images?.find((img: ProductImage) => img.is_main) ||
+          product.images?.[0];
+
+        const desc: ProductDescription =
+          typeof product.description === 'object'
+            ? product.description
+            : {
+                name: '',
+                description: '',
+                short_description: '',
+                url_key: '',
+              };
+
+        return {
+          ...product,
+          image: mainImage?.origin_image || '',
+          name: desc.name || 'No name',
+          description: desc.description || 'No description available',
+          short_description: desc.short_description || '',
+          urlKey: desc.url_key || '',
+          brandName: product.brand?.name || '',
+        };
       });
+
+      setProducts(prev => [...prev, ...transformed]);
+      setPage(prev => prev + 1);
+      setHasMore(transformed.length === PAGE_SIZE);
+    } catch (error) {
+      console.error('Error loading more products:', error);
+      setHasMore(false);
+    } finally {
       setLoadingMore(false);
-    }, 500); // optional delay
+    }
   };
 
   const handleAddToCart = async (item: Product) => {
@@ -312,7 +339,9 @@ const StoreScreen = () => {
         />
       ) : (
         <FlatList
-          data={displayedProducts}
+          data={products}
+          initialNumToRender={10}
+          removeClippedSubviews={true}
           numColumns={2}
           keyExtractor={item => item.product_id.toString()}
           columnWrapperStyle={styles.productRow}
@@ -337,6 +366,7 @@ const StoreScreen = () => {
           ListFooterComponent={
             loadingMore ? <ActivityIndicator size="small" /> : null
           }
+          ListEmptyComponent={!loading && <Text>No products found.</Text>}
         />
       )}
       <View
@@ -346,17 +376,17 @@ const StoreScreen = () => {
           padding: 16,
         }}>
         <Button
+          color={'purple'}
           title="Previous"
           onPress={() => setPage(p => Math.max(p - 1, 1))}
           disabled={page === 1}
         />
-        <Text>
-          Page {page} of {totalPages}
-        </Text>
+        <Text>Page {page}</Text>
         <Button
+          color={'purple'}
           title="Next"
-          onPress={() => setPage(p => Math.min(p + 1, totalPages))}
-          disabled={page === totalPages}
+          onPress={() => setPage(p => p + 1)}
+          disabled={!hasMore}
         />
       </View>
     </View>
@@ -364,7 +394,7 @@ const StoreScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#f7f7f7'},
+  container: {flex: 1, backgroundColor: '#f7f7f7', paddingTop: 16},
   subcategoryContainer: {
     paddingHorizontal: 16,
     paddingTop: 8,

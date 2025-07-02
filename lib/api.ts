@@ -70,7 +70,7 @@ export const getProducts = async (
   lang: string,
   categoryId?: number,
   brandId?: number,
-  page?: number,
+  page: number = 1,
   limit?: number,
 ) => {
   try {
