@@ -133,18 +133,20 @@ export const getProductById = async (productId: number, lang: string) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Accept-Language': lang, // this enables language translation
+          'Accept-Language': lang,
         },
       },
     );
+
     if (!response.ok) {
       throw new Error(`Failed to fetch product (status: ${response.status})`);
     }
 
     const json = await response.json();
-    const product = json?.data?.[0];
+    const product = json?.data; // <-- FIXED
 
     if (!product) {
+      console.warn('Product response missing or empty:', json);
       throw new Error('Product not found in response');
     }
 
@@ -155,6 +157,7 @@ export const getProductById = async (productId: number, lang: string) => {
     throw error;
   }
 };
+
 // ================= CATEGORIES =================
 export const getParentCategories = async () => {
   try {

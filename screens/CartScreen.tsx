@@ -20,7 +20,6 @@ import CustomButton from '../components/CustomButton';
 import {
   deleteCartItem,
   updateCartItemQuantity,
-  getProductById,
   getCustomerCart,
 } from '../lib/api';
 import type {RootStackParamList} from '../App';
@@ -38,25 +37,24 @@ type CartItem = {
   selected?: boolean;
   selectedColor?: {color: string};
 };
-
-type ProductImage = {
-  is_main: boolean;
-  listing_image: string;
-  origin_image: string; // ✅ add this
-};
-
 type CartApiItem = {
   cart_item_id: number;
   product_id: number;
   cart_id: number;
   qty: number;
   price?: number;
-};
 
-type ProductDescription = {
-  name?: string;
-  description?: string;
-  short_description?: string;
+  product_name?: string;
+  product_price?: number;
+  image?: string;
+  product?: {
+    description?: {
+      url_key?: string;
+      name?: string;
+      description?: string;
+      short_description?: string;
+    };
+  };
 };
 
 const CartScreen = () => {
@@ -82,45 +80,31 @@ const CartScreen = () => {
 
       if (!cart || !cart.items) {
         setCartItems([]);
-        setCartId(cart.id || null);
+        setCartId(cart?.cart_id || null);
         return;
       }
 
       setCartId(cart.cart_id || null);
 
-      const enrichedItems = await Promise.all(
-        (cart.items as CartApiItem[]).map(async (item: CartApiItem) => {
-          const product = await getProductById(item.product_id, i18n.language);
-          const mainImage =
-            product.images?.find((img: ProductImage) => img.is_main) ||
-            product.images?.[0];
+      const enrichedItems = cart.items.map((item: CartApiItem) => {
+        const quantity = item.qty ?? 1;
+        const product = item.product || {};
+        const description = product.description ?? {};
+        const title = item.product_name || description.name || 'No title';
 
-          let desc: ProductDescription = {};
-          if (
-            typeof product.description === 'object' &&
-            product.description !== null
-          ) {
-            desc = product.description;
-          }
-
-          const quantity = item.qty ?? 1;
-
-          return {
-            cart_item_id: item.cart_item_id,
-            product_id: item.product_id,
-            cart_id: item.cart_id,
-            qty: item.qty,
-            quantity,
-            price: item.price ?? product.price ?? 0,
-            title: product.name || desc.name || 'No title',
-            image: mainImage?.origin_image
-              ? {uri: mainImage.origin_image}
-              : undefined,
-            selected: false,
-            selectedColor: undefined,
-          } as CartItem;
-        }),
-      );
+        return {
+          cart_item_id: item.cart_item_id,
+          product_id: item.product_id,
+          cart_id: item.cart_id,
+          qty: item.qty,
+          quantity,
+          price: item.product_price ?? 0,
+          title,
+          image: item.image ? {uri: item.image} : undefined,
+          selected: false,
+          selectedColor: undefined,
+        } as CartItem;
+      });
 
       setCartItems(enrichedItems);
     } catch (err) {
@@ -128,12 +112,11 @@ const CartScreen = () => {
       setCartItems([]);
       setCartId(null);
     }
-  }, [i18n.language]); // 👈 include only what's necessary
+  }, []);
 
   useEffect(() => {
     loadCartItems();
   }, [loadCartItems]);
-
   const updateItemQty = async (productId: number, change: number) => {
     try {
       const token = await AsyncStorage.getItem('token');

@@ -86,17 +86,22 @@ const MyOrders = () => {
       if (!token) {
         throw new Error(t('myorder.authError') || 'Authentication error');
       }
+      console.log('Token:', token);
 
       const response = await fetch(API_ORDERS_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
         },
       });
 
       if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('Orders API failed:', response.status, errorBody);
         throw new Error(t('myorder.fetchError'));
       }
       console.log('response', response);
+      console.log('Token used:', token);
 
       const data = await response.json();
       console.log('Orders API response:', data);

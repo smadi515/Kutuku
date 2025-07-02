@@ -82,7 +82,7 @@ export type RootStackParamList = {
   SecurityScreen: undefined;
   NotificationSetting: undefined;
   NotificationScreen: undefined;
-  ProductsDetails: {url_key: string}; // Updated to include urlKey
+  ProductsDetails: {url_key: string; product_id: number}; // Updated to include urlKey
   LegalPolicies: undefined;
   LanguageScreen: undefined;
   CartScreen: undefined;

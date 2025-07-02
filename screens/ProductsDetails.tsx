@@ -98,7 +98,8 @@ const ProductsDetails = () => {
         const data = await getProductByUrlKey(urlKey, i18n.language);
         setProduct(data);
         console.log('Fetched product:', data);
-
+        const product_id = data?.product_id;
+        if (!product_id) throw new Error('Product ID not found');
         // Fetch reviews
         const response = await fetch(
           `https://api.sareh-nomow.xyz/api/reviews/product/${product_id}`,
@@ -246,7 +247,7 @@ const ProductsDetails = () => {
   };
 
   return (
-    <View style={{flex: 1, backgroundColor: '#F5F0FF'}}>
+    <View style={{flex: 1, backgroundColor: '#F5F0FF', paddingTop: 20}}>
       <Header
         title={t('productDetails.headerTitle')}
         showBack={true}
