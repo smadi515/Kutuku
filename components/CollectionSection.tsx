@@ -23,6 +23,7 @@ type ProductDescription = {
   name: string;
   short_description: string;
   url_key: string;
+  description: string;
 };
 
 type ProductImage = {
@@ -141,7 +142,7 @@ const CollectionSection = () => {
               {description.name}
             </Text>
             <Text style={styles.productShort} numberOfLines={2}>
-              {description.short_description || 'No description'}
+              {description.description || 'No description'}
             </Text>
             <View style={styles.priceRow}>
               <Text style={styles.productPrice}>${price.toFixed(2)}</Text>
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#2a9d8f',
+    color: 'blcak',
   },
   outOfStock: {
     fontSize: 12,
