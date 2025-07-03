@@ -80,7 +80,7 @@ const LanguageScreen = () => {
                   ? require('../assets/usa.png')
                   : item.languageCode === 'ar'
                   ? require('../assets/ksa.png')
-                  : require('../assets/placeholder_flag.png') // optional placeholder image
+                  : require('../assets/flag.png')
               }
               style={styles.flag}
             />

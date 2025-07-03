@@ -16,12 +16,18 @@ import {searchProducts} from '../lib/api';
 
 const SearchScreen = ({navigation}: any) => {
   const {t, i18n} = useTranslation();
-
+  type ProductDescription = {
+    name: string;
+    short_description: string;
+    url_key: string;
+    description: string;
+  };
   type Product = {
     product_id: number;
     price: number;
     name: string;
     image: string;
+    description: ProductDescription;
   };
 
   const [filteredResults, setFilteredResults] = useState<Product[]>([]);
@@ -46,7 +52,6 @@ const SearchScreen = ({navigation}: any) => {
         const results = await searchProducts(i18n.language, searchText);
         console.log('Raw API response:', results);
         const transformed = results.map((product: any) => {
-          console.log('Product:', product);
           return {
             product_id: product.product_id,
             price: product.price,
@@ -55,8 +60,12 @@ const SearchScreen = ({navigation}: any) => {
               product.images?.find((img: any) => img.is_main)?.origin_image ??
               product.images?.[0]?.origin_image ??
               'https://via.placeholder.com/100',
+            description: {
+              url_key: product.description?.url_key ?? '',
+            },
           };
         });
+
         setFilteredResults(transformed);
       } catch (error) {
         console.error('Search failed:', error);
@@ -73,12 +82,20 @@ const SearchScreen = ({navigation}: any) => {
   const handleTagPress = (term: string) => {
     setSearchText(term);
   };
-
   const handleSearchSelect = (product: any) => {
-    if (!searchHistory.includes(product.name)) {
-      setSearchHistory(prev => [product.name, ...prev.slice(0, 9)]); // keep last 10
+    const urlKey = product?.description?.url_key || '';
+    console.log('Navigating with url_key:', urlKey);
+
+    if (!urlKey) {
+      console.warn('Missing url_key for selected product:', product);
+      return; // Prevent navigating with an invalid key
     }
-    navigation.navigate('ProductsDetails', {product_id: product.product_id});
+
+    if (!searchHistory.includes(product.name)) {
+      setSearchHistory(prev => [product.name, ...prev.slice(0, 9)]);
+    }
+
+    navigation.navigate('ProductsDetails', {url_key: urlKey});
   };
 
   const removeItem = (item: string) => {
