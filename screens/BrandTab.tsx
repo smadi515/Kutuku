@@ -50,8 +50,8 @@ const BrandTab = () => {
 
   const handleSearch = (text: string) => {
     setSearchText(text);
-    const filtered = brands.filter(
-      brand => brand.name.toLowerCase().includes(text.toLowerCase()), // Filter brands by name
+    const filtered = brands.filter(brand =>
+      brand.name.toLowerCase().includes(text.toLowerCase()),
     );
     setFilteredBrands(filtered);
   };
@@ -77,7 +77,7 @@ const BrandTab = () => {
       {/* Brands List */}
       <ScrollView contentContainerStyle={styles.brandsContainer}>
         {filteredBrands.map(brand => {
-          if (!brand.image) return null; // Skip if image is missing
+          if (!brand.image) return null;
           return (
             <BrandCard
               key={brand.id}

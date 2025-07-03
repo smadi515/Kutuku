@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -262,20 +263,20 @@ const ProductsDetails = () => {
       />
       <ScrollView
         style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
-        <ScrollView
+        <FlatList
           horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.imageScroll}>
-          {product.images?.map((image: any, index: number) => (
+          data={product.images}
+          keyExtractor={(_, index) => index.toString()}
+          renderItem={({item}) => (
             <Image
-              key={index}
-              source={{uri: image.origin_image}}
+              source={{uri: item.origin_image}}
               style={styles.productImage}
               resizeMode="cover"
             />
-          ))}
-        </ScrollView>
-
+          )}
+          showsHorizontalScrollIndicator={false}
+          style={styles.imageScroll}
+        />
         <View style={styles.detailsContainer}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>{product.description?.name}</Text>
@@ -325,13 +326,10 @@ const ProductsDetails = () => {
               {product.attributes.map((attr: any, index: number) => (
                 <View key={index} style={styles.attributeRow}>
                   <Text style={styles.attributeLabel}>
-                    {attr.attribute?.attribute_name ||
-                      t('productDetails.attributeLabel')}
-                    :
+                    {attr.attribute_text || t('productDetails.attributeLabel')}:
                   </Text>
                   <Text style={styles.attributeValue}>
-                    {attr.option?.option_text ||
-                      t('productDetails.attributeValueNA')}
+                    {attr.option_text || t('productDetails.attributeValueNA')}
                   </Text>
                 </View>
               ))}
