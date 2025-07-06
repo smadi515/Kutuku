@@ -69,7 +69,8 @@
     "applying": "Applying...",
     "choose payment method": "Choose Payment Method",
     "enter_promo_code": "Enter your Promo Code",
-    "not_selected": "Not selected"
+    "not_selected": "Not selected",
+    "Delivery Company": "Delivery Company"
   },
   "AddressScreen": {
     "title": "Address",

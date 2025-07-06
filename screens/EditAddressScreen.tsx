@@ -5,6 +5,7 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import {RootStackParamList} from '../App';
+import Header from '../components/Header';
 
 type RouteParams = RouteProp<RootStackParamList, 'EditAddressScreen'>;
 
@@ -76,6 +77,8 @@ const EditAddressScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Header title="Edit Address" showImage={false} showBack={true} />
+
       <CustomInput
         label="Full Name"
         placeholder="Enter full name"
@@ -117,7 +120,7 @@ const EditAddressScreen = () => {
         onChangeText={setPostcode}
       />
       <Switch value={isDefault} onValueChange={val => setIsDefault(val)} />
-      <View style={{flexDirection: 'row', alignItems: 'center'}}>
+      <View style={{alignItems: 'center', width: '100%'}}>
         <CustomButton text="Confirm Edit" onPress={handleEditAddress} />
       </View>
     </ScrollView>

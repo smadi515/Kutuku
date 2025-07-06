@@ -67,7 +67,8 @@
     "applying": "جارٍ التطبيق...",
     "choose payment method": "اختر طريقة الدفع",
     "enter_promo_code": "أدخل رمز الخصم",
-    "not_selected": "غير محدد"
+    "not_selected": "غير محدد",
+    "Delivery Company": "شركة التوصيل"
   },
   "AddressScreen": {
     "title": "العنوان",
