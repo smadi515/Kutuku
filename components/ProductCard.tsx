@@ -65,6 +65,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleCartPress = () => {
     if (!stock_availability) {
+      console.log('stock_availability', stock_availability);
+
       showOutOfStockMessage();
       return;
     }

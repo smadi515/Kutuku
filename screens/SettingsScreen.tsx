@@ -3,11 +3,27 @@ import {View, StyleSheet, ScrollView, Text, I18nManager} from 'react-native';
 import Header from '../components/Header';
 import CustomButton from '../components/CustomButton';
 import {useTranslation} from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {CommonActions} from '@react-navigation/native';
 
 const SettingsScreen = ({navigation}: any) => {
   const {t, i18n} = useTranslation();
   const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('user');
 
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{name: 'Login'}],
+        }),
+      );
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
   return (
     <View style={styles.container}>
       <Header
@@ -84,7 +100,7 @@ const SettingsScreen = ({navigation}: any) => {
             />
             <CustomButton
               text={t('settings.logout')}
-              onPress={() => navigation.navigate('Login')}
+              onPress={handleLogout}
               icon="logout"
               iconType="MaterialCommunityIcons"
               type="ICON_ROW"
