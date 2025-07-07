@@ -1,8 +1,10 @@
-apply plugin: "com.android.application"
-apply plugin: "org.jetbrains.kotlin.android"
-apply plugin: "com.facebook.react"
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.facebook.react'
+    id 'com.google.gms.google-services'
+}
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
-
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -79,9 +81,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.kutuku"
+    namespace "com.SarehAlNomow.ecommerce"
     defaultConfig {
-        applicationId "com.kutuku"
+        applicationId "com.SarehAlNomow.ecommerce"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -110,7 +112,7 @@ android {
 }
 
 dependencies {
-    // The version of react-native is set by the React Native Gradle Plugin
+    // React Native core
     implementation("com.facebook.react:react-android")
 
     if (hermesEnabled.toBoolean()) {
@@ -118,4 +120,13 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // ✅ Firebase BoM (Bill of Materials)
+    implementation platform('com.google.firebase:firebase-bom:33.16.0')
+
+    // ✅ Firebase Analytics (optional but recommended)
+    implementation 'com.google.firebase:firebase-analytics'
+
+    // ✅ Firebase Cloud Messaging
+    implementation 'com.google.firebase:firebase-messaging'
 }

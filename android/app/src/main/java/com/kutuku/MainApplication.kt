@@ -1,4 +1,4 @@
-package com.kutuku
+package com.SarehAlNomow.ecommerce
 
 import android.app.Application
 import com.facebook.react.PackageList

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "212676441628",
+    "project_id": "kutuku-3ccf8",
+    "storage_bucket": "kutuku-3ccf8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:212676441628:android:5eccb689c3bfc3c25991d9",
+        "android_client_info": {
+          "package_name": "com.SarehAlNomow.ecommerce"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCawXjn3y13U3VJ4FdFMVsJVue_XzGskIk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -2,7 +2,14 @@ import React, {useEffect, useState} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {ActivityIndicator, View, I18nManager} from 'react-native';
+import {
+  ActivityIndicator,
+  View,
+  I18nManager,
+  Platform,
+  PermissionsAndroid,
+  Alert,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import './locales/i18n';
 import {I18nextProvider} from 'react-i18next';
@@ -36,6 +43,7 @@ import EditAddressScreen from './screens/EditAddressScreen';
 import Home from './screens/HomeScreen';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import Toast from 'react-native-toast-message';
+import messaging from '@react-native-firebase/messaging';
 
 GoogleSignin.configure({
   webClientId:
@@ -100,6 +108,74 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App = () => {
+  messaging().setBackgroundMessageHandler(async remoteMessage => {
+    console.log('🔙 Background Message:', remoteMessage);
+  });
+  useEffect(() => {
+    const requestPermissions = async () => {
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+        );
+        console.log('Notification permission granted:', granted);
+      }
+
+      // ✅ iOS: request permission via Firebase Messaging
+      if (Platform.OS === 'ios') {
+        const authStatus = await messaging().requestPermission();
+        const enabled =
+          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+        console.log(
+          'iOS Authorization status:',
+          authStatus,
+          'Enabled:',
+          enabled,
+        );
+      }
+    };
+
+    requestPermissions();
+  }, []);
+  useEffect(() => {
+    const getToken = async () => {
+      const token = await messaging().getToken();
+      console.log('📲 FCM Token:', token);
+      // TODO: Send this token to your backend server if needed
+    };
+
+    getToken();
+
+    // Optional: listen for token refresh
+    return messaging().onTokenRefresh(token => {
+      console.log('🔁 New FCM Token:', token);
+    });
+  }, []);
+
+  useEffect(() => {
+    // 🔔 Foreground Notification Handler
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      console.log('🔔 Foreground Message:', remoteMessage);
+      Alert.alert(
+        remoteMessage.notification?.title || 'New Message',
+        remoteMessage.notification?.body || 'You received a notification',
+      );
+    });
+
+    return unsubscribe;
+  }, []);
+  useEffect(() => {
+  const subscribeToTopic = async () => {
+    try {
+      await messaging().subscribeToTopic('news');
+      console.log('Subscribed to topic!');
+    } catch (error) {
+      console.log('Topic subscription failed:', error);
+    }
+  };
+
+  subscribeToTopic();
+}, []);
   <I18nextProvider i18n={i18n}>{/* your app components */}</I18nextProvider>;
 
   const [initialRoute, setInitialRoute] = useState<

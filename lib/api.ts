@@ -561,3 +561,25 @@ export const searchProducts = async (lang: string, query: string) => {
     return [];
   }
 };
+
+export const fetchSocialMediaLinks = async () => {
+  try {
+    const response = await fetch(
+      'https://api.sareh-nomow.website/api/client/v1/settings',
+    );
+    const data = await response.json();
+
+    const socialMediaSetting = data.find(
+      (item: any) => item.name === 'social_media_links',
+    );
+
+    if (socialMediaSetting && socialMediaSetting.is_json) {
+      return socialMediaSetting.value;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Failed to fetch social media links:', error);
+    return null;
+  }
+};
