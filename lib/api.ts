@@ -583,3 +583,25 @@ export const fetchSocialMediaLinks = async () => {
     return null;
   }
 };
+
+export const getAvailableCurrencies = async () => {
+  const res = await fetch(
+    'https://api.sareh-nomow.website/api/client/v1/settings',
+  );
+  const data = await res.json();
+
+  const currencySetting = data.find(
+    (item: any) => item.name === 'available_currencies',
+  );
+
+  if (currencySetting?.is_json) {
+    return currencySetting.value; // Already parsed as array
+  }
+
+  try {
+    return JSON.parse(currencySetting?.value || '[]'); // Just in case it's a stringified array
+  } catch (e) {
+    console.error('Failed to parse currencies', e);
+    return [];
+  }
+};

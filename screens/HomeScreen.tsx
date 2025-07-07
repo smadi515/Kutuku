@@ -7,6 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import Icon from '../components/icon';
 import ProductCard from '../components/ProductCard';
@@ -17,6 +18,7 @@ import {
   getCustomerCart,
   addItemToCart,
   updateCartItemQuantity,
+  getAvailableCurrencies,
 } from '../lib/api';
 import BrandTab from './BrandTab';
 import {useTranslation} from 'react-i18next';
@@ -111,7 +113,34 @@ type ExtendedProduct = Product & {
 };
 
 const HomeScreen = ({navigation}: any) => {
-  const [quantity] = useState(1); // No need to change quantity for now
+  const currencyFlags: Record<string, string> = {
+    USD: '🇺🇸',
+    EUR: '🇪🇺',
+    GBP: '🇬🇧',
+    JOD: '🇯🇴',
+    SAR: '🇸🇦',
+  };
+  const currencyRates: Record<string, number> = {
+    USD: 1,
+    EUR: 0.91,
+    GBP: 0.77,
+    JOD: 0.71,
+    SAR: 3.75,
+  };
+  const currencySymbols: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JOD: 'JD',
+    SAR: '﷼',
+  };
+  const [currencies, setCurrencies] = useState<string[]>([]);
+  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
+  const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
+
+  const rate = selectedCurrency ? currencyRates[selectedCurrency] || 1 : 1;
+
+  const [quantity] = useState(1);
   const [firstName, setFirstName] = useState('');
   const [products, setProducts] = useState<ExtendedProduct[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -121,6 +150,39 @@ const HomeScreen = ({navigation}: any) => {
   const isRTL = i18n.language === 'ar';
   console.log('products', products);
 
+  useEffect(() => {
+    const loadCurrencies = async () => {
+      try {
+        const res = await getAvailableCurrencies(); // ['USD', 'EUR', 'JOD', ...]
+        console.log('Available currencies:', res);
+
+        if (res?.length > 0) {
+          setCurrencies(res);
+
+          // Get saved currency from AsyncStorage
+          const saved = await AsyncStorage.getItem('selectedCurrency');
+
+          if (saved && res.includes(saved)) {
+            setSelectedCurrency(saved); // Use saved value
+          } else {
+            // If no saved or invalid, set the first currency
+            setSelectedCurrency(res[0]);
+            await AsyncStorage.setItem('selectedCurrency', res[0]); // Save fallback
+          }
+        }
+      } catch (error) {
+        console.error('Error loading currencies:', error);
+      }
+    };
+
+    loadCurrencies();
+  }, []);
+
+  useEffect(() => {
+    if (selectedCurrency) {
+      AsyncStorage.setItem('selectedCurrency', selectedCurrency);
+    }
+  }, [selectedCurrency]);
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -328,6 +390,33 @@ const HomeScreen = ({navigation}: any) => {
             </Text>
             <Text style={styles.subText}>{t('HomeScreen.letsGoShopping')}</Text>
           </View>
+          <TouchableOpacity
+            onPress={() => setCurrencyModalVisible(true)}
+            style={{
+              backgroundColor: 'transparent',
+              padding: 10,
+              borderRadius: 8,
+              marginHorizontal: 16,
+              marginBottom: 8,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              shadowColor: '#f7f7f7',
+              shadowOpacity: 0.1,
+              shadowOffset: {width: 0, height: 1},
+              shadowRadius: 3,
+              elevation: 2,
+            }}>
+            {selectedCurrency ? (
+              <Text style={{fontSize: 16}}>
+                {currencyFlags[selectedCurrency] || '🏳️'} {selectedCurrency}
+              </Text>
+            ) : (
+              <Text style={{fontSize: 16, color: '#aaa'}}>Loading...</Text>
+            )}
+
+            <Icon name="chevron-down" type="feather" size={18} color="#333" />
+          </TouchableOpacity>
         </View>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <Icon
@@ -347,7 +436,57 @@ const HomeScreen = ({navigation}: any) => {
           />
         </View>
       </View>
-
+      <Modal
+        visible={currencyModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCurrencyModalVisible(false)}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.3)',
+            justifyContent: 'center',
+            padding: 20,
+          }}>
+          <View
+            style={{
+              backgroundColor: 'white',
+              borderRadius: 10,
+              padding: 20,
+              maxHeight: '60%',
+            }}>
+            <Text style={{fontSize: 18, fontWeight: 'bold', marginBottom: 10}}>
+              Select Currency
+            </Text>
+            {currencies.length === 0 ? (
+              <Text>No currencies found.</Text>
+            ) : (
+              <FlatList
+                data={currencies}
+                keyExtractor={item => item}
+                renderItem={({item}) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedCurrency(item);
+                      setCurrencyModalVisible(false);
+                    }}
+                    style={{
+                      paddingVertical: 10,
+                      borderBottomWidth: 0.5,
+                      borderBottomColor: '#ccc',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                    }}>
+                    <Text style={{fontSize: 16}}>
+                      {currencyFlags[item] || '🏳️'} {item}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
       {/* Tabs */}
       <View style={styles.tabSwitch}>
         <TouchableOpacity onPress={() => setActiveTab('Home')}>
@@ -398,11 +537,17 @@ const HomeScreen = ({navigation}: any) => {
             </View>
           }
           renderItem={({item}) => {
-            const {description, product_id, price, images, inventory} = item;
+            const {product_id, price, description, brand, images, inventory} =
+              item;
+
+            const convertedPrice = Math.round(price * rate);
+            const currencySymbol = selectedCurrency
+              ? currencySymbols[selectedCurrency] || ''
+              : '';
 
             const urlKey = description?.url_key || '';
             const title = description?.name || 'Unnamed Product';
-            const designer = item.brand?.name || 'No brand';
+            const designer = brand?.name || 'No brand';
             const desc = description?.description || 'No description available';
             const image =
               images?.find((img: ProductImage) => img.is_main)?.origin_image ||
@@ -415,9 +560,10 @@ const HomeScreen = ({navigation}: any) => {
                 urlKey={urlKey}
                 title={title}
                 designer={designer}
-                price={price}
+                price={convertedPrice}
                 image={image}
                 description={desc}
+                currencySymbol={currencySymbol} // ✅ use the variable
                 stock_availability={inventory?.stock_availability ?? false}
                 isFavorite={favorites.includes(product_id.toString())}
                 onPressFavorite={() => toggleFavorite(product_id.toString())}

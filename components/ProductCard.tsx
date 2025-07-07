@@ -26,6 +26,8 @@ type ColorOption = {
 
 type ProductCardProps = {
   product_id: number;
+  currencySymbol?: string;
+
   urlKey: string;
   title: string;
   designer: string;
@@ -50,6 +52,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onPressFavorite,
   onPressCart,
   urlKey,
+  currencySymbol,
 }) => {
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
   console.log('ProductCard rendered with urlKey:', urlKey);
@@ -115,7 +118,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
             gap: 4,
             marginTop: 4,
           }}>
-          <Text style={styles.productPrice}>${price.toFixed(2)}</Text>
+          <Text style={styles.productPrice}>
+            {currencySymbol} {price}
+          </Text>
           {!stock_availability && (
             <>
               <Text>|</Text>

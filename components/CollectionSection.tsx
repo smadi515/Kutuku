@@ -13,6 +13,7 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import type {RootStackParamList} from '../App';
 import {useTranslation} from 'react-i18next';
 import {getParentCategories} from '../lib/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ProductDetailsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -59,6 +60,28 @@ type Category = {
 };
 
 const CollectionSection = () => {
+  const currencyRates: Record<string, number> = {
+    USD: 1,
+    EUR: 0.91,
+    GBP: 0.77,
+    JOD: 0.71,
+    SAR: 3.75,
+  };
+
+  const currencySymbols: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JOD: 'JD',
+    SAR: '﷼',
+  };
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+
+  const rate = selectedCurrency ? currencyRates[selectedCurrency] || 1 : 1;
+  const symbol = selectedCurrency
+    ? currencySymbols[selectedCurrency] || ''
+    : '';
+
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
@@ -97,7 +120,13 @@ const CollectionSection = () => {
       setLoading(false);
     }
   }, [i18n.language]);
-
+  useEffect(() => {
+    const loadSelectedCurrency = async () => {
+      const saved = await AsyncStorage.getItem('selectedCurrency');
+      if (saved) setSelectedCurrency(saved);
+    };
+    loadSelectedCurrency();
+  }, []);
   useEffect(() => {
     fetchCollections();
   }, [fetchCollections]);
@@ -145,7 +174,9 @@ const CollectionSection = () => {
               {description.description || 'No description'}
             </Text>
             <View style={styles.priceRow}>
-              <Text style={styles.productPrice}>${price.toFixed(2)}</Text>
+              <Text style={styles.productPrice}>
+                {symbol} {(price * rate).toFixed(2)}
+              </Text>
               {!stockAvailability && (
                 <Text style={styles.outOfStock}>Out of stock</Text>
               )}
