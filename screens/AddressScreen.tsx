@@ -19,6 +19,7 @@ import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../App';
 import {useTranslation} from 'react-i18next';
+import LinearGradient from 'react-native-linear-gradient';
 
 interface MethodDetails {
   id: number;
@@ -291,166 +292,166 @@ const AddressScreen = () => {
   };
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{flex: 1, backgroundColor: '#F5F0FF'}}>
       <Header
         title={t('AddressScreen.title')}
         showBack={true}
         showImage={false}
       />
-
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{flex: 1, direction: isRTL ? 'rtl' : 'ltr'}}>
-        <ScrollView contentContainerStyle={{padding: 10}}>
-          <Text style={styles.label}>{t('AddressScreen.enter_address')}</Text>
-
-          <CustomInput
-            label={t('AddressScreen.full_name')}
-            placeholder={t('AddressScreen.enter_full_name')}
-            iconType="feather"
-            iconName="user"
-            value={fullName}
-            onChangeText={setFullName}
-          />
-          <CustomInput
-            label={t('AddressScreen.phone_number')}
-            placeholder={t('AddressScreen.enter_phone_number')}
-            iconType="feather"
-            iconName="phone"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-          />
-          <CustomInput
-            label={t('AddressScreen.address1')}
-            placeholder={t('AddressScreen.enter_address1')}
-            iconType="feather"
-            iconName="map-pin"
-            value={address1}
-            onChangeText={setAddress1}
-          />
-          <CustomInput
-            label={t('AddressScreen.address2')}
-            placeholder={t('AddressScreen.enter_address2')}
-            iconType="feather"
-            iconName="map"
-            value={address2}
-            onChangeText={setAddress2}
-          />
-          <CustomInput
-            label={t('AddressScreen.postcode')}
-            placeholder={t('AddressScreen.enter_postcode')}
-            iconType="feather"
-            iconName="hash"
-            value={postcode}
-            onChangeText={handleNumericInput(setPostcode)}
-          />
-
-          <Text style={styles.dropdownLabel}>{t('AddressScreen.country')}</Text>
-          <TouchableOpacity
-            style={styles.dropdown}
-            onPress={() => setCountryModalVisible(true)}>
-            <Text>
-              {selectedCountry
-                ? selectedCountry.name
-                : t('AddressScreen.select_country')}
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={styles.dropdownLabel}>{t('AddressScreen.city')}</Text>
-          <TouchableOpacity
-            style={styles.dropdown}
-            onPress={() => setCityModalVisible(true)}
-            disabled={!selectedCountry}>
-            <Text>
-              {selectedCity
-                ? selectedCity.name
-                : selectedCountry
-                ? t('AddressScreen.select_city')
-                : t('AddressScreen.choose_country_first')}
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={styles.dropdownLabel}>
-            {t('AddressScreen.shipping')}
-          </Text>
-          <TouchableOpacity
-            style={styles.dropdown}
-            onPress={() => setShippingModalVisible(true)}
-            disabled={!selectedCountry}>
-            <Text>
-              {shippingCost
-                ? `${shippingCost.name} - ${shippingCost.cost} JOD`
-                : selectedCountry
-                ? t('AddressScreen.select_shipping_method')
-                : t('AddressScreen.choose_country_first')}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
-            <Text style={styles.confirmText}>{t('AddressScreen.confirm')}</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* Country Modal */}
-      <Modal visible={countryModalVisible} animationType="slide">
-        <FlatList
-          data={countries}
-          keyExtractor={item => item.id.toString()}
-          renderItem={({item}) => (
+        <ScrollView contentContainerStyle={{padding: 18}}>
+          <View style={styles.formCard}>
+            <Text style={styles.label}>{t('AddressScreen.enter_address')}</Text>
+            <CustomInput
+              label={t('AddressScreen.full_name')}
+              placeholder={t('AddressScreen.enter_full_name')}
+              iconType="feather"
+              iconName="user"
+              value={fullName}
+              onChangeText={setFullName}
+            />
+            <CustomInput
+              label={t('AddressScreen.phone_number')}
+              placeholder={t('AddressScreen.enter_phone_number')}
+              iconType="feather"
+              iconName="phone"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+            />
+            <CustomInput
+              label={t('AddressScreen.address1')}
+              placeholder={t('AddressScreen.enter_address1')}
+              iconType="feather"
+              iconName="map-pin"
+              value={address1}
+              onChangeText={setAddress1}
+            />
+            <CustomInput
+              label={t('AddressScreen.address2')}
+              placeholder={t('AddressScreen.enter_address2')}
+              iconType="feather"
+              iconName="map"
+              value={address2}
+              onChangeText={setAddress2}
+            />
+            <CustomInput
+              label={t('AddressScreen.postcode')}
+              placeholder={t('AddressScreen.enter_postcode')}
+              iconType="feather"
+              iconName="hash"
+              value={postcode}
+              onChangeText={handleNumericInput(setPostcode)}
+            />
+            <Text style={styles.dropdownLabel}>{t('AddressScreen.country')}</Text>
             <TouchableOpacity
-              style={styles.option}
-              onPress={() => onCountryChange(item)}>
-              <Text>{item.name}</Text>
-            </TouchableOpacity>
-          )}
-        />
-      </Modal>
-
-      {/* City Modal */}
-      <Modal visible={cityModalVisible} animationType="slide">
-        <FlatList
-          data={selectedCountry?.Cities || []}
-          keyExtractor={item => item.id.toString()}
-          renderItem={({item}) => (
-            <TouchableOpacity
-              style={styles.option}
-              onPress={() => {
-                setSelectedCity(item);
-                setCityModalVisible(false);
-              }}>
-              <Text>{item.name}</Text>
-            </TouchableOpacity>
-          )}
-        />
-      </Modal>
-
-      {/* Shipping Modal */}
-      <Modal visible={ShippingModalVisible} animationType="slide">
-        <FlatList
-          data={getShippingMethods()}
-          keyExtractor={(_, index) => index.toString()}
-          renderItem={({item}) => (
-            <TouchableOpacity
-              style={styles.option}
-              onPress={() => {
-                setShippingCost(item);
-                console.log(
-                  `Selected shipping method: ${item.name} with shipping_zone_method_id: ${item.id}`,
-                );
-                setShippingModalVisible(false);
-              }}>
-              <Text>
-                {item.name} - {item.cost} JOD
+              style={styles.dropdownPill}
+              onPress={() => setCountryModalVisible(true)}>
+              <Text style={styles.dropdownPillText}>
+                {selectedCountry
+                  ? selectedCountry.name
+                  : t('AddressScreen.select_country')}
               </Text>
             </TouchableOpacity>
-          )}
-          ListEmptyComponent={() => (
-            <View style={{padding: 20}}>
-              <Text>{t('AddressScreen.no_shipping_methods')}</Text>
-            </View>
-          )}
-        />
+            <Text style={styles.dropdownLabel}>{t('AddressScreen.city')}</Text>
+            <TouchableOpacity
+              style={styles.dropdownPill}
+              onPress={() => setCityModalVisible(true)}
+              disabled={!selectedCountry}>
+              <Text style={styles.dropdownPillText}>
+                {selectedCity
+                  ? selectedCity.name
+                  : selectedCountry
+                  ? t('AddressScreen.select_city')
+                  : t('AddressScreen.choose_country_first')}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.dropdownLabel}>{t('AddressScreen.shipping')}</Text>
+            <TouchableOpacity
+              style={styles.dropdownPill}
+              onPress={() => setShippingModalVisible(true)}
+              disabled={!selectedCountry}>
+              <Text style={styles.dropdownPillText}>
+                {shippingCost
+                  ? `${shippingCost.name} - ${shippingCost.cost} JOD`
+                  : selectedCountry
+                  ? t('AddressScreen.select_shipping_method')
+                  : t('AddressScreen.choose_country_first')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.confirmBtnGradient} onPress={handleConfirm}>
+              <LinearGradient colors={["#7B2FF2", "#F357A8"]} style={styles.confirmBtnGradientInner}>
+                <Text style={styles.confirmText}>{t('AddressScreen.confirm')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      {/* Country Modal */}
+      <Modal visible={countryModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <FlatList
+              data={countries}
+              keyExtractor={item => item.id.toString()}
+              renderItem={({item}) => (
+                <TouchableOpacity
+                  style={styles.modalOption}
+                  onPress={() => onCountryChange(item)}>
+                  <Text style={styles.modalOptionText}>{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+      {/* City Modal */}
+      <Modal visible={cityModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <FlatList
+              data={selectedCountry?.Cities || []}
+              keyExtractor={item => item.id.toString()}
+              renderItem={({item}) => (
+                <TouchableOpacity
+                  style={styles.modalOption}
+                  onPress={() => {
+                    setSelectedCity(item);
+                    setCityModalVisible(false);
+                  }}>
+                  <Text style={styles.modalOptionText}>{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+      {/* Shipping Modal */}
+      <Modal visible={ShippingModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <FlatList
+              data={getShippingMethods()}
+              keyExtractor={(_, index) => index.toString()}
+              renderItem={({item}) => (
+                <TouchableOpacity
+                  style={styles.modalOption}
+                  onPress={() => {
+                    setShippingCost(item);
+                    setShippingModalVisible(false);
+                  }}>
+                  <Text style={styles.modalOptionText}>{item.name} - {item.cost} JOD</Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={() => (
+                <View style={{padding: 20}}>
+                  <Text>{t('AddressScreen.no_shipping_methods')}</Text>
+                </View>
+              )}
+            />
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -459,29 +460,79 @@ const AddressScreen = () => {
 const styles = StyleSheet.create({
   label: {fontSize: 16, marginBottom: 10},
   dropdownLabel: {marginTop: 10, fontSize: 14, fontWeight: '500'},
-  dropdown: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 12,
-    borderRadius: 6,
-    marginTop: 5,
+  formCard: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 18,
+    elevation: 5,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.09,
+    shadowRadius: 10,
+    marginBottom: 18,
   },
+  dropdownPill: {
+    backgroundColor: '#F7F0FF',
+    borderRadius: 22,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    marginTop: 8,
+    marginBottom: 2,
+    borderWidth: 1.5,
+    borderColor: '#F7F0FF',
+  },
+  dropdownPillText: {color: '#7B2FF2', fontWeight: '600', fontSize: 15},
   confirmBtn: {
-    backgroundColor: 'purple',
-    padding: 12,
-    borderRadius: 10,
+    display: 'none',
+  },
+  confirmBtnGradient: {
+    marginTop: 24,
+    borderRadius: 22,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#F357A8',
+    shadowOpacity: 0.13,
+    shadowRadius: 8,
+  },
+  confirmBtnGradientInner: {
+    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 20,
+    borderRadius: 22,
   },
   confirmText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 17,
+    letterSpacing: 1,
   },
   option: {
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.18)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 18,
+    maxHeight: '60%',
+    elevation: 8,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.13,
+    shadowRadius: 14,
+  },
+  modalOption: {
+    paddingVertical: 18,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    borderRadius: 12,
+  },
+  modalOptionText: {fontSize: 16, color: '#7B2FF2', fontWeight: '600'},
 });
 
 export default AddressScreen;

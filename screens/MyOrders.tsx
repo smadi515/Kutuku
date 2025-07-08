@@ -8,11 +8,15 @@ import {
   Image,
   ActivityIndicator,
   TextInput,
+  StatusBar,
 } from 'react-native';
 import Header from '../components/Header';
 import {useTranslation} from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import { useCurrency } from '../contexts/CurrencyContext';
+import Icon from '../components/icon';
+import LinearGradient from 'react-native-linear-gradient';
 
 const API_ORDERS_URL =
   'https://api.sareh-nomow.website/api/client/v1/orders/user';
@@ -34,6 +38,13 @@ type Order = {
   shipping_method_name?: string;
 };
 
+const statusColors: Record<string, string> = {
+  delivered: '#7B2FF2',
+  pending: '#F357A8',
+  cancelled: '#ccc',
+  onProgress: '#FBBF24',
+};
+
 const MyOrders = () => {
   const {t, i18n} = useTranslation();
   const isRTL = i18n.language === 'ar';
@@ -45,6 +56,8 @@ const MyOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
+  const { currency, rate } = useCurrency();
+
   const openOrderDetail = () => bottomSheetRef.current?.expand();
   const openOrderReview = () => bottomSheetRef.current?.expand();
   const handleSubmitReview = async () => {
@@ -68,10 +81,7 @@ const MyOrders = () => {
           }),
         },
       );
-      console.log('productId', productId);
-
-      const result = await response.json();
-      console.log('Review submitted:', result);
+      await response.json();
       bottomSheetRef.current?.close();
     } catch (error) {
       console.error('Error submitting review:', error);
@@ -80,36 +90,24 @@ const MyOrders = () => {
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         throw new Error(t('myorder.authError') || 'Authentication error');
       }
-      console.log('Token:', token);
-
       const response = await fetch(API_ORDERS_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: 'application/json',
         },
       });
-
       if (!response.ok) {
-        const errorBody = await response.text();
-        console.error('Orders API failed:', response.status, errorBody);
         throw new Error(t('myorder.fetchError'));
       }
-      console.log('response', response);
-      console.log('Token used:', token);
-
       const data = await response.json();
-      console.log('Orders API response:', data);
-
       if (!Array.isArray(data)) {
         throw new Error(t('myorder.invalidResponse') || 'Invalid response');
       }
-
       const formattedOrders: Order[] = data.map((order: any) => ({
         items: order.items.map((item: any) => ({
           product_name: item.product_name,
@@ -126,12 +124,8 @@ const MyOrders = () => {
         payment_method_name: order.payment_method_name,
         shipping_method_name: order.shipping_method_name,
       }));
-      console.log('formattedOrders', formattedOrders);
-
       setOrders(formattedOrders);
-      console.log('formattedOrders', formattedOrders);
     } catch (err: any) {
-      console.error('Failed to fetch orders:', err);
       setError(err.message || t('myorder.fetchError'));
     } finally {
       setLoading(false);
@@ -145,7 +139,7 @@ const MyOrders = () => {
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#6A5AE0" />
+        <ActivityIndicator size="large" color="#7B2FF2" />
       </View>
     );
   }
@@ -163,130 +157,73 @@ const MyOrders = () => {
 
   return (
     <View style={styles.container}>
-      <Header showImage={false} title={t('myorder.title')} />
-      <ScrollView>
+      <StatusBar barStyle="light-content" backgroundColor="#7B2FF2" />
+      <LinearGradient colors={["#7B2FF2", "#F357A8"]} style={styles.headerGradient}>
+        <Header showImage={false} title={t('myorder.title')} />
+      </LinearGradient>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {orders.length > 0 ? (
           orders.map((order, orderIndex) => (
             <View key={orderIndex} style={styles.orderCard}>
-              {order.items.map((item, itemIndex) => (
-                <View key={itemIndex} style={styles.itemRow}>
-                  <Image
-                    source={{uri: item.product_image}}
-                    style={styles.itemImg}
-                    resizeMode="contain"
-                  />
-                  <View style={styles.itemDetails}>
-                    <Text style={styles.itemTitle}>{order.order_number}</Text>
-                    <Text style={styles.itemSub}>
-                      {t('myorder.color')}: {item.color || 'N/A'}
-                    </Text>
-                    <Text style={styles.itemSub}>
-                      {t('myorder.qty')}: {item.qty}
-                    </Text>
-                  </View>
-                  <View style={styles.rightSide}>
-                    <View style={styles.statusBox}>
-                      <Text style={styles.statusText}>
-                        {order.status || t('myorder.onProgress')}
-                      </Text>
-                    </View>
-                    <Text style={styles.priceText}>
-                      ${order.product_price * item.qty}
-                    </Text>
-                  </View>
+              <View style={styles.orderHeaderRow}>
+                <Text style={styles.orderNumber}>{t('myorder.order_number')}: {order.order_number}</Text>
+                <View style={[styles.statusBadge, { backgroundColor: statusColors[order.status?.toLowerCase() || 'pending'] || '#7B2FF2' }] }>
+                  <Text style={styles.statusBadgeText}>{order.status || t('myorder.onProgress')}</Text>
                 </View>
-              ))}
-              <View style={styles.buttonRow}>
-                <TouchableOpacity
-                  style={styles.detailBtn}
-                  onPress={() => {
-                    setSelectedOrder(order);
-                    openOrderDetail();
-                  }}>
-                  <Text>{t('myorder.detail')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.trackingBtn}
-                  onPress={() => {
-                    setSelectedOrder(order);
-                    openOrderReview();
-                  }}>
-                  <Text style={{color: '#fff'}}>{t('myorder.Review')}</Text>
+              </View>
+              <View style={styles.orderInfoRow}>
+                <Icon name="credit-card" type="Feather" size={18} color="#7B2FF2" style={{ marginRight: 6 }} />
+                <Text style={styles.orderInfoText}>{order.payment_method_name || t('myorder.payment_method')}</Text>
+                <Icon name="truck" type="Feather" size={18} color="#F357A8" style={{ marginLeft: 16, marginRight: 6 }} />
+                <Text style={styles.orderInfoText}>{order.shipping_method_name || t('myorder.shipping_method')}</Text>
+              </View>
+              <View style={styles.itemsList}>
+                {order.items.map((item, itemIndex) => (
+                  <View key={itemIndex} style={styles.itemRow}>
+                    <Image
+                      source={{uri: item.product_image}}
+                      style={styles.itemImg}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.itemDetails}>
+                      <Text style={styles.itemTitle}>{item.product_name}</Text>
+                      <Text style={styles.itemSub}>{t('myorder.color')}: {item.color || 'N/A'}</Text>
+                      <Text style={styles.itemSub}>{t('myorder.qty')}: {item.qty}</Text>
+                    </View>
+                    <View style={styles.rightSide}>
+                      <Text style={styles.priceText}>{currency} {(order.product_price * item.qty * rate).toFixed(2)}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.orderFooterRow}>
+                <Text style={styles.orderTotalLabel}>{t('myorder.total_amount')}:</Text>
+                <Text style={styles.orderTotalValue}>{currency} {(order.product_price * rate).toFixed(2)}</Text>
+                <TouchableOpacity style={styles.reviewBtn} onPress={() => { setSelectedOrder(order); openOrderReview(); }}>
+                  <Icon name="star" type="Feather" size={18} color="#fff" />
+                  <Text style={styles.reviewBtnText}>{t('myorder.Review')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
           ))
         ) : (
-          <Text style={{textAlign: 'center', marginTop: 20}}>
+          <Text style={{textAlign: 'center', marginTop: 20, color: '#888', fontSize: 16}}>
             {t('myorder.noCurrentOrders')}
           </Text>
         )}
+        <View style={{ height: 40 }} />
       </ScrollView>
+      {/* Review Bottom Sheet */}
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
         snapPoints={snapPoints}
-        enablePanDownToClose>
-        <BottomSheetView style={{alignItems: 'center', padding: 10}}>
-          <View
-            style={[styles.sheetContent, {direction: isRTL ? 'rtl' : 'ltr'}]}>
-            {selectedOrder ? (
-              <>
-                <Text style={{fontWeight: 'bold', fontSize: 16}}>
-                  {t('myorder.order_number')}:
-                </Text>
-                <Text>{selectedOrder.order_number}</Text>
-
-                <Text style={{fontWeight: 'bold', marginTop: 10}}>
-                  {t('myorder.status')}:
-                </Text>
-                <Text>{selectedOrder.status}</Text>
-
-                <Text style={{fontWeight: 'bold', marginTop: 10}}>
-                  {t('myorder.payment_method')}:
-                </Text>
-                <Text>{selectedOrder.payment_method_name || 'N/A'}</Text>
-
-                <Text style={{fontWeight: 'bold', marginTop: 10}}>
-                  {t('myorder.shipping_method')}:
-                </Text>
-                <Text>{selectedOrder.shipping_method_name || 'N/A'}</Text>
-
-                <Text style={{fontWeight: 'bold', marginTop: 10}}>
-                  {t('myorder.total_amount')}:
-                </Text>
-                <Text>${selectedOrder.product_price.toFixed(2)}</Text>
-
-                <Text style={{fontWeight: 'bold', marginTop: 10}}>
-                  {t('myorder.items')}:
-                </Text>
-                {selectedOrder.items.map((item, idx) => (
-                  <View key={idx} style={{marginBottom: 8}}>
-                    <Text>
-                      {t('myorder.name')}: {item.product_name}
-                    </Text>
-                    <Text>
-                      {t('myorder.qty')}: {item.qty}
-                    </Text>
-                  </View>
-                ))}
-              </>
-            ) : (
-              <Text>{t('myorder.no_details')}</Text>
-            )}
-          </View>
-        </BottomSheetView>
-      </BottomSheet>
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={-1}
-        snapPoints={snapPoints}
-        enablePanDownToClose>
+        enablePanDownToClose
+      >
         <BottomSheetView style={{alignItems: 'center', padding: 20}}>
-          <Text style={{fontSize: 16, fontWeight: 'bold', marginBottom: 10}}>
+          <Text style={{fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#7B2FF2'}}>
             {t('myorder.leaveReview')}
           </Text>
-
           {/* Star Rating */}
           <View style={{flexDirection: 'row', marginBottom: 15}}>
             {[1, 2, 3, 4, 5].map(num => (
@@ -294,14 +231,13 @@ const MyOrders = () => {
                 <Text
                   style={{
                     fontSize: 30,
-                    color: num <= rating ? 'gold' : 'gray',
+                    color: num <= rating ? '#F357A8' : '#ccc',
                   }}>
                   ★
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
-
           {/* Review Text */}
           <TextInput
             style={{
@@ -319,20 +255,13 @@ const MyOrders = () => {
             value={reviewText}
             onChangeText={setReviewText}
           />
-
           {/* Submit Button */}
           <TouchableOpacity
-            style={{
-              backgroundColor: '#6A5AE0',
-              padding: 12,
-              borderRadius: 8,
-              width: '100%',
-              alignItems: 'center',
-            }}
-            onPress={handleSubmitReview}>
-            <Text style={{color: '#fff', fontWeight: 'bold'}}>
-              {t('myorder.submitReview')}
-            </Text>
+            style={styles.submitReviewBtn}
+            onPress={handleSubmitReview}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.submitReviewBtnText}>{t('myorder.submitReview')}</Text>
           </TouchableOpacity>
         </BottomSheetView>
       </BottomSheet>
@@ -341,80 +270,166 @@ const MyOrders = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F5F0FF', paddingTop: 10},
-  sheetContent: {
-    padding: 20,
+  container: { flex: 1, backgroundColor: '#F7F7FB' },
+  center: { justifyContent: 'center', alignItems: 'center' },
+  headerGradient: {
+    width: '100%',
+    paddingTop: 0,
+    paddingBottom: 18,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    marginBottom: 8,
   },
-  center: {justifyContent: 'center', alignItems: 'center'},
+  scrollContent: {
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    paddingBottom: 60,
+  },
   orderCard: {
-    margin: 16,
-    backgroundColor: 'white',
-    padding: 12,
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    marginBottom: 24,
+    elevation: 3,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.09,
+    shadowRadius: 12,
+    padding: 18,
+  },
+  orderHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  orderNumber: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#7B2FF2',
+  },
+  statusBadge: {
     borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 80,
+  },
+  statusBadgeText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 13,
+    textTransform: 'capitalize',
+  },
+  orderInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  orderInfoText: {
+    fontSize: 14,
+    color: '#7B2FF2',
+    fontWeight: '600',
+  },
+  itemsList: {
+    marginBottom: 10,
   },
   itemRow: {
     flexDirection: 'row',
-    marginBottom: 12,
     alignItems: 'center',
+    backgroundColor: '#F7F7FB',
+    borderRadius: 12,
+    marginBottom: 10,
+    padding: 10,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   itemImg: {
     width: 60,
     height: 60,
-    borderRadius: 8,
+    borderRadius: 10,
+    backgroundColor: '#eee',
+    marginRight: 12,
   },
   itemDetails: {
     flex: 1,
-    marginLeft: 10,
+    marginLeft: 2,
   },
   itemTitle: {
-    fontWeight: 'bold',
+    fontWeight: '700',
+    fontSize: 15,
+    color: '#333',
+    marginBottom: 2,
   },
   itemSub: {
     fontSize: 12,
-    color: '#666',
+    color: '#888',
+    marginBottom: 1,
   },
   rightSide: {
     alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  statusBox: {
-    backgroundColor: '#E0F7FA',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#2196F3',
+    justifyContent: 'center',
+    minWidth: 80,
   },
   priceText: {
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 15,
+    color: '#7B2FF2',
   },
-  buttonRow: {
+  orderFooterRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: 8,
   },
-  detailBtn: {
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    width: '45%',
-    alignItems: 'center',
+  orderTotalLabel: {
+    fontSize: 15,
+    color: '#333',
+    fontWeight: '600',
   },
-  trackingBtn: {
-    padding: 10,
-    backgroundColor: '#6A5AE0',
-    borderRadius: 8,
-    width: '45%',
+  orderTotalValue: {
+    fontSize: 16,
+    color: '#7B2FF2',
+    fontWeight: '700',
+    marginLeft: 6,
+  },
+  reviewBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#F357A8',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginLeft: 10,
+    elevation: 2,
+    shadowColor: '#F357A8',
+    shadowOpacity: 0.09,
+    shadowRadius: 6,
+  },
+  reviewBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    marginLeft: 6,
+    fontSize: 15,
+  },
+  submitReviewBtn: {
+    backgroundColor: '#7B2FF2',
+    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    marginTop: 8,
+    elevation: 2,
+  },
+  submitReviewBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
   },
   retryBtn: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: '#6A5AE0',
+    backgroundColor: '#7B2FF2',
     borderRadius: 8,
   },
 });

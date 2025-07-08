@@ -24,6 +24,7 @@ import {
 import {useTranslation} from 'react-i18next';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 import Toast from 'react-native-toast-message';
+import LinearGradient from 'react-native-linear-gradient';
 interface Review {
   review_id: number;
   customer: {
@@ -73,6 +74,27 @@ type BackendCartItem = {
   // add other relevant fields if you have them
 };
 const ProductsDetails = () => {
+  const currencyRates: Record<string, number> = {
+    USD: 1,
+    EUR: 0.91,
+    GBP: 0.77,
+    JOD: 0.71,
+    SAR: 3.75,
+  };
+
+  const currencySymbols: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JOD: 'JD',
+    SAR: '﷼',
+  };
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+
+  const rate = selectedCurrency ? currencyRates[selectedCurrency] || 1 : 1;
+  const symbol = selectedCurrency
+    ? currencySymbols[selectedCurrency] || ''
+    : '';
   const {t, i18n} = useTranslation();
   const isRTL = i18n.language === 'ar';
   const navigation =
@@ -90,6 +112,7 @@ const ProductsDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [averageRating, setAverageRating] = useState<number | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -131,7 +154,13 @@ const ProductsDetails = () => {
 
   const increaseQuantity = () => setQuantity(prev => prev + 1);
   const decreaseQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
-
+  useEffect(() => {
+    const loadSelectedCurrency = async () => {
+      const saved = await AsyncStorage.getItem('selectedCurrency');
+      if (saved) setSelectedCurrency(saved);
+    };
+    loadSelectedCurrency();
+  }, []);
   const handleAddToCart = async (item: Product) => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -247,22 +276,48 @@ const ProductsDetails = () => {
     return stars;
   };
 
+  // Extract color options from attributes
+  let colorOptions: any[] = [];
+  if (product?.attributes && Array.isArray(product.attributes)) {
+    const colorAttrs = product.attributes.filter(
+      (attr: any) =>
+        (attr.attribute_code && attr.attribute_code.toLowerCase().includes('color')) ||
+        (attr.attribute_text && attr.attribute_text.toLowerCase().includes('color'))
+    );
+    if (colorAttrs.length > 0) {
+      // If options array exists, use it
+      if (Array.isArray(colorAttrs[0].options) && colorAttrs[0].options.length > 0) {
+        colorOptions = colorAttrs[0].options;
+      } else if (colorAttrs[0].option_text) {
+        // Otherwise, use option_text as a single color
+        colorOptions = [{
+          value: colorAttrs[0].option_text,
+          label: colorAttrs[0].option_text,
+          hex: colorAttrs[0].hex || '#888',
+        }];
+      }
+    }
+  }
+
   return (
-    <View style={{flex: 1, backgroundColor: '#F5F0FF', paddingTop: 20}}>
-      <Header
-        title={t('productDetails.headerTitle')}
-        showBack={true}
-        showImage={false}
-        rightIcons={[
-          {
-            name: 'cart-outline',
-            type: 'Ionicons',
-            onPress: () => navigation.navigate('CartScreen'),
-          },
-        ]}
-      />
+    <View style={{flex: 1, backgroundColor: '#F5F0FF'}}>
+      <View style={{marginTop: 24}}>
+        <Header
+          title={t('productDetails.headerTitle')}
+          showBack={true}
+          showImage={false}
+          rightIcons={[
+            {
+              name: 'cart-outline',
+              type: 'Ionicons',
+              onPress: () => navigation.navigate('CartScreen'),
+            },
+          ]}
+        />
+      </View>
       <ScrollView
-        style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
+        style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr', marginTop: 0}]}
+        contentContainerStyle={{paddingBottom: 40}}>
         <FlatList
           horizontal
           data={product.images}
@@ -277,21 +332,49 @@ const ProductsDetails = () => {
           showsHorizontalScrollIndicator={false}
           style={styles.imageScroll}
         />
-        <View style={styles.detailsContainer}>
+        {/* Color Selection */}
+        {(colorOptions.length > 0) && (
+          <View style={[styles.colorSectionCard, {marginBottom: 18}]}> 
+            <Text style={styles.sectionTitle}>Choose Color</Text>
+            <View style={styles.colorOptionsRow}>
+              {colorOptions.map((color: any, idx: number) => (
+                <TouchableOpacity
+                  key={color.value || color.label || idx}
+                  style={[styles.colorCircle, {
+                    backgroundColor: color.hex || color.value || '#888',
+                    borderWidth: selectedColor === color.value ? 3 : 1.5,
+                    borderColor: selectedColor === color.value ? '#F357A8' : '#eee',
+                  }]}
+                  onPress={() => setSelectedColor(color.value)}
+                  activeOpacity={0.8}
+                >
+                  {selectedColor === color.value && (
+                    <View style={styles.selectedCircle}/>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+        {/* Debug: Show colorOptions if empty for troubleshooting */}
+        {(product?.attributes && colorOptions.length === 0) && (
+          <Text style={{color: 'red', margin: 10, fontSize: 12}}>No color options found for this product.</Text>
+        )}
+        <View style={styles.detailsCard}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>{product.description?.name}</Text>
             <View style={styles.quantityContainer}>
-              <TouchableOpacity onPress={decreaseQuantity}>
-                <Icon name="minus" type="ant" size={16} color="#333" />
+              <TouchableOpacity onPress={decreaseQuantity} style={styles.qtyBtn}>
+                <Icon name="minus" type="ant" size={16} color="#7B2FF2" />
               </TouchableOpacity>
               <Text style={styles.quantityText}>{quantity}</Text>
-              <TouchableOpacity onPress={increaseQuantity}>
-                <Icon name="plus" type="ant" size={16} color="#333" />
+              <TouchableOpacity onPress={increaseQuantity} style={styles.qtyBtn}>
+                <Icon name="plus" type="ant" size={16} color="#7B2FF2" />
               </TouchableOpacity>
             </View>
           </View>
           <Text style={styles.priceText}>
-            {product.price ? `$${product.price.toFixed(2)}` : 'N/A'}
+            {symbol} {(product.price * rate).toFixed(2)}
           </Text>
           <Text style={styles.stockText}>qty:{product.inventory?.qty}</Text>
           <Text style={styles.stockText}>
@@ -319,7 +402,7 @@ const ProductsDetails = () => {
           </Text>
           {/* Attributes Section */}
           {product.attributes && product.attributes.length > 0 && (
-            <>
+            <View style={styles.attributesCard}>
               <Text style={styles.sectionTitle}>
                 {t('productDetails.attributesTitle')}
               </Text>
@@ -333,7 +416,7 @@ const ProductsDetails = () => {
                   </Text>
                 </View>
               ))}
-            </>
+            </View>
           )}
           <TouchableOpacity
             style={styles.cartButton}
@@ -407,7 +490,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 10,
   },
-  productImage: {width: 300, height: 300, marginRight: 10},
+  productImage: {width: 300, height: 300, marginRight: 10, borderRadius: 24, borderWidth: 2, borderColor: '#fff', shadowColor: '#7B2FF2', shadowOpacity: 0.09, shadowRadius: 10, backgroundColor: '#f7f7fb'},
   detailsContainer: {padding: 16},
   titleRow: {
     flexDirection: 'row',
@@ -450,6 +533,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  detailsCard: {padding: 20, backgroundColor: '#fff', borderRadius: 24, marginHorizontal: 12, marginTop: -40, elevation: 6, shadowColor: '#7B2FF2', shadowOpacity: 0.09, shadowRadius: 14},
+  colorSectionCard: {backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, marginTop: 10, marginBottom: 0, padding: 16, elevation: 3, shadowColor: '#7B2FF2', shadowOpacity: 0.06, shadowRadius: 8},
+  colorOptionsRow: {flexDirection: 'row', gap: 12, marginTop: 10, marginBottom: 4},
+  colorCircle: {width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: '#eee', marginRight: 10, justifyContent: 'center', alignItems: 'center'},
+  selectedCircle: {width: 18, height: 18, borderRadius: 9, backgroundColor: '#fff', borderWidth: 2, borderColor: '#F357A8'},
+  qtyBtn: {backgroundColor: '#f7f7fb', borderRadius: 8, padding: 6, marginHorizontal: 2, borderWidth: 1, borderColor: '#eee'},
+  attributesCard: {backgroundColor: '#F7F0FF', borderRadius: 14, padding: 12, marginTop: 18},
 });
 
 export default ProductsDetails;

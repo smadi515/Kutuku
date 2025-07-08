@@ -9,10 +9,10 @@ import {
   TouchableOpacity,
   ScrollView,
   Button,
+  StatusBar,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import Header from '../components/Header';
 import ProductCard from '../components/ProductCard';
 import type {RootStackParamList} from '../App';
@@ -23,6 +23,9 @@ import {
   getCustomerCart,
   addItemToCart,
 } from '../lib/api';
+import { useCurrency } from '../contexts/CurrencyContext';
+import LinearGradient from 'react-native-linear-gradient';
+import Icon from '../components/icon';
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -76,7 +79,6 @@ const StoreScreen = () => {
   const brandId = route.params?.brandId;
   const [products, setProducts] = useState<ExtendedProduct[]>([]);
 
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -87,6 +89,16 @@ const StoreScreen = () => {
   const [page, setPage] = useState(1);
 
   const PAGE_SIZE = 10;
+
+  const { currency, rate } = useCurrency();
+  const currencySymbols: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JOD: 'JD',
+    SAR: '﷼',
+  };
+  const symbol = currencySymbols[currency] || '';
 
   useEffect(() => {
     const fetchSubcategories = async () => {
@@ -256,32 +268,24 @@ const StoreScreen = () => {
       console.error('Error in handleAddToCart:', error);
     }
   };
-  const toggleFavorite = async (productId: string) => {
-    try {
-      let updatedFavorites = favorites.includes(productId)
-        ? favorites.filter(id => id !== productId)
-        : [...favorites, productId];
-      setFavorites(updatedFavorites);
-      await AsyncStorage.setItem('favorites', JSON.stringify(updatedFavorites));
-    } catch (error) {
-      console.error('Error updating favorites:', error);
-    }
-  };
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Store"
-        showBack={true}
-        showImage={false}
-        rightIcons={[
-          {
-            name: 'cart-outline',
-            type: 'Ionicons',
-            onPress: () => navigation.navigate('CartScreen'),
-          },
-        ]}
-      />
+      <StatusBar barStyle="light-content" backgroundColor="#7B2FF2" />
+      <LinearGradient colors={["#7B2FF2", "#F357A8"]} style={styles.headerGradient}>
+        <Header
+          title="Store"
+          showBack={true}
+          showImage={false}
+          rightIcons={[
+            {
+              name: 'cart-outline',
+              type: 'Ionicons',
+              onPress: () => navigation.navigate('CartScreen'),
+            },
+          ]}
+        />
+      </LinearGradient>
       {/* Subcategory Filter */}
       {categoryId && subcategories.length > 0 && (
         <ScrollView
@@ -289,43 +293,20 @@ const StoreScreen = () => {
           showsHorizontalScrollIndicator={false}
           style={styles.subcategoryContainer}>
           <TouchableOpacity
-            style={styles.subcategoryButton}
+            style={[styles.pillButton, selectedSubcategoryId === null && styles.pillButtonSelected]}
             onPress={() => setSelectedSubcategoryId(null)}>
-            <View
-              style={[
-                styles.circle,
-                selectedSubcategoryId === null && styles.circleSelected,
-              ]}>
-              <Text
-                style={[
-                  styles.subcategoryText,
-                  selectedSubcategoryId === null && styles.textSelected,
-                ]}>
-                All
-              </Text>
-            </View>
+            <Text style={[styles.pillButtonText, selectedSubcategoryId === null && styles.pillButtonTextSelected]}>All</Text>
           </TouchableOpacity>
-
           {subcategories.map(sub => (
             <TouchableOpacity
               key={sub.id}
-              style={styles.subcategoryButton}
+              style={[styles.pillButton, selectedSubcategoryId === sub.id && styles.pillButtonSelected]}
               onPress={() => setSelectedSubcategoryId(sub.id)}>
               <Image
                 source={{uri: sub.image}}
-                style={[
-                  styles.subcategoryImage,
-                  selectedSubcategoryId === sub.id &&
-                    styles.circleSelectedBorder,
-                ]}
+                style={styles.pillImage}
               />
-              <Text
-                style={[
-                  styles.subcategoryText,
-                  selectedSubcategoryId === sub.id && styles.textSelected,
-                ]}>
-                {sub.name}
-              </Text>
+              <Text style={[styles.pillButtonText, selectedSubcategoryId === sub.id && styles.pillButtonTextSelected]}>{sub.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -334,7 +315,7 @@ const StoreScreen = () => {
       {loading ? (
         <ActivityIndicator
           size="large"
-          color="purple"
+          color="#7B2FF2"
           style={{marginTop: 20}}
         />
       ) : (
@@ -347,97 +328,158 @@ const StoreScreen = () => {
           columnWrapperStyle={styles.productRow}
           contentContainerStyle={{padding: 16}}
           renderItem={({item}) => (
-            <ProductCard
-              product_id={item.product_id}
-              urlKey={item.urlKey}
-              title={item.name}
-              designer={item.brandName}
-              price={item.price}
-              image={item.image ?? ''}
-              description={item.description}
-              stock_availability={item.inventory?.stock_availability ?? false}
-              isFavorite={favorites.includes(item.product_id.toString())}
-              onPressFavorite={() => toggleFavorite(item.product_id.toString())}
-              onPressCart={() => handleAddToCart(item)}
-            />
+            <View style={styles.productCardWrapper}>
+              <ProductCard
+                product_id={item.product_id}
+                urlKey={item.urlKey}
+                title={item.name}
+                designer={item.brandName}
+                price={Math.round(item.price * rate)}
+                currencySymbol={symbol}
+                image={item.image ?? ''}
+                description={item.description}
+                stock_availability={item.inventory?.stock_availability ?? false}
+                onPressCart={() => handleAddToCart(item)}
+              />
+            </View>
           )}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={
-            loadingMore ? <ActivityIndicator size="small" /> : null
+            loadingMore ? <ActivityIndicator size="small" color="#7B2FF2" /> : null
           }
-          ListEmptyComponent={!loading && <Text>No products found.</Text>}
+          ListEmptyComponent={!loading && <Text style={styles.emptyText}>No products found.</Text>}
         />
       )}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          padding: 16,
-        }}>
-        <Button
-          color={'purple'}
-          title="Previous"
+      <View style={styles.paginationRow}>
+        <TouchableOpacity
+          style={[styles.paginationBtn, page === 1 && styles.paginationBtnDisabled]}
           onPress={() => setPage(p => Math.max(p - 1, 1))}
           disabled={page === 1}
-        />
-        <Text>Page {page}</Text>
-        <Button
-          color={'purple'}
-          title="Next"
+        >
+          <Icon name="chevron-left" type="Feather" size={22} color={page === 1 ? '#ccc' : '#fff'} />
+          <Text style={styles.paginationBtnText}>Previous</Text>
+        </TouchableOpacity>
+        <Text style={styles.pageNumber}>Page {page}</Text>
+        <TouchableOpacity
+          style={[styles.paginationBtn, !hasMore && styles.paginationBtnDisabled]}
           onPress={() => setPage(p => p + 1)}
           disabled={!hasMore}
-        />
+        >
+          <Text style={styles.paginationBtnText}>Next</Text>
+          <Icon name="chevron-right" type="Feather" size={22} color={!hasMore ? '#ccc' : '#fff'} />
+        </TouchableOpacity>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#f7f7f7', paddingTop: 16},
-  subcategoryContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
+  container: {flex: 1, backgroundColor: '#F7F7FB'},
+  headerGradient: {
+    width: '100%',
+    paddingTop: 0,
+    paddingBottom: 18,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
     marginBottom: 8,
   },
-  subcategoryButton: {
+  subcategoryContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    marginBottom: 10,
+  },
+  pillButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
+    backgroundColor: '#fff',
+    borderRadius: 22,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    marginRight: 12,
+    borderWidth: 1.5,
+    borderColor: '#eee',
+    elevation: 2,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
   },
-  circle: {
-    width: 60,
-    height: 60,
-    backgroundColor: 'white',
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
+  pillButtonSelected: {
+    backgroundColor: '#7B2FF2',
+    borderColor: '#7B2FF2',
   },
-  circleSelected: {
-    backgroundColor: 'purple',
+  pillButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7B2FF2',
+    marginLeft: 6,
   },
-  circleSelectedBorder: {
-    borderWidth: 2,
-    borderColor: 'purple',
+  pillButtonTextSelected: {
+    color: '#fff',
   },
-  subcategoryText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#000',
-    marginTop: 4,
-  },
-  textSelected: {
-    color: 'white',
-  },
-  subcategoryImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 4,
+  pillImage: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    marginRight: 6,
+    backgroundColor: '#eee',
   },
   productRow: {
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 18,
     paddingHorizontal: 8,
+  },
+  productCardWrapper: {
+    flex: 1,
+    marginHorizontal: 6,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    elevation: 3,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    padding: 4,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#888',
+    fontSize: 16,
+    marginTop: 30,
+  },
+  paginationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingBottom: 18,
+    marginTop: 2,
+  },
+  paginationBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#7B2FF2',
+    borderRadius: 22,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    elevation: 2,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.13,
+    shadowRadius: 8,
+  },
+  paginationBtnDisabled: {
+    backgroundColor: '#eee',
+  },
+  paginationBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+    marginHorizontal: 4,
+  },
+  pageNumber: {
+    fontSize: 16,
+    color: '#7B2FF2',
+    fontWeight: '700',
   },
 });
 

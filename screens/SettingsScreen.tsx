@@ -1,29 +1,31 @@
 import React from 'react';
-import {View, StyleSheet, ScrollView, Text, I18nManager} from 'react-native';
+import { View, StyleSheet, ScrollView, Text, I18nManager, TouchableOpacity } from 'react-native';
 import Header from '../components/Header';
 import CustomButton from '../components/CustomButton';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {CommonActions} from '@react-navigation/native';
+import { CommonActions } from '@react-navigation/native';
+import Icon from '../components/icon';
 
-const SettingsScreen = ({navigation}: any) => {
-  const {t, i18n} = useTranslation();
+const SettingsScreen = ({ navigation }: any) => {
+  const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'ar' || I18nManager.isRTL;
+
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('user');
-
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
-          routes: [{name: 'Login'}],
-        }),
+          routes: [{ name: 'Login' }],
+        })
       );
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
+
   return (
     <View style={styles.container}>
       <Header
@@ -37,14 +39,18 @@ const SettingsScreen = ({navigation}: any) => {
           },
         ]}
       />
-
-      <View style={styles.scrollWrapper}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          style={{direction: isRTL ? 'rtl' : 'ltr'}}
-          showsVerticalScrollIndicator={false}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('settings.general')}</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        style={{ direction: isRTL ? 'rtl' : 'ltr' }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.sectionCard}>
+          <View style={styles.accentBar} />
+          <View style={styles.sectionContent}>
+            <View style={styles.sectionHeaderRow}>
+              <Icon name="settings" type="Feather" size={22} color="#7B2FF2" style={{ marginRight: 8 }} />
+              <Text style={styles.sectionTitle}>{t('settings.general')}</Text>
+            </View>
             <CustomButton
               text={t('settings.edit_profile')}
               onPress={() => navigation.navigate('EditProfile')}
@@ -81,9 +87,14 @@ const SettingsScreen = ({navigation}: any) => {
               type="ICON_ROW"
             />
           </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('settings.preferences')}</Text>
+        </View>
+        <View style={styles.sectionCard}>
+          <View style={styles.accentBar} />
+          <View style={styles.sectionContent}>
+            <View style={styles.sectionHeaderRow}>
+              <Icon name="star" type="Feather" size={22} color="#F357A8" style={{ marginRight: 8 }} />
+              <Text style={styles.sectionTitle}>{t('settings.preferences')}</Text>
+            </View>
             <CustomButton
               text={t('settings.legal')}
               onPress={() => navigation.navigate('LegalPolicies')}
@@ -98,16 +109,14 @@ const SettingsScreen = ({navigation}: any) => {
               iconType="Feather"
               type="ICON_ROW"
             />
-            <CustomButton
-              text={t('settings.logout')}
-              onPress={handleLogout}
-              icon="logout"
-              iconType="MaterialCommunityIcons"
-              type="ICON_ROW"
-            />
           </View>
-        </ScrollView>
-      </View>
+        </View>
+        <View style={{ height: 40 }} />
+      </ScrollView>
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
+        <Icon name="log-out" type="Feather" size={20} color="#fff" style={{ marginRight: 8 }} />
+        <Text style={styles.logoutBtnText}>{t('settings.logout') || 'Logout'}</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -115,30 +124,69 @@ const SettingsScreen = ({navigation}: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F0FF',
-    paddingTop: 10,
-  },
-  scrollWrapper: {
-    flex: 1,
+    backgroundColor: '#F7F7FB',
+    paddingTop: 0,
   },
   scrollContent: {
-    paddingVertical: 10,
+    paddingVertical: 18,
     paddingHorizontal: 16,
-    paddingBottom: 30,
+    paddingBottom: 60,
   },
-  section: {
-    backgroundColor: '#F5F0FF',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    marginBottom: 16,
+  sectionCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    marginBottom: 22,
     elevation: 2,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    alignItems: 'flex-start',
+    minHeight: 80,
+  },
+  accentBar: {
+    width: 6,
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
+    backgroundColor: '#7B2FF2',
+    height: '100%',
+    minHeight: 120,
+  },
+  sectionContent: {
+    flex: 1,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 10,
-    color: '#333',
+    fontWeight: '700',
+    color: '#7B2FF2',
+    letterSpacing: 0.2,
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#7B2FF2',
+    borderRadius: 24,
+    marginHorizontal: 18,
+    marginBottom: 24,
+    paddingVertical: 16,
+    elevation: 3,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.13,
+    shadowRadius: 8,
+  },
+  logoutBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 17,
+    letterSpacing: 0.2,
   },
 });
 

@@ -13,7 +13,10 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import type {RootStackParamList} from '../App';
 import {useTranslation} from 'react-i18next';
 import {getParentCategories} from '../lib/api';
+import { useCurrency } from '../contexts/CurrencyContext';
+import ProductCard from './ProductCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getCustomerCart, addItemToCart, updateCartItemQuantity } from '../lib/api';
 
 type ProductDetailsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -60,14 +63,7 @@ type Category = {
 };
 
 const CollectionSection = () => {
-  const currencyRates: Record<string, number> = {
-    USD: 1,
-    EUR: 0.91,
-    GBP: 0.77,
-    JOD: 0.71,
-    SAR: 3.75,
-  };
-
+  const { currency, rate } = useCurrency();
   const currencySymbols: Record<string, string> = {
     USD: '$',
     EUR: '€',
@@ -75,18 +71,14 @@ const CollectionSection = () => {
     JOD: 'JD',
     SAR: '﷼',
   };
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
-
-  const rate = selectedCurrency ? currencyRates[selectedCurrency] || 1 : 1;
-  const symbol = selectedCurrency
-    ? currencySymbols[selectedCurrency] || ''
-    : '';
+  const symbol = currencySymbols[currency] || '';
 
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
   const {i18n} = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [quantity] = useState(1);
 
   const bannerRef = useRef<FlatList>(null);
   const currentBannerIndex = useRef(0);
@@ -121,13 +113,6 @@ const CollectionSection = () => {
     }
   }, [i18n.language]);
   useEffect(() => {
-    const loadSelectedCurrency = async () => {
-      const saved = await AsyncStorage.getItem('selectedCurrency');
-      if (saved) setSelectedCurrency(saved);
-    };
-    loadSelectedCurrency();
-  }, []);
-  useEffect(() => {
     fetchCollections();
   }, [fetchCollections]);
 
@@ -146,44 +131,91 @@ const CollectionSection = () => {
     return () => clearInterval(interval);
   }, [collections]);
 
+  // Add to cart logic (copied from StoreScreen)
+  const handleAddToCart = async (item: ProductItem) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        // Optionally show a login prompt
+        return;
+      }
+      const storedCart = await AsyncStorage.getItem('cart');
+      const parsedCart: any[] = storedCart ? JSON.parse(storedCart) : [];
+      let cart = await getCustomerCart(token);
+      if (!cart || !cart.cart_id) {
+        return;
+      }
+      const backendCartItems: any[] = cart.items || [];
+      parsedCart.forEach((localItem: any) => {
+        const backendItem = backendCartItems.find(
+          (bItem: any) => bItem.product_id.toString() === localItem.id,
+        );
+        if (backendItem) {
+          localItem.cart_item_id = backendItem.cart_item_id;
+        }
+      });
+      const existingItemIndex = parsedCart.findIndex(
+        (cartItem: any) => cartItem.id.toString() === item.product_id.toString(),
+      );
+      if (existingItemIndex !== -1) {
+        const existingItem = parsedCart[existingItemIndex];
+        const newQuantity = existingItem.quantity + quantity;
+        if (!existingItem.cart_item_id) {
+          // Optionally show error
+          return;
+        }
+        await updateCartItemQuantity(
+          token,
+          existingItem.cart_item_id,
+          cart.cart_id,
+          newQuantity,
+        );
+        parsedCart[existingItemIndex].quantity = newQuantity;
+      } else {
+        const backendResponse = await addItemToCart(
+          token,
+          item.product_id.toString(),
+          quantity,
+        );
+        const newItem = {
+          id: item.product_id.toString(),
+          title: item.product.description.name,
+          price: item.product.price,
+          quantity: quantity,
+          selected: true,
+          image: { uri: item.product.images[0]?.origin_image || '' },
+          cart_item_id: backendResponse?.cart_item_id || null,
+        };
+        parsedCart.push(newItem);
+      }
+      await AsyncStorage.setItem('cart', JSON.stringify(parsedCart));
+      navigation.navigate('CartScreen');
+    } catch (error) {
+      // Optionally show error
+    }
+  };
+
   const renderProduct = ({item}: {item: ProductItem}) => {
     const {product} = item;
     const {description, price, images, inventory} = product;
     const stockAvailability = inventory.stock_availability;
     const urlKey = product?.description?.url_key || '';
-
     const imageUri = images[0]?.origin_image || '';
-
     return (
-      <TouchableOpacity
-        onPress={() =>
-          navigation.navigate('ProductsDetails', {url_key: urlKey})
-        }
-        style={styles.productCard}>
-        <View style={styles.cardContainer}>
-          <Image
-            source={{uri: imageUri}}
-            style={styles.productImage}
-            resizeMode="cover"
-          />
-          <View style={styles.productInfo}>
-            <Text style={styles.productName} numberOfLines={1}>
-              {description.name}
-            </Text>
-            <Text style={styles.productShort} numberOfLines={2}>
-              {description.description || 'No description'}
-            </Text>
-            <View style={styles.priceRow}>
-              <Text style={styles.productPrice}>
-                {symbol} {(price * rate).toFixed(2)}
-              </Text>
-              {!stockAvailability && (
-                <Text style={styles.outOfStock}>Out of stock</Text>
-              )}
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
+      <View style={{width: 180, marginRight: 12}}>
+        <ProductCard
+          product_id={item.product_id}
+          urlKey={urlKey}
+          title={description.name}
+          designer={''}
+          price={Math.round(price * rate)}
+          currencySymbol={symbol}
+          image={imageUri}
+          description={description.description}
+          stock_availability={stockAvailability}
+          onPressCart={() => handleAddToCart(item)}
+        />
+      </View>
     );
   };
 

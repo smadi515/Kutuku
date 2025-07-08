@@ -27,7 +27,6 @@ type ColorOption = {
 type ProductCardProps = {
   product_id: number;
   currencySymbol?: string;
-
   urlKey: string;
   title: string;
   designer: string;
@@ -35,8 +34,6 @@ type ProductCardProps = {
   image: string;
   description: string;
   stock_availability: boolean;
-  isFavorite: boolean;
-  onPressFavorite: () => void;
   onPressCart: () => void;
   colors?: ColorOption[];
 };
@@ -48,8 +45,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
   image,
   description,
   stock_availability,
-  isFavorite,
-  onPressFavorite,
   onPressCart,
   urlKey,
   currencySymbol,
@@ -78,7 +73,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.8}
+      activeOpacity={0.88}
       onPress={() => navigation.navigate('ProductsDetails', {url_key: urlKey})}
       style={styles.card}>
       <View style={styles.imageWrapper}>
@@ -87,45 +82,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
           style={styles.productImage}
           resizeMode="cover"
         />
-
-        <TouchableOpacity style={styles.heartIcon} onPress={onPressFavorite}>
-          <Icon
-            name={isFavorite ? 'heart' : 'hearto'}
-            type="ant"
-            size={16}
-            color={isFavorite ? 'red' : '#777'}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.cartIcon} onPress={handleCartPress}>
-          <Icon name="shoppingcart" type="ant" size={16} color="#333" />
+        <TouchableOpacity style={styles.cartIcon} onPress={handleCartPress} activeOpacity={0.85}>
+          <Icon name="shoppingcart" type="ant" size={18} color="#fff" />
         </TouchableOpacity>
       </View>
-
       <View style={styles.infoContainer}>
-        <Text style={styles.title} numberOfLines={1}>
-          {title}
-        </Text>
-        <Text style={styles.designer} numberOfLines={1}>
-          {designer}
-        </Text>
-        <Text style={styles.description} numberOfLines={2}>
-          {description || 'No description available'}
-        </Text>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 4,
-            marginTop: 4,
-          }}>
-          <Text style={styles.productPrice}>
-            {currencySymbol} {price}
-          </Text>
+        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        <Text style={styles.designer} numberOfLines={1}>{designer}</Text>
+        <Text style={styles.description} numberOfLines={2}>{description || 'No description available'}</Text>
+        <View style={styles.priceRow}>
+          <Text style={styles.productPrice}>{currencySymbol} {price}</Text>
           {!stock_availability && (
-            <>
-              <Text>|</Text>
-              <Text style={{color: 'red'}}>Out of stock</Text>
-            </>
+            <Text style={styles.outOfStockBadge}>Out of stock</Text>
           )}
         </View>
       </View>
@@ -134,68 +102,85 @@ const ProductCard: React.FC<ProductCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  description: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
   card: {
-    width: '48%',
+    width: '100%',
     backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 16,
+    borderRadius: 20,
+    marginBottom: 18,
     overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    elevation: 6,
+    shadowColor: '#7B2FF2',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.13,
+    shadowRadius: 14,
   },
   imageWrapper: {
     position: 'relative',
+    backgroundColor: '#f7f7fb',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
   },
   productImage: {
     width: '100%',
-    height: 120,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  heartIcon: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: '#fff',
-    padding: 4,
-    borderRadius: 20,
-    elevation: 2,
+    height: 140,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   cartIcon: {
     position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: '#fff',
-    padding: 4,
-    borderRadius: 20,
-    elevation: 2,
+    top: 14,
+    left: 14,
+    backgroundColor: '#F357A8',
+    padding: 7,
+    borderRadius: 22,
+    elevation: 3,
+    shadowColor: '#F357A8',
+    shadowOpacity: 0.13,
+    shadowRadius: 6,
+    zIndex: 2,
   },
   infoContainer: {
-    padding: 10,
+    padding: 14,
   },
   title: {
-    fontWeight: '600',
-    fontSize: 14,
-    color: '#333',
+    fontWeight: '700',
+    fontSize: 16,
+    color: '#222',
+    marginBottom: 2,
   },
   designer: {
     fontSize: 12,
     color: '#888',
+    marginBottom: 2,
+  },
+  description: {
+    fontSize: 12,
+    color: '#666',
     marginTop: 2,
+    marginBottom: 6,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 8,
   },
   productPrice: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: 'black',
-    marginTop: 6,
+    color: '#7B2FF2',
+  },
+  outOfStockBadge: {
+    backgroundColor: '#F357A8',
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
+    overflow: 'hidden',
   },
 });
 

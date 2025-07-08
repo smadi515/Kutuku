@@ -44,6 +44,7 @@ import Home from './screens/HomeScreen';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import Toast from 'react-native-toast-message';
 import messaging from '@react-native-firebase/messaging';
+import { CurrencyProvider } from './contexts/CurrencyContext'; // adjust path if needed
 
 GoogleSignin.configure({
   webClientId:
@@ -107,7 +108,7 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const App = () => {
+export default function App() {
   messaging().setBackgroundMessageHandler(async remoteMessage => {
     console.log('🔙 Background Message:', remoteMessage);
   });
@@ -199,54 +200,54 @@ const App = () => {
   }
 
   return (
-    <GestureHandlerRootView style={{flex: 1}}>
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName={initialRoute}
-          screenOptions={{headerShown: false}}>
-          <Stack.Screen name="Splash" component={SplashScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="OTPScreen" component={OTPScreen} />
-          <Stack.Screen name="CreateAcount" component={CreateAcountScreen} />
-          <Stack.Screen name="Onboarding" component={OnboardingFlow} />
-          <Stack.Screen
-            name="TabNavigationScreen"
-            component={TabNavigationScreen}
-          />
-          <Stack.Screen name="EditProfile" component={EditProfile} />
-          <Stack.Screen name="Favorites" component={Favorites} />
-          <Stack.Screen name="Profile" component={Profile} />
-          <Stack.Screen name="StoreScreen" component={StoreScreen} />
-          <Stack.Screen name="ChangePassword" component={ChangePassword} />
-          <Stack.Screen
-            name="EditAddressScreen"
-            component={EditAddressScreen}
-          />
-          <Stack.Screen name="MyOrders" component={MyOrders} />
-          <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
-          <Stack.Screen name="HelpSupport" component={HelpSupport} />
-          <Stack.Screen name="AddressScreen" component={AddressScreen} />
-          <Stack.Screen name="SecurityScreen" component={SecurityScreen} />
-          <Stack.Screen
-            name="NotificationSetting"
-            component={NotificationSetting}
-          />
-          <Stack.Screen
-            name="NotificationScreen"
-            component={NotificationScreen}
-          />
-          <Stack.Screen name="Home" component={Home} />
-          <Stack.Screen name="ProductsDetails" component={ProductsDetails} />
-          <Stack.Screen name="LegalPolicies" component={LegalPolicies} />
-          <Stack.Screen name="LanguageScreen" component={LanguageScreen} />
-          <Stack.Screen name="CartScreen" component={CartScreen} />
-          <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
-          <Stack.Screen name="SearchScreen" component={SearchScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-      <Toast />
-    </GestureHandlerRootView>
+    <CurrencyProvider>
+      <GestureHandlerRootView style={{flex: 1}}>
+        <NavigationContainer>
+          <Stack.Navigator
+            initialRouteName={initialRoute}
+            screenOptions={{headerShown: false}}>
+            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="OTPScreen" component={OTPScreen} />
+            <Stack.Screen name="CreateAcount" component={CreateAcountScreen} />
+            <Stack.Screen name="Onboarding" component={OnboardingFlow} />
+            <Stack.Screen
+              name="TabNavigationScreen"
+              component={TabNavigationScreen}
+            />
+            <Stack.Screen name="EditProfile" component={EditProfile} />
+            <Stack.Screen name="Favorites" component={Favorites} />
+            <Stack.Screen name="Profile" component={Profile} />
+            <Stack.Screen name="StoreScreen" component={StoreScreen} />
+            <Stack.Screen name="ChangePassword" component={ChangePassword} />
+            <Stack.Screen
+              name="EditAddressScreen"
+              component={EditAddressScreen}
+            />
+            <Stack.Screen name="MyOrders" component={MyOrders} />
+            <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+            <Stack.Screen name="HelpSupport" component={HelpSupport} />
+            <Stack.Screen name="AddressScreen" component={AddressScreen} />
+            <Stack.Screen name="SecurityScreen" component={SecurityScreen} />
+            <Stack.Screen
+              name="NotificationSetting"
+              component={NotificationSetting}
+            />
+            <Stack.Screen
+              name="NotificationScreen"
+              component={NotificationScreen}
+            />
+            <Stack.Screen name="Home" component={Home} />
+            <Stack.Screen name="ProductsDetails" component={ProductsDetails} />
+            <Stack.Screen name="LegalPolicies" component={LegalPolicies} />
+            <Stack.Screen name="LanguageScreen" component={LanguageScreen} />
+            <Stack.Screen name="CartScreen" component={CartScreen} />
+            <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+            <Stack.Screen name="SearchScreen" component={SearchScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+        <Toast />
+      </GestureHandlerRootView>
+    </CurrencyProvider>
   );
-};
-
-export default App;
+}

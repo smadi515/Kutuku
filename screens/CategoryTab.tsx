@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   TextInput, // Add TextInput for search
+  View, // Added View for categories grid
 } from 'react-native';
 import {getParentCategories} from '../lib/api';
 import {useNavigation} from '@react-navigation/native';
@@ -78,54 +79,77 @@ const CategoryTab = () => {
         placeholder={t('CategoryTab.search_categories')}
         value={searchText}
         onChangeText={handleSearch}
+        placeholderTextColor="#aaa"
       />
-
       {/* Categories List */}
-      {filteredCategories.map(category => (
-        <TouchableOpacity
-          key={category.id}
-          onPress={() => handleCategoryPress(category.id)}
-          style={styles.card}>
-          <Image
-            source={{uri: category.image}}
-            style={styles.image}
-            resizeMode="cover"
-          />
-          <Text style={styles.title}>{category.name}</Text>
-        </TouchableOpacity>
-      ))}
+      <View style={styles.categoriesGrid}>
+        {filteredCategories.map(category => (
+          <TouchableOpacity
+            key={category.id}
+            onPress={() => handleCategoryPress(category.id)}
+            style={styles.card}>
+            <Image
+              source={{uri: category.image}}
+              style={styles.image}
+              resizeMode="cover"
+            />
+            <Text style={styles.title}>{category.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-    backgroundColor: '#F5F0FF',
+    padding: 14,
+    backgroundColor: '#F7F7FB',
   },
   searchInput: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 12,
-    paddingHorizontal: 10,
+    height: 44,
+    borderColor: '#7B2FF2',
+    borderWidth: 1.5,
+    borderRadius: 14,
+    marginBottom: 18,
+    paddingHorizontal: 14,
     fontSize: 16,
+    backgroundColor: '#fff',
+    color: '#222',
+    elevation: 2,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+  },
+  categoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   card: {
-    marginBottom: 20,
+    width: '48%',
+    marginBottom: 18,
+    borderRadius: 18,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    elevation: 4,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.09,
+    shadowRadius: 10,
   },
   image: {
     width: '100%',
-    height: 180,
-    borderRadius: 10,
-    backgroundColor: '#eaeaea',
+    height: 120,
+    backgroundColor: '#eee',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
   },
   title: {
-    marginTop: 8,
+    padding: 12,
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
+    color: '#7B2FF2',
+    textAlign: 'center',
   },
 });
 

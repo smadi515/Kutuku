@@ -6,6 +6,9 @@ import {
   ActivityIndicator,
   View,
   TextInput,
+  Text,
+  TouchableOpacity,
+  Image,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -65,51 +68,85 @@ const BrandTab = () => {
   }
 
   return (
-    <View style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
+    <ScrollView style={[styles.container, {direction: isRTL ? 'rtl' : 'ltr'}]}>
       {/* Search Input */}
       <TextInput
         style={styles.searchInput}
         placeholder={t('brandsTab.search_Brands')}
         value={searchText}
         onChangeText={handleSearch}
+        placeholderTextColor="#aaa"
       />
-
       {/* Brands List */}
-      <ScrollView contentContainerStyle={styles.brandsContainer}>
+      <View style={styles.brandsGrid}>
         {filteredBrands.map(brand => {
           if (!brand.image) return null;
           return (
-            <BrandCard
+            <TouchableOpacity
               key={brand.id}
-              id={brand.id}
-              name={brand.name}
-              image={brand.image}
-              onPress={handleBrandPress}
-            />
+              onPress={() => handleBrandPress(brand.id)}
+              style={styles.card}
+              activeOpacity={0.85}
+            >
+              <Image source={{uri: brand.image}} style={styles.image} resizeMode="cover" />
+              <Text style={styles.name}>{brand.name}</Text>
+            </TouchableOpacity>
           );
         })}
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 12,
-    backgroundColor: '#F5F0FF',
+    padding: 14,
+    backgroundColor: '#F7F7FB',
   },
   searchInput: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 12,
-    paddingHorizontal: 10,
+    height: 44,
+    borderColor: '#7B2FF2',
+    borderWidth: 1.5,
+    borderRadius: 14,
+    marginBottom: 18,
+    paddingHorizontal: 14,
     fontSize: 16,
+    backgroundColor: '#fff',
+    color: '#222',
+    elevation: 2,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
   },
-  brandsContainer: {
-    paddingBottom: 16,
+  brandsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  card: {
+    width: '48%',
+    marginBottom: 18,
+    borderRadius: 18,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    elevation: 4,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.09,
+    shadowRadius: 10,
+  },
+  image: {
+    width: '100%',
+    height: 120,
+    backgroundColor: '#eee',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+  },
+  name: {
+    padding: 12,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#7B2FF2',
+    textAlign: 'center',
   },
   center: {
     flex: 1,

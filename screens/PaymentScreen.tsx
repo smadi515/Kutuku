@@ -19,6 +19,8 @@ import CustomInput from '../components/CustomInput';
 import Icon from '../components/icon';
 import {useTranslation} from 'react-i18next';
 import Toast from 'react-native-toast-message';
+import { useCurrency } from '../contexts/CurrencyContext';
+import LinearGradient from 'react-native-linear-gradient';
 interface CartItem {
   product_price: number;
   qty: number;
@@ -47,6 +49,7 @@ const PaymentScreen = () => {
   const isRTL = i18n.language === 'ar';
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
+  const { currency, rate } = useCurrency();
 
   const {
     cartId,
@@ -210,6 +213,24 @@ const PaymentScreen = () => {
   };
   const confirmPayment = async () => {
     console.log('Confirm Payment Pressed');
+
+    // Validation for payment method and address
+    if (!paymentMethod) {
+      Toast.show({
+        type: 'error',
+        text1: 'Missing Payment Method',
+        text2: 'Please select a payment method before confirming.',
+      });
+      return;
+    }
+    if (!selectedAddressId) {
+      Toast.show({
+        type: 'error',
+        text1: 'Missing Address',
+        text2: 'Please select a shipping address before confirming.',
+      });
+      return;
+    }
 
     try {
       setLoading(true);
@@ -494,33 +515,21 @@ const PaymentScreen = () => {
         showBack={true}
         showImage={false}
       />
-      <ScrollView style={{padding: 20, direction: isRTL ? 'rtl' : 'ltr'}}>
-        <View style={styles.mapPreview}>
-          <Text style={styles.title}>
-            {t('PaymentScreen.Choose an Address')}
-          </Text>
-
+      <ScrollView style={{padding: 20, direction: isRTL ? 'rtl' : 'ltr'}} contentContainerStyle={{paddingBottom: 60}}>
+        <View style={styles.mapPreviewCard}>
+          <Text style={styles.title}>{t('PaymentScreen.Choose an Address')}</Text>
           {addresses.length > 0 ? (
-            <View
-              style={{backgroundColor: '#fff', borderRadius: 10, padding: 10}}>
+            <View>
               {addresses.map(addr => (
                 <TouchableOpacity
                   key={addr.id}
                   onPress={() => onSelectAddress(addr)}
-                  style={{
-                    padding: 10,
-                    backgroundColor:
-                      addr.id === selectedAddressId ? '#d0f0c0' : '#f0f0f0',
-                    borderRadius: 8,
-                    marginBottom: 5,
-                  }}>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}>
-                    <Text style={{flex: 1}}>
+                  style={[
+                    styles.addressCard,
+                    addr.id === selectedAddressId && styles.addressCardSelected,
+                  ]}>
+                  <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <Text style={styles.addressText} numberOfLines={2}>
                       {addr.street}, {addr.city}, {addr.country}
                     </Text>
                     <View style={{flexDirection: 'row'}}>
@@ -533,21 +542,10 @@ const PaymentScreen = () => {
                           }
                         }}
                         style={{marginHorizontal: 5}}>
-                        <Icon
-                          type={'Ionicons'}
-                          name="create-outline"
-                          size={20}
-                          color="#007bff"
-                        />
+                        <Icon type={'Ionicons'} name="create-outline" size={20} color="#7B2FF2" />
                       </TouchableOpacity>
-
                       <TouchableOpacity onPress={() => deleteAddress(addr.id)}>
-                        <Icon
-                          type={'Ionicons'}
-                          name="trash"
-                          size={20}
-                          color="red"
-                        />
+                        <Icon type={'Ionicons'} name="trash" size={20} color="#F357A8" />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -555,110 +553,61 @@ const PaymentScreen = () => {
               ))}
             </View>
           ) : (
-            <Text style={{color: '#888'}}>
-              {t('PaymentScreen.No addresses found')}
-            </Text>
+            <Text style={{color: '#888'}}>{t('PaymentScreen.No addresses found')}</Text>
           )}
-
-          {selectedAddressId && (
-            <View style={{marginTop: 20}}>
-              <Text style={styles.title}>
-                {t('PaymentScreen.Delivery Company')}
-              </Text>
-              {addresses
-                .find(addr => addr.id === selectedAddressId)
-                ?.shippingMethods.map(method => (
-                  <TouchableOpacity
-                    key={method.name}
-                    style={{
-                      padding: 10,
-                      backgroundColor:
-                        method.name === shippingMethodName
-                          ? '#d0f0c0'
-                          : '#f0f0f0',
-                      borderRadius: 8,
-                      marginTop: 5,
-                    }}
-                    onPress={() => {
-                      setShippingMethodName(method.name);
-                      setShippingCost(method.cost);
-                    }}>
-                    <Text>{`${method.name} - ${method.cost} JOD`}</Text>
-                  </TouchableOpacity>
-                ))}
-            </View>
-          )}
-
           <TouchableOpacity
             onPress={() => navigation.navigate('AddressScreen')}
-            style={{
-              marginTop: 10,
-              padding: 12,
-              backgroundColor: 'purple',
-              borderRadius: 8,
-              alignItems: 'center',
-            }}>
-            <Text style={{color: '#fff', fontWeight: 'bold'}}>
-              {t('PaymentScreen.Create Address')}
-            </Text>
+            style={styles.addAddressBtn}>
+            <Text style={styles.addAddressBtnText}>{t('PaymentScreen.Create Address')}</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.summaryContainer}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>
-              {t('PaymentScreen.subtotal')}
-            </Text>
-            <Text style={styles.summaryValue}>
-              ${subtotal ? subtotal.toFixed(2) : '0.00'}
-            </Text>
+        {selectedAddressId && (
+          <View style={styles.shippingCard}>
+            <Text style={styles.title}>{t('PaymentScreen.Delivery Company')}</Text>
+            {addresses.find(addr => addr.id === selectedAddressId)?.shippingMethods.map(method => (
+              <TouchableOpacity
+                key={method.name}
+                style={[
+                  styles.shippingMethodBtn,
+                  method.name === shippingMethodName && styles.shippingMethodBtnSelected,
+                ]}
+                onPress={() => {
+                  setShippingMethodName(method.name);
+                  setShippingCost(method.cost);
+                }}>
+                <Text style={styles.shippingMethodText}>{`${method.name} - ${currency} ${(method.cost * rate).toFixed(2)}`}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>
-              {t('PaymentScreen.Quantity')}
-            </Text>
-            <Text style={styles.summaryValue}>
-              {typeof totalQuantity === 'number' ? totalQuantity : 0}
-            </Text>
+        )}
+        <LinearGradient colors={["#7B2FF2", "#F357A8"]} style={styles.summaryGradient}>
+          <View style={styles.summaryContainer}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>{t('PaymentScreen.subtotal')}</Text>
+              <Text style={styles.summaryValue}>{currency} {(subtotal * rate).toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>{t('PaymentScreen.Quantity')}</Text>
+              <Text style={styles.summaryValue}>{typeof totalQuantity === 'number' ? totalQuantity : 0}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>{t('PaymentScreen.Shipping')}</Text>
+              <Text style={styles.summaryValue}>{currency} {(shippingCost * rate).toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>{t('PaymentScreen.Shipping Method')}</Text>
+              <Text style={styles.summaryValue}>{shippingMethodName || t('PaymentScreen.not_selected')}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, {color: '#fff'}]}>{t('PaymentScreen.Total')}</Text>
+              <Text style={[styles.summaryValue, {color: '#fff'}]}>{currency} {(totalPrice * rate).toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, {fontWeight: 'bold', color: '#fff'}]}>{t('PaymentScreen.Total After Discount')}</Text>
+              <Text style={[styles.summaryValue, {fontWeight: 'bold', color: '#fff'}]}>{currency} {(discountedTotal ? discountedTotal * rate : 0).toFixed(2)}</Text>
+            </View>
           </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>
-              {t('PaymentScreen.Shipping')}
-            </Text>
-            <Text style={styles.summaryValue}>
-              ${shippingCost ? shippingCost.toFixed(2) : '0.00'}
-            </Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>
-              {t('PaymentScreen.Shipping Method')}
-            </Text>
-            <Text style={styles.summaryValue}>
-              {shippingMethodName || t('PaymentScreen.not_selected')}
-            </Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, {color: 'gray'}]}>
-              {t('PaymentScreen.Total')}
-            </Text>
-            <Text style={[styles.summaryValue, {color: 'gray'}]}>
-              ${totalPrice ? totalPrice.toFixed(2) : '0.00'}
-            </Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={[styles.summaryLabel, {fontWeight: 'bold'}]}>
-              {t('PaymentScreen.Total After Discount')}
-            </Text>
-            <Text style={[styles.summaryValue, {fontWeight: 'bold'}]}>
-              ${discountedTotal ? discountedTotal.toFixed(2) : '0.00'}
-            </Text>
-          </View>
-        </View>
-
+        </LinearGradient>
         <CustomInput
           placeholder={t('PaymentScreen.enter_promo_code')}
           iconType="MaterialCommunityIcons"
@@ -669,43 +618,33 @@ const PaymentScreen = () => {
           value={couponCode}
           onChangeText={setCouponCode}
         />
-
         <View style={{width: '100%', alignItems: 'center'}}>
           <CustomButton
-            text={
-              loading
-                ? t('PaymentScreen.applying')
-                : t('PaymentScreen.apply promo')
-            }
+            text={loading ? t('PaymentScreen.applying') : t('PaymentScreen.apply promo')}
             onPress={handleApplyCoupon}
             disabled={loading}
           />
         </View>
         <Text style={styles.title}>{t('PaymentScreen.Products')}</Text>
         {cartItems.map((item, index) => (
-          <View key={index} style={styles.itemRow}>
+          <View key={index} style={styles.productCard}>
             <Image source={{uri: item.image}} style={styles.itemImg} />
             <View style={{flex: 1, marginLeft: 10}}>
-              <Text>{item.name}</Text>
-              <Text>Qty: {item.qty}</Text>
+              <Text style={styles.productName}>{item.name}</Text>
+              <Text style={styles.productQty}>Qty: {item.qty}</Text>
             </View>
-            <Text>${(item.product_price * item.qty).toFixed(2)}</Text>
+            <Text style={styles.productPrice}>{currency} {(item.product_price * item.qty * rate).toFixed(2)}</Text>
           </View>
         ))}
-
         <Text style={styles.title}>{t('PaymentScreen.Payment Method')}</Text>
-        <TouchableOpacity
-          style={styles.selectBtn}
-          onPress={openPaymentMethodSheet}>
-          <Text>{paymentMethod || t('choose payment method')}</Text>
+        <TouchableOpacity style={styles.paymentMethodBtn} onPress={openPaymentMethodSheet}>
+          <Text style={styles.paymentMethodText}>{paymentMethod || t('choose payment method')}</Text>
         </TouchableOpacity>
-        <View style={{}}>
-          <TouchableOpacity style={styles.confirmBtn} onPress={confirmPayment}>
-            <Text style={styles.confirmText}>
-              {t('PaymentScreen.Confirm Payment')}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.confirmBtnGradient} onPress={confirmPayment}>
+          <LinearGradient colors={["#7B2FF2", "#F357A8"]} style={styles.confirmBtnGradientInner}>
+            <Text style={styles.confirmText}>{t('PaymentScreen.Confirm Payment')}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Confirmation Bottom Sheet */}
@@ -753,15 +692,72 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
   },
-  summaryContainer: {
+  mapPreviewCard: {
     backgroundColor: '#fff',
-    padding: 15,
+    padding: 18,
+    borderRadius: 18,
+    marginBottom: 18,
+    elevation: 4,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.09,
+    shadowRadius: 10,
+  },
+  addressCard: {
+    backgroundColor: '#F7F0FF',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: '#F7F0FF',
+  },
+  addressCardSelected: {
+    borderColor: '#7B2FF2',
+    backgroundColor: '#E9D7FF',
+  },
+  addressText: {fontSize: 15, color: '#333', fontWeight: '600'},
+  addAddressBtn: {
+    marginTop: 10,
+    padding: 12,
+    backgroundColor: '#7B2FF2',
     borderRadius: 10,
-    marginVertical: 15,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    alignItems: 'center',
+  },
+  addAddressBtnText: {color: '#fff', fontWeight: 'bold', fontSize: 15},
+  shippingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 18,
     elevation: 3,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+  },
+  shippingMethodBtn: {
+    backgroundColor: '#F7F0FF',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 8,
+    borderWidth: 1.5,
+    borderColor: '#F7F0FF',
+  },
+  shippingMethodBtnSelected: {
+    borderColor: '#7B2FF2',
+    backgroundColor: '#E9D7FF',
+  },
+  shippingMethodText: {fontSize: 15, color: '#7B2FF2', fontWeight: '600'},
+  summaryGradient: {
+    borderRadius: 18,
+    marginBottom: 18,
+    elevation: 6,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.09,
+    shadowRadius: 14,
+  },
+  summaryContainer: {
+    backgroundColor: 'transparent',
+    padding: 18,
+    borderRadius: 18,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -771,11 +767,11 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontWeight: '600',
     fontSize: 16,
-    color: '#333',
+    color: '#fff',
   },
   summaryValue: {
     fontSize: 16,
-    color: '#333',
+    color: '#fff',
   },
   itemRow: {
     flexDirection: 'row',
@@ -799,11 +795,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   confirmBtn: {
-    marginVertical: 15,
-    backgroundColor: 'purple',
-    borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
+    display: 'none',
   },
   confirmText: {
     color: '#fff',
@@ -815,6 +807,45 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomColor: '#ccc',
     borderBottomWidth: 1,
+  },
+  productCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 12,
+    marginVertical: 7,
+    borderRadius: 14,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+  },
+  productName: {fontWeight: '700', fontSize: 15, color: '#222'},
+  productQty: {fontSize: 13, color: '#888'},
+  productPrice: {fontWeight: 'bold', color: '#7B2FF2', fontSize: 15},
+  paymentMethodBtn: {
+    backgroundColor: '#F7F0FF',
+    borderRadius: 22,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    marginVertical: 12,
+    alignSelf: 'flex-start',
+  },
+  paymentMethodText: {color: '#7B2FF2', fontWeight: '700', fontSize: 16},
+  confirmBtnGradient: {
+    marginTop: 18,
+    borderRadius: 22,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#F357A8',
+    shadowOpacity: 0.13,
+    shadowRadius: 8,
+  },
+  confirmBtnGradientInner: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderRadius: 22,
   },
 });
 

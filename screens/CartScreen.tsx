@@ -16,6 +16,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Icon from '../components/icon';
 import Header from '../components/Header';
 import CustomButton from '../components/CustomButton';
+import LinearGradient from 'react-native-linear-gradient';
 
 import {
   deleteCartItem,
@@ -24,6 +25,7 @@ import {
 } from '../lib/api';
 import type {RootStackParamList} from '../App';
 import {useTranslation} from 'react-i18next';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 type CartItem = {
   cart_item_id: number;
@@ -65,6 +67,7 @@ const CartScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   console.log(navigation);
+  const { currency, rate } = useCurrency();
 
   const loadCartItems = useCallback(async () => {
     try {
@@ -180,61 +183,41 @@ const CartScreen = () => {
   );
 
   const renderItem = ({item}: {item: CartItem}) => (
-    <View style={styles.itemContainer}>
-      <TouchableOpacity
-        style={styles.checkbox}
-        onPress={() => toggleSelect(item.cart_item_id)}>
-        <View
-          style={[
-            styles.checkCircle,
-            item.selected && {backgroundColor: 'purple'},
-            {direction: isRTL ? 'rtl' : 'ltr'},
-          ]}
-        />
-      </TouchableOpacity>
-
-      {item.image ? (
-        <Image source={item.image} style={styles.image} />
-      ) : (
-        <View style={[styles.image, {backgroundColor: '#ccc'}]} />
-      )}
-
-      <View style={{flex: 1, marginHorizontal: 10}}>
+    <View style={styles.itemCard}>
+      <View style={styles.imageWrapper}>
+        {item.image ? (
+          <Image source={item.image} style={styles.image} />
+        ) : (
+          <View style={[styles.image, {backgroundColor: '#ccc'}]} />
+        )}
+      </View>
+      <View style={styles.itemInfo}>
         <Text style={styles.title}>{item.title}</Text>
         {item.selectedColor?.color && (
-          <Text style={{fontSize: 12, color: '#555'}}>
-            Color: {item.selectedColor.color}
-          </Text>
+          <Text style={styles.colorText}>Color: {item.selectedColor.color}</Text>
         )}
-
         <View style={styles.qtyRow}>
           <TouchableOpacity
             onPress={() => updateItemQty(item.product_id, -1)}
             style={styles.qtyBtn}>
-            <Text style={styles.qtyText}>-</Text>
+            <Icon name="minus" type="ant" size={16} color="#7B2FF2" />
           </TouchableOpacity>
-
           <Text style={styles.qtyNum}>{item.quantity}</Text>
-
           <TouchableOpacity
             onPress={() => updateItemQty(item.product_id, 1)}
             style={styles.qtyBtn}>
-            <Text style={styles.qtyText}>+</Text>
+            <Icon name="plus" type="ant" size={16} color="#7B2FF2" />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => deleteItem(item.cart_item_id)}
-            style={{marginLeft: 15}}>
-            <Icon type="Ionicons" name="trash-outline" size={24} color="red" />
-          </TouchableOpacity>
-
-          <View style={{alignItems: 'flex-end', flex: 1}}>
-            <Text style={styles.price}>
-              ${(item.price * (item.quantity || 1)).toFixed(2)}
-            </Text>
-          </View>
         </View>
+        <Text style={styles.price}>
+          {currency} {(item.price * (item.quantity || 1) * rate).toFixed(2)}
+        </Text>
       </View>
+      <TouchableOpacity
+        onPress={() => deleteItem(item.cart_item_id)}
+        style={styles.deleteBtn}>
+        <Icon type="Ionicons" name="trash-outline" size={22} color="#F357A8" />
+      </TouchableOpacity>
     </View>
   );
 
@@ -246,98 +229,133 @@ const CartScreen = () => {
         showImage={false}
         rightIcons={[]}
       />
-
       <FlatList
         data={cartItems}
         keyExtractor={item => item.cart_item_id.toString()}
         renderItem={renderItem}
         ListEmptyComponent={<Text style={styles.empty}>{t('cart.empty')}</Text>}
+        contentContainerStyle={{padding: 12, paddingBottom: 120}}
       />
-      <View
-        style={{
-          paddingHorizontal: 15,
-          paddingVertical: 10,
-          backgroundColor: '#fff',
-          borderTopWidth: 1,
-          borderColor: '#ddd',
-        }}>
-        <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-          <Text style={{fontSize: 16, fontWeight: 'bold'}}>
-            {t('cart.subtotal')}
-          </Text>
-          <Text style={{fontSize: 16, fontWeight: 'bold'}}>
-            ${subtotal.toFixed(2)}
-          </Text>
+      <LinearGradient
+        colors={["#7B2FF2", "#F357A8"]}
+        style={styles.subtotalGradient}
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 0}}
+      >
+        <View style={styles.subtotalRow}>
+          <Text style={styles.subtotalLabel}>{t('cart.subtotal')}</Text>
+          <Text style={styles.subtotalValue}>{currency} {(subtotal * rate).toFixed(2)}</Text>
         </View>
-      </View>
-
-      <View style={{width: '100%', padding: 10, alignItems: 'center'}}>
-        <CustomButton
-          text={t('cart.checkout')}
+        <TouchableOpacity
+          style={[styles.checkoutBtn, cartItems.length === 0 && {opacity: 0.5}]}
           disabled={cartItems.length === 0}
           onPress={() => {
             if (!cartId) {
               Alert.alert(t('cart.noActiveCart'));
               return;
             }
-
             navigation.navigate('PaymentScreen', {cartId} as any);
           }}
-        />
-      </View>
+        >
+          <Text style={styles.checkoutBtnText}>{t('cart.checkout')}</Text>
+        </TouchableOpacity>
+      </LinearGradient>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F5F0FF', paddingTop: 10},
+  container: {flex: 1, backgroundColor: '#F5F0FF'},
   empty: {textAlign: 'center', marginTop: 20, color: '#777'},
-  itemContainer: {
+  itemCard: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    margin: 10,
-    padding: 10,
-    borderRadius: 10,
+    marginBottom: 18,
+    borderRadius: 18,
     alignItems: 'center',
+    padding: 14,
+    elevation: 5,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.09,
+    shadowRadius: 10,
+    marginHorizontal: 2,
   },
-  image: {width: 60, height: 60, borderRadius: 8},
-  title: {fontWeight: 'bold', fontSize: 14},
-  price: {color: 'black', marginTop: 2, fontSize: 20},
-  qtyRow: {flexDirection: 'row', alignItems: 'center', marginTop: 4},
-  qtyBtn: {
-    width: 30,
-    height: 30,
-    backgroundColor: '#ECECEC',
+  imageWrapper: {
+    width: 70,
+    height: 70,
+    borderRadius: 14,
+    backgroundColor: '#f7f7fb',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 6,
+    marginRight: 14,
   },
-  qtyText: {fontWeight: 'bold', fontSize: 20},
-  qtyNum: {paddingHorizontal: 6, fontSize: 18},
-  checkbox: {padding: 10},
-  checkCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderColor: 'gray',
-    borderWidth: 2,
+  image: {width: 60, height: 60, borderRadius: 12},
+  itemInfo: {flex: 1},
+  title: {fontWeight: '700', fontSize: 16, color: '#222', marginBottom: 2},
+  colorText: {fontSize: 12, color: '#7B2FF2', marginBottom: 2},
+  price: {color: '#7B2FF2', marginTop: 8, fontSize: 18, fontWeight: 'bold'},
+  qtyRow: {flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 8},
+  qtyBtn: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#F5F0FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#eee',
   },
-  summaryBtn: {
-    width: '100%',
-    height: 60,
-    backgroundColor: 'purple',
-    padding: 10,
-    borderRadius: 10,
+  qtyNum: {paddingHorizontal: 10, fontSize: 16, fontWeight: '600'},
+  deleteBtn: {
+    marginLeft: 10,
+    backgroundColor: '#fff',
+    borderRadius: 22,
+    padding: 7,
+    elevation: 2,
+    shadowColor: '#F357A8',
+    shadowOpacity: 0.13,
+    shadowRadius: 6,
   },
-  summaryText: {
-    textAlign: 'center',
-    color: 'white',
+  subtotalGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 24,
+    paddingTop: 18,
+    paddingBottom: 32,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    elevation: 10,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.09,
+    shadowRadius: 14,
+  },
+  subtotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  subtotalLabel: {fontSize: 18, color: '#fff', fontWeight: '700'},
+  subtotalValue: {fontSize: 18, color: '#fff', fontWeight: '700'},
+  checkoutBtn: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 2,
+    elevation: 2,
+    shadowColor: '#F357A8',
+    shadowOpacity: 0.13,
+    shadowRadius: 6,
+  },
+  checkoutBtnText: {
+    color: '#7B2FF2',
     fontWeight: 'bold',
+    fontSize: 18,
+    letterSpacing: 1,
   },
-  sheetContent: {
-    flex: 1,
-  },
-  total: {fontWeight: 'bold', fontSize: 20, marginTop: 6},
 });
 
 export default CartScreen;

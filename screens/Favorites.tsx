@@ -109,8 +109,6 @@ const Favorites = () => {
           renderItem={({item}) => (
             <ProductCard
               {...item}
-              isFavorite={true}
-              onPressFavorite={() => {}}
               onPressCart={() => {}}
               scrollEnabled={true}
             />
