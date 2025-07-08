@@ -24,7 +24,7 @@ import BrandTab from './BrandTab';
 import {useTranslation} from 'react-i18next';
 import CollectionSection from '../components/CollectionSection';
 import Toast from 'react-native-toast-message';
-import { useCurrency } from '../contexts/CurrencyContext';
+import {useCurrency} from '../contexts/CurrencyContext';
 import LinearGradient from 'react-native-linear-gradient';
 
 type LocalCartItem = {
@@ -140,7 +140,7 @@ const HomeScreen = ({navigation}: any) => {
   const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
 
-  const { changeCurrency } = useCurrency();
+  const {changeCurrency} = useCurrency();
 
   const rate = selectedCurrency ? currencyRates[selectedCurrency] || 1 : 1;
 
@@ -150,7 +150,7 @@ const HomeScreen = ({navigation}: any) => {
   const [activeTab, setActiveTab] = useState('Home');
   const [loading, setLoading] = useState(true);
   const {t, i18n} = useTranslation();
-  const isRTL = i18n.language === 'ar';
+  // const isRTL = i18n.language === 'ar';
   console.log('products', products);
 
   useEffect(() => {
@@ -360,7 +360,9 @@ const HomeScreen = ({navigation}: any) => {
   }
   return (
     <View style={{flex: 1, backgroundColor: '#F7F7FB'}}>
-      <LinearGradient colors={["#7B2FF2", "#F357A8"]} style={styles.headerGradient}>
+      <LinearGradient
+        colors={['#7B2FF2', '#F357A8']}
+        style={styles.headerGradient}>
         <View style={styles.topBar}>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <Image
@@ -368,8 +370,12 @@ const HomeScreen = ({navigation}: any) => {
               style={styles.avatar}
             />
             <View style={{marginLeft: 10}}>
-              <Text style={styles.topBarHi}>{t('HomeScreen.hi')} {firstName || 'Guest'}</Text>
-              <Text style={styles.subText}>{t('HomeScreen.letsGoShopping')}</Text>
+              <Text style={styles.topBarHi}>
+                {t('HomeScreen.hi')} {firstName || 'Guest'}
+              </Text>
+              <Text style={styles.subText}>
+                {t('HomeScreen.letsGoShopping')}
+              </Text>
             </View>
             <TouchableOpacity
               onPress={() => setCurrencyModalVisible(true)}
@@ -379,7 +385,9 @@ const HomeScreen = ({navigation}: any) => {
                   {currencyFlags[selectedCurrency] || '🏳️'} {selectedCurrency}
                 </Text>
               ) : (
-                <Text style={[styles.currencyText, {color: '#aaa'}]}>Loading...</Text>
+                <Text style={[styles.currencyText, {color: '#aaa'}]}>
+                  Loading...
+                </Text>
               )}
               <Icon name="chevron-down" type="feather" size={18} color="#fff" />
             </TouchableOpacity>
