@@ -212,6 +212,7 @@ const SearchScreen = ({navigation}: any) => {
         <ActivityIndicator size="large" color="#7B2FF2" />
       ) : searchText.length >= 3 ? (
         <FlatList
+          key={'single'}
           data={filteredResults}
           keyExtractor={item => item.product_id.toString()}
           ListEmptyComponent={() => (
@@ -237,6 +238,7 @@ const SearchScreen = ({navigation}: any) => {
         />
       ) : (
         <FlatList
+          key={'double'}
           data={suggestedProducts}
           keyExtractor={item => item.product_id.toString()}
           numColumns={2}

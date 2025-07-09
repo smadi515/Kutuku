@@ -10,6 +10,7 @@ import {
   ScrollView,
   Button,
   StatusBar,
+  TextInput,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,10 +23,13 @@ import {
   getSubcategories,
   getCustomerCart,
   addItemToCart,
+  getParentCategories,
+  getBrands,
 } from '../lib/api';
 import { useCurrency } from '../contexts/CurrencyContext';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from '../components/icon';
+import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -62,6 +66,8 @@ type Product = {
   images?: ProductImage[];
   image?: string;
   description_data?: ProductDescription;
+  category_id?: number; // Added for category filtering
+  brand?: { id: number; name: string }; // Added for brand filtering
 };
 
 type Category = {
@@ -87,6 +93,17 @@ const StoreScreen = () => {
     number | null
   >(null);
   const [page, setPage] = useState(1);
+
+  const [searchText, setSearchText] = useState('');
+  const [filterSheetVisible, setFilterSheetVisible] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number|null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<number|null>(null);
+  const [filteredProducts, setFilteredProducts] = useState<ExtendedProduct[]>([]);
+  const bottomSheetRef = React.useRef<BottomSheet>(null);
+  const snapPoints = React.useMemo(() => [500], []); // Increased height
 
   const PAGE_SIZE = 10;
 
@@ -168,58 +185,42 @@ const StoreScreen = () => {
     fetchData();
   }, [page, selectedSubcategoryId, categoryId, brandId]);
 
-  const loadMore = async () => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-
-    try {
-      const categoryIdNum =
-        selectedSubcategoryId !== null ? selectedSubcategoryId : categoryId;
-
-      const result = await getProducts(
-        'en', // or your current language
-        categoryIdNum,
-        brandId,
-        page + 1, // next page
-        PAGE_SIZE,
-      );
-
-      const transformed = result.map((product: any) => {
-        const mainImage =
-          product.images?.find((img: ProductImage) => img.is_main) ||
-          product.images?.[0];
-
-        const desc: ProductDescription =
-          typeof product.description === 'object'
-            ? product.description
-            : {
-                name: '',
-                description: '',
-                short_description: '',
-                url_key: '',
-              };
-
-        return {
-          ...product,
-          image: mainImage?.origin_image || '',
-          name: desc.name || 'No name',
-          description: desc.description || 'No description available',
-          short_description: desc.short_description || '',
-          urlKey: desc.url_key || '',
-          brandName: product.brand?.name || '',
-        };
+  useEffect(() => {
+    getParentCategories()
+      .then(data => {
+        console.log('Fetched categories:', data);
+        setCategories(data);
+      })
+      .catch(err => {
+        console.error('Error fetching categories:', err);
+        setCategories([]);
       });
+    getBrands()
+      .then(data => {
+        console.log('Fetched brands:', data);
+        setBrands(data);
+      })
+      .catch(err => {
+        console.error('Error fetching brands:', err);
+        setBrands([]);
+      });
+  }, []);
 
-      setProducts(prev => [...prev, ...transformed]);
-      setPage(prev => prev + 1);
-      setHasMore(transformed.length === PAGE_SIZE);
-    } catch (error) {
-      console.error('Error loading more products:', error);
-      setHasMore(false);
-    } finally {
-      setLoadingMore(false);
-    }
-  };
+  // Debounced live search effect
+  React.useEffect(() => {
+    // Only filter if not using the filter sheet (i.e., when not applying advanced filters)
+    // This effect will run on every searchText change
+    const handler = setTimeout(() => {
+      let result = [...products];
+      if (searchText.length >= 3) {
+        result = result.filter(p => p.name.toLowerCase().includes(searchText.toLowerCase()));
+      }
+      setFilteredProducts(result);
+    }, 400); // 400ms debounce
+    return () => clearTimeout(handler);
+  }, [searchText, products]);
+
+
 
   const handleAddToCart = async (item: Product) => {
     try {
@@ -269,13 +270,33 @@ const StoreScreen = () => {
     }
   };
 
+  // Filtering logic (runs only when Apply is pressed)
+  const applyFilters = () => {
+    let result = [...products];
+    if (searchText.length >= 3) {
+      result = result.filter(p => p.name.toLowerCase().includes(searchText.toLowerCase()));
+    }
+    if (selectedCategory) {
+      result = result.filter(p => p.category_id === selectedCategory);
+    }
+    if (selectedBrand) {
+      result = result.filter(p => p.brand?.id === selectedBrand);
+    }
+    if (sortOrder === 'asc') {
+      result = result.sort((a, b) => a.price - b.price);
+    } else {
+      result = result.sort((a, b) => b.price - a.price);
+    }
+    setFilteredProducts(result);
+    bottomSheetRef.current?.close();
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#7B2FF2" />
       <LinearGradient colors={["#7B2FF2", "#F357A8"]} style={styles.headerGradient}>
         <Header
           title="Store"
-          showBack={true}
           showImage={false}
           rightIcons={[
             {
@@ -311,6 +332,22 @@ const StoreScreen = () => {
           ))}
         </ScrollView>
       )}
+      {/* Search Bar */}
+      <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 36, marginBottom: 18, zIndex: 1, paddingHorizontal: 8}}>
+        <View style={[styles.searchBar, {flex: 1}]}> 
+          <Icon type="ant" name="search1" size={20} style={{marginRight: 8}} />
+          <TextInput
+            placeholder={'Search products'}
+            style={styles.searchInput}
+            placeholderTextColor="#aaa"
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+          <TouchableOpacity onPress={() => bottomSheetRef.current?.snapToIndex(0)}>
+            <Icon type="ant" name="filter" size={20} />
+          </TouchableOpacity>
+        </View>
+      </View>
       {/* Products List */}
       {loading ? (
         <ActivityIndicator
@@ -320,7 +357,7 @@ const StoreScreen = () => {
         />
       ) : (
         <FlatList
-          data={products}
+          data={filteredProducts}
           initialNumToRender={10}
           removeClippedSubviews={true}
           numColumns={2}
@@ -343,8 +380,6 @@ const StoreScreen = () => {
               />
             </View>
           )}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
           ListFooterComponent={
             loadingMore ? <ActivityIndicator size="small" color="#7B2FF2" /> : null
           }
@@ -370,6 +405,55 @@ const StoreScreen = () => {
           <Icon name="chevron-right" type="Feather" size={22} color={!hasMore ? '#ccc' : '#fff'} />
         </TouchableOpacity>
       </View>
+      {/* Filter Bottom Sheet */}
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose
+        onClose={() => setFilterSheetVisible(false)}
+      >
+        <BottomSheetView style={{padding: 20, flex: 1}}>
+          <ScrollView contentContainerStyle={{paddingBottom: 32}} showsVerticalScrollIndicator={false}>
+            <Text style={styles.sectionTitle}>Filter Products</Text>
+            {/* Price Sort */}
+            <Text style={{marginTop: 16, fontWeight: 'bold'}}>Sort by Price</Text>
+            <View style={{flexDirection: 'row', marginVertical: 8}}>
+              <TouchableOpacity onPress={() => setSortOrder('asc')} style={[styles.filterOption, sortOrder === 'asc' && styles.selectedFilterOption]}>
+                <Text>Smallest to Largest</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setSortOrder('desc')} style={[styles.filterOption, sortOrder === 'desc' && styles.selectedFilterOption]}>
+                <Text>Largest to Smallest</Text>
+              </TouchableOpacity>
+            </View>
+            {/* Category Filter */}
+            <Text style={{marginTop: 16, fontWeight: 'bold'}}>Category</Text>
+            <View style={{marginVertical: 8, minHeight: 56, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}}>
+                {categories.map(cat => (
+                  <TouchableOpacity key={cat.id} onPress={() => setSelectedCategory(cat.id)} style={[styles.filterOption, {marginRight: 10}, selectedCategory === cat.id && styles.selectedFilterOption]}>
+                    <Text>{cat.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+            {/* Brand Filter */}
+            <Text style={{marginTop: 16, fontWeight: 'bold'}}>Brand</Text>
+            <View style={{marginVertical: 8, minHeight: 56, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}}>
+                {brands.map(brand => (
+                  <TouchableOpacity key={brand.id} onPress={() => setSelectedBrand(brand.id)} style={[styles.filterOption, {marginRight: 10}, selectedBrand === brand.id && styles.selectedFilterOption]}>
+                    <Text>{brand.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+            <TouchableOpacity onPress={applyFilters} style={[styles.applyButton, {marginTop: 24}]}> 
+              <Text style={{color: '#fff', fontWeight: 'bold'}}>Apply</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </BottomSheetView>
+      </BottomSheet>
     </View>
   );
 };
@@ -480,6 +564,50 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#7B2FF2',
     fontWeight: '700',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#7B2FF2',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 20,
+    width: '90%',
+    backgroundColor: '#fff',
+    elevation: 2,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+  },
+  sectionTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#7B2FF2',
+  },
+  filterOption: {
+    backgroundColor: '#eee',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginRight: 10,
+  },
+  selectedFilterOption: {
+    backgroundColor: '#7B2FF2',
+    borderColor: '#7B2FF2',
+    borderWidth: 1.5,
+  },
+  applyButton: {
+    backgroundColor: '#F357A8',
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
   },
 });
 

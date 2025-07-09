@@ -6,6 +6,7 @@ import Home from '../screens/HomeScreen'; // Make sure path is correct
 import Icon from '../components/icon'; // Make sure path is correct
 import {useTranslation} from 'react-i18next';
 import SettingsScreen from './SettingsScreen';
+import StoreScreen from './StoreScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -50,6 +51,16 @@ const TabNavigationScreen = () => {
         name="Home"
         component={Home}
         options={{tabBarLabel: t('TabNavigationScreen.home')}}
+      />
+      <Tab.Screen
+        name="Store"
+        component={StoreScreen}
+        options={{
+          tabBarLabel: t('TabNavigationScreen.store') || 'Store',
+          tabBarIcon: ({color, size}) => (
+            <Icon name="shopping-bag" type="feather" color={color} size={size} />
+          ),
+        }}
       />
       <Tab.Screen
         name="MyOrders"

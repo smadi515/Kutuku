@@ -19,7 +19,9 @@
     "home": "الرئيسية",
     "my_orders": "طلباتي",
     "favorites": "المفضلة",
-    "profile": "الملف الشخصي"
+    "profile": "الملف الشخصي",
+    "Settings": "الإعدادات",
+    "store": "المتجر"
   },
   "settings": {
     "title": "الإعدادات",
