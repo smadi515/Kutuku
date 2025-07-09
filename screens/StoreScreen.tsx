@@ -28,7 +28,7 @@ import {
 } from '../lib/api';
 import { useCurrency } from '../contexts/CurrencyContext';
 import LinearGradient from 'react-native-linear-gradient';
-import Icon from '../components/icon';
+import Icon from '../components/Icon';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 
 type NavigationProp = NativeStackNavigationProp<

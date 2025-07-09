@@ -21,7 +21,6 @@ import LoginScreen from './screens/LoginScreen';
 import OnboardingFlow from './screens/OnboardingFlow';
 import CreateAcountScreen from './screens/CreateAcountScreen';
 import MyOrders from './screens/MyOrders';
-import Favorites from './screens/Favorites';
 import Profile from './screens/Profile';
 import TabNavigationScreen from './screens/TabNavigationScreen';
 import SearchScreen from './screens/SearchScreen';
@@ -76,7 +75,6 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Home: undefined;
   EditProfile: undefined;
-  Favorites: undefined;
   Profile: {
     fullName: string;
     birthday: string;
@@ -204,6 +202,7 @@ export default function App() {
       <GestureHandlerRootView style={{flex: 1}}>
         <NavigationContainer>
           <Stack.Navigator
+            id={undefined}
             initialRouteName={initialRoute}
             screenOptions={{headerShown: false}}>
             <Stack.Screen name="Splash" component={SplashScreen} />
@@ -216,7 +215,6 @@ export default function App() {
               component={TabNavigationScreen}
             />
             <Stack.Screen name="EditProfile" component={EditProfile} />
-            <Stack.Screen name="Favorites" component={Favorites} />
             <Stack.Screen name="Profile" component={Profile} />
             <Stack.Screen name="StoreScreen" component={StoreScreen} />
             <Stack.Screen name="ChangePassword" component={ChangePassword} />
