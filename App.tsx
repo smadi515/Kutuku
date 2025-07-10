@@ -43,7 +43,7 @@ import Home from './screens/HomeScreen';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import Toast from 'react-native-toast-message';
 import messaging from '@react-native-firebase/messaging';
-import { CurrencyProvider } from './contexts/CurrencyContext'; // adjust path if needed
+import {CurrencyProvider} from './contexts/CurrencyContext'; // adjust path if needed
 
 GoogleSignin.configure({
   webClientId:
@@ -164,17 +164,17 @@ export default function App() {
     return unsubscribe;
   }, []);
   useEffect(() => {
-  const subscribeToTopic = async () => {
-    try {
-      await messaging().subscribeToTopic('news');
-      console.log('Subscribed to topic!');
-    } catch (error) {
-      console.log('Topic subscription failed:', error);
-    }
-  };
+    const subscribeToTopic = async () => {
+      try {
+        await messaging().subscribeToTopic('news');
+        console.log('Subscribed to topic!');
+      } catch (error) {
+        console.log('Topic subscription failed:', error);
+      }
+    };
 
-  subscribeToTopic();
-}, []);
+    subscribeToTopic();
+  }, []);
   <I18nextProvider i18n={i18n}>{/* your app components */}</I18nextProvider>;
 
   const [initialRoute, setInitialRoute] = useState<
