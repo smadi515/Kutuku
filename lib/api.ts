@@ -538,6 +538,10 @@ export const signInWithGoogle = async () => {
     await GoogleSignin.hasPlayServices(); // Ensure device has Google Play Services
     const userInfo = await GoogleSignin.signIn();
     console.log('Google user info:', userInfo);
+    const isAvailable = await GoogleSignin.hasPlayServices({
+      showPlayServicesUpdateDialog: true,
+    });
+    console.log('Play Services available:', isAvailable);
 
     // 👉 Send userInfo.idToken to your backend API for verification or login
   } catch (error) {
