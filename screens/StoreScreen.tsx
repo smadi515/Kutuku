@@ -12,7 +12,7 @@ import {
   StatusBar,
   TextInput,
 } from 'react-native';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {useNavigation, useRoute, RouteProp, useFocusEffect} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
 import ProductCard from '../components/ProductCard';
@@ -104,6 +104,7 @@ const StoreScreen = () => {
   const [filteredProducts, setFilteredProducts] = useState<ExtendedProduct[]>([]);
   const bottomSheetRef = React.useRef<BottomSheet>(null);
   const snapPoints = React.useMemo(() => [500], []); // Increased height
+  const [cartCount, setCartCount] = useState(0);
 
   const PAGE_SIZE = 10;
 
@@ -206,6 +207,22 @@ const StoreScreen = () => {
       });
   }, []);
 
+  // Load cart count every time StoreScreen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadCartCount = async () => {
+        try {
+          const storedCart = await AsyncStorage.getItem('cart');
+          const parsedCart = storedCart ? JSON.parse(storedCart) : [];
+          setCartCount(parsedCart.length);
+        } catch (error) {
+          setCartCount(0);
+        }
+      };
+      loadCartCount();
+    }, [])
+  );
+
   // Debounced live search effect
   React.useEffect(() => {
     // Only filter if not using the filter sheet (i.e., when not applying advanced filters)
@@ -263,6 +280,7 @@ const StoreScreen = () => {
 
       const updatedCart = [...parsedCart, newItem];
       await AsyncStorage.setItem('cart', JSON.stringify(updatedCart));
+      setCartCount(updatedCart.length);
 
       navigation.navigate('CartScreen');
     } catch (error) {
@@ -294,17 +312,25 @@ const StoreScreen = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#7B2FF2" />
-      <LinearGradient colors={["#7B2FF2", "#F357A8"]} style={styles.headerGradient}>
+      <LinearGradient colors={["#7B2FF2", "#F357A8"]} style={[styles.headerGradient, {marginTop: 18}]}>
         <Header
           title="Store"
           showImage={false}
-          rightIcons={[
-            {
-              name: 'cart-outline',
-              type: 'Ionicons',
-              onPress: () => navigation.navigate('CartScreen'),
-            },
-          ]}
+          rightIcons={[{
+            name: 'cart-outline',
+            type: 'Ionicons',
+            onPress: () => navigation.navigate('CartScreen'),
+            render: () => (
+              <View style={{position: 'relative'}}>
+                <Icon name="cart-outline" type="Ionicons" size={24} color="#000" />
+                {cartCount > 0 && (
+                  <View style={styles.cartBadge}>
+                    <Text style={styles.cartBadgeText}>{cartCount}</Text>
+                  </View>
+                )}
+              </View>
+            )
+          }]}
         />
       </LinearGradient>
       {/* Subcategory Filter */}
@@ -334,7 +360,7 @@ const StoreScreen = () => {
       )}
       {/* Search Bar */}
       <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 36, marginBottom: 18, zIndex: 1, paddingHorizontal: 8}}>
-        <View style={[styles.searchBar, {flex: 1}]}> 
+        <View style={[styles.searchBar, {flex: 1}]}>
           <Icon type="ant" name="search1" size={20} style={{marginRight: 8}} />
           <TextInput
             placeholder={'Search products'}
@@ -448,7 +474,7 @@ const StoreScreen = () => {
                 ))}
               </ScrollView>
             </View>
-            <TouchableOpacity onPress={applyFilters} style={[styles.applyButton, {marginTop: 24}]}> 
+            <TouchableOpacity onPress={applyFilters} style={[styles.applyButton, {marginTop: 24}]}>
               <Text style={{color: '#fff', fontWeight: 'bold'}}>Apply</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -608,6 +634,24 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 12,
     alignItems: 'center',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: 'red',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    paddingHorizontal: 3,
+  },
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
   },
 });
 

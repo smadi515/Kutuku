@@ -8,11 +8,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
+  SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import Icon from '../components/icon';
 import ProductCard from '../components/ProductCard';
 import CategoryTab from './CategoryTab';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   getProducts,
   getCustomerCart,
@@ -139,6 +142,7 @@ const HomeScreen = ({navigation}: any) => {
   const [currencies, setCurrencies] = useState<string[]>([]);
   const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
 
   const {changeCurrency} = useCurrency();
 
@@ -242,6 +246,22 @@ const HomeScreen = ({navigation}: any) => {
     loadFavorites();
   }, []);
 
+  // Load cart count every time HomeScreen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadCartCount = async () => {
+        try {
+          const storedCart = await AsyncStorage.getItem('cart');
+          const parsedCart = storedCart ? JSON.parse(storedCart) : [];
+          setCartCount(parsedCart.length);
+        } catch (error) {
+          setCartCount(0);
+        }
+      };
+      loadCartCount();
+    }, [])
+  );
+
   const handleAddToCart = async (item: Product) => {
     try {
       console.log('Starting handleAddToCart for product:', item.product_id);
@@ -342,6 +362,7 @@ const HomeScreen = ({navigation}: any) => {
       }
 
       await AsyncStorage.setItem('cart', JSON.stringify(parsedCart));
+      setCartCount(parsedCart.length);
       navigation.navigate('CartScreen');
     } catch (error) {
       console.error('Error in handleAddToCart:', error);
@@ -358,13 +379,17 @@ const HomeScreen = ({navigation}: any) => {
       <ActivityIndicator size="large" color="#7B2FF2" style={{marginTop: 20}} />
     );
   }
+  const screenWidth = Dimensions.get('window').width;
+  const cardMargin = 8;
+  const cardWidth = (screenWidth - cardMargin * 4) / 2; // 2 cards, 3 margins (left, middle, right)
   return (
-    <View style={{flex: 1, backgroundColor: '#F7F7FB'}}>
+    <SafeAreaView style={{flex: 1, backgroundColor: '#F7F7FB'}}>
       <LinearGradient
         colors={['#7B2FF2', '#F357A8']}
         style={styles.headerGradient}>
-        <View style={styles.topBar}>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+        <View style={styles.headerRow}>
+          {/* Left side: Profile, greeting, currency */}
+          <View style={styles.headerLeft}>
             <Image
               source={require('../assets/Maskgroup4.png')}
               style={styles.avatar}
@@ -392,22 +417,29 @@ const HomeScreen = ({navigation}: any) => {
               <Icon name="chevron-down" type="feather" size={18} color="#fff" />
             </TouchableOpacity>
           </View>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Icon
-              name="search1"
-              type="ant"
-              size={22}
-              color="#fff"
-              style={{marginRight: 15}}
-              onPress={() => navigation.navigate('SearchScreen')}
-            />
-            <Icon
-              name="cart"
-              type="ionicon"
-              size={22}
-              color="#fff"
-              onPress={() => navigation.navigate('CartScreen')}
-            />
+          {/* Right side: Search and Cart icons */}
+          <View style={styles.headerRight}>
+            <TouchableOpacity onPress={() => navigation.navigate('SearchScreen')} style={styles.iconButton}>
+              <Icon
+                name="search1"
+                type="ant"
+                size={24}
+                color="#fff"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('CartScreen')} style={styles.iconButton}>
+              <Icon
+                name="cart"
+                type="ionicon"
+                size={24}
+                color="#fff"
+              />
+              {cartCount > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>{cartCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </LinearGradient>
@@ -539,21 +571,22 @@ const HomeScreen = ({navigation}: any) => {
                 price={convertedPrice}
                 image={image}
                 description={desc}
-                currencySymbol={currencySymbol} // ✅ use the variable
+                currencySymbol={currencySymbol}
                 stock_availability={inventory?.stock_availability ?? false}
                 onPressCart={() => handleAddToCart(item)}
+                cardWidth={cardWidth}
               />
             );
           }}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={{paddingHorizontal: 8}}
+          columnWrapperStyle={{justifyContent: 'space-between', marginBottom: 12, paddingHorizontal: cardMargin}}
+          contentContainerStyle={{paddingBottom: 16}}
         />
       ) : activeTab === 'category' ? (
         <CategoryTab />
       ) : (
         <BrandTab />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -565,6 +598,31 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     marginBottom: 8,
+    minHeight: 90,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    width: '100%',
+    minHeight: 70,
+    marginTop: 18, // Lower the header content
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    marginLeft: 16,
+    padding: 6,
+    borderRadius: 20,
   },
   topBar: {
     flexDirection: 'row',
@@ -676,8 +734,26 @@ const styles = StyleSheet.create({
   },
   row: {
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    marginBottom: 16,
+    paddingHorizontal: 0,
+    alignItems: 'flex-start',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: 'red',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    paddingHorizontal: 3,
+  },
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
   },
 });
 

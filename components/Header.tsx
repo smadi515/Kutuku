@@ -20,6 +20,7 @@ type HeaderIcon = {
   type: string;
   onPress: () => void;
   color?: string;
+  render?: () => React.ReactNode;
 };
 
 const HEIGHT = 80;
@@ -68,12 +69,14 @@ const Header = ({
             key={index}
             onPress={icon.onPress}
             style={{marginLeft: 8}}>
-            <Icon
-              type={icon.type}
-              name={icon.name}
-              size={24}
-              color={icon.color ?? color ?? 'black'}
-            />
+            {icon.render ? icon.render() : (
+              <Icon
+                type={icon.type}
+                name={icon.name}
+                size={24}
+                color={icon.color ?? color ?? 'black'}
+              />
+            )}
           </TouchableOpacity>
         ))}
       </View>

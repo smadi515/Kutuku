@@ -36,6 +36,7 @@ type ProductCardProps = {
   stock_availability: boolean;
   onPressCart: () => void;
   colors?: ColorOption[];
+  cardWidth?: number;
 };
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -48,6 +49,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onPressCart,
   urlKey,
   currencySymbol,
+  cardWidth,
 }) => {
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
   console.log('ProductCard rendered with urlKey:', urlKey);
@@ -75,7 +77,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     <TouchableOpacity
       activeOpacity={0.88}
       onPress={() => navigation.navigate('ProductsDetails', {url_key: urlKey})}
-      style={styles.card}>
+      style={[styles.card, cardWidth ? {width: cardWidth} : {}]}>
       <View style={styles.imageWrapper}>
         <Image
           source={{uri: image || 'https://via.placeholder.com/150'}}
@@ -83,7 +85,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           resizeMode="cover"
         />
         <TouchableOpacity style={styles.cartIcon} onPress={handleCartPress} activeOpacity={0.85}>
-          <Icon name="shoppingcart" type="ant" size={18} color="#fff" />
+          <Icon name="shoppingcart" type="ant" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
       <View style={styles.infoContainer}>
@@ -103,10 +105,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    width: '100%',
+    width: 148,
+    minWidth: 130,
     backgroundColor: '#fff',
     borderRadius: 20,
-    marginBottom: 18,
+    marginBottom: 12,
+    marginHorizontal: 4,
     overflow: 'hidden',
     elevation: 6,
     shadowColor: '#7B2FF2',
@@ -132,8 +136,11 @@ const styles = StyleSheet.create({
     top: 14,
     left: 14,
     backgroundColor: '#F357A8',
-    padding: 7,
-    borderRadius: 22,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
     elevation: 3,
     shadowColor: '#F357A8',
     shadowOpacity: 0.13,

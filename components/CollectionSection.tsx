@@ -7,6 +7,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  Dimensions,
+  ScrollView,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -118,9 +120,10 @@ const CollectionSection = () => {
 
   // Auto-scroll banner
   useEffect(() => {
+    const banners = collections.filter(c => c.type === 'banner');
+    if (!banners.length) return;
+    
     const interval = setInterval(() => {
-      const banners = collections.filter(c => c.type === 'banner');
-      if (!banners.length) return;
       currentBannerIndex.current =
         (currentBannerIndex.current + 1) % banners.length;
       bannerRef.current?.scrollToIndex({
@@ -130,6 +133,17 @@ const CollectionSection = () => {
     }, 3000);
     return () => clearInterval(interval);
   }, [collections]);
+
+  // Handle scroll errors
+  const handleScrollToIndexFailed = (info: any) => {
+    const wait = new Promise(resolve => setTimeout(resolve, 500));
+    wait.then(() => {
+      bannerRef.current?.scrollToIndex({
+        index: currentBannerIndex.current,
+        animated: true,
+      });
+    });
+  };
 
   // Add to cart logic (copied from StoreScreen)
   const handleAddToCart = async (item: ProductItem) => {
@@ -202,31 +216,42 @@ const CollectionSection = () => {
     const urlKey = product?.description?.url_key || '';
     const imageUri = images[0]?.origin_image || '';
     return (
-      <View style={{width: 180, marginRight: 12}}>
-        <ProductCard
-          product_id={item.product_id}
-          urlKey={urlKey}
-          title={description.name}
-          designer={''}
-          price={Math.round(price * rate)}
-          currencySymbol={symbol}
-          image={imageUri}
-          description={description.description}
-          stock_availability={stockAvailability}
-          onPressCart={() => handleAddToCart(item)}
-        />
-      </View>
+      <ProductCard
+        product_id={item.product_id}
+        urlKey={urlKey}
+        title={description.name}
+        designer={''}
+        price={Math.round(price * rate)}
+        currencySymbol={symbol}
+        image={imageUri}
+        description={description.description}
+        stock_availability={stockAvailability}
+        onPressCart={() => handleAddToCart(item)}
+        cardWidth={cardWidth}
+      />
     );
   };
+
+  // Group products into pairs for horizontal paging
+  function groupIntoPairs(arr: ProductItem[]) {
+    const pairs = [];
+    for (let i = 0; i < arr.length; i += 2) {
+      pairs.push(arr.slice(i, i + 2));
+    }
+    return pairs;
+  }
 
   if (loading) {
     return <ActivityIndicator size="large" style={{marginTop: 20}} />;
   }
 
   const bannerCollections = collections.filter(c => c.type === 'banner');
+  const windowWidth = Dimensions.get('window').width;
+  const cardMargin = 8;
+  const cardWidth = (windowWidth * 0.9 - cardMargin * 3) / 2;
 
   return (
-    <View style={{flex: 1, backgroundColor: '#F5F0FF'}}>
+    <ScrollView style={{flex: 1, backgroundColor: '#F5F0FF'}} contentContainerStyle={{paddingBottom: 24}}>
       {/* Banner Section */}
       <FlatList
         ref={bannerRef}
@@ -234,6 +259,7 @@ const CollectionSection = () => {
         horizontal
         showsHorizontalScrollIndicator={false}
         pagingEnabled
+        onScrollToIndexFailed={handleScrollToIndexFailed}
         keyExtractor={item => item.collection_id.toString()}
         renderItem={({item}) => (
           <TouchableOpacity
@@ -242,7 +268,8 @@ const CollectionSection = () => {
                 collectionId: item.collection_id,
               })
             }
-            style={styles.bannerContainer}>
+            style={styles.bannerContainer}
+          >
             <Image
               source={{uri: item.image}}
               style={styles.bannerImage}
@@ -250,7 +277,7 @@ const CollectionSection = () => {
             />
           </TouchableOpacity>
         )}
-        contentContainerStyle={{paddingHorizontal: 12, marginTop: 16}}
+        contentContainerStyle={{marginTop: 16}}
       />
       <View>
         <Text style={styles.title}>Categories</Text>
@@ -267,21 +294,34 @@ const CollectionSection = () => {
       {/* Other Collections */}
       {collections
         .filter(collection => collection.type !== 'banner')
-        .map(collection => (
-          <View
-            key={collection.collection_id}
-            style={styles.collectionContainer}>
-            <Text style={styles.collectionTitle}>{collection.name}</Text>
-            <FlatList
-              data={collection.products}
-              keyExtractor={item => item.product_id.toString()}
-              renderItem={renderProduct}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            />
-          </View>
-        ))}
-    </View>
+        .map(collection => {
+          const productPairs = groupIntoPairs(collection.products);
+          return (
+            <View
+              key={collection.collection_id}
+              style={styles.collectionContainer}>
+              <Text style={styles.collectionTitle}>{collection.name}</Text>
+              <FlatList
+                data={productPairs}
+                keyExtractor={(_, idx) => idx.toString()}
+                renderItem={({item: pair}) => (
+                  <View style={{flexDirection: 'row', width: windowWidth * 0.9, justifyContent: 'flex-start', alignSelf: 'center'}}>
+                    {pair.map((productItem: ProductItem, idx: number) => (
+                      <View key={productItem.product_id} style={{width: cardWidth, marginRight: idx === 0 && pair.length === 2 ? cardMargin : 0}}>
+                        {renderProduct({item: productItem})}
+                      </View>
+                    ))}
+                  </View>
+                )}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={true}
+                contentContainerStyle={{paddingBottom: 8}}
+              />
+            </View>
+          );
+        })}
+    </ScrollView>
   );
 };
 
@@ -375,8 +415,7 @@ const styles = StyleSheet.create({
   },
   bannerContainer: {
     height: 180,
-    width: 320,
-    marginRight: 12,
+    width: Dimensions.get('window').width,
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 3,
