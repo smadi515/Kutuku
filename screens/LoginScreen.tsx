@@ -16,6 +16,7 @@ import Icon from '../components/icon';
 import {login, signInWithGoogle} from '../lib/api';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 import {useTranslation} from 'react-i18next';
+import Header from '../components/Header';
 
 const LoginScreen = ({navigation}: any) => {
   const {t, i18n} = useTranslation();
@@ -79,57 +80,48 @@ const LoginScreen = ({navigation}: any) => {
   };
 
   return (
-    <>
-      <ScrollView
-        contentContainerStyle={[
-          styles.container,
-          {direction: isRTL ? 'rtl' : 'ltr'},
-        ]}>
-        <Text style={styles.title}>{t('login.title')}</Text>
-        <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
-
-        <CustomInput
-          label={t('login.emailLabel')}
-          placeholder={t('login.emailPlaceholder')}
-          iconType="feather"
-          iconName="mail"
-          value={email}
-          onChangeText={setEmail}
-        />
-
-        <CustomInput
-          label={t('login.passwordLabel')}
-          placeholder={t('login.passwordPlaceholder')}
-          secureTextEntry
-          iconType="feather"
-          iconName="lock"
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        <CustomButton
-          text={t('login.forgotPassword')}
-          type="TERTIARY"
-          onPress={openPaymentMethodSheet}
-        />
-
-        <View style={{width: '100%', alignItems: 'center'}}>
-          <CustomButton text={t('login.signIn')} onPress={handleLogin} />
-        </View>
-
-        <Text style={styles.orText}>{t('login.orOtherMethods')}</Text>
-
-        <TouchableOpacity style={styles.altBtn} onPress={signInWithGoogle}>
-          <Icon type="ant" name="google" size={18} />
-          <Text style={styles.altBtnText}>{t('login.google')}</Text>
-        </TouchableOpacity>
-
-        <View style={styles.altBtn}>
-          <Icon type="fa" name="facebook" size={18} />
-          <Text style={styles.altBtnText}>{t('login.facebook')}</Text>
+    <View style={{flex: 1, backgroundColor: '#F7F7FB', paddingTop: 15}}>
+      <Header title={t('login.title')} showBack={true} showImage={false} />
+      <ScrollView contentContainerStyle={{flexGrow: 1, alignItems: 'center', paddingTop: 24}}>
+        <View style={styles.card}>
+          <Text style={styles.title}>{t('login.title')}</Text>
+          <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
+          <CustomInput
+            label={t('login.emailLabel')}
+            placeholder={t('login.emailPlaceholder')}
+            iconType="feather"
+            iconName="mail"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <CustomInput
+            label={t('login.passwordLabel')}
+            placeholder={t('login.passwordPlaceholder')}
+            secureTextEntry
+            iconType="feather"
+            iconName="lock"
+            value={password}
+            onChangeText={setPassword}
+          />
+          <CustomButton
+            text={t('login.forgotPassword')}
+            type="TERTIARY"
+            onPress={openPaymentMethodSheet}
+          />
+          <View style={{width: '100%', alignItems: 'center'}}>
+            <CustomButton text={t('login.signIn')} onPress={handleLogin} />
+          </View>
+          <Text style={styles.orText}>{t('login.orOtherMethods')}</Text>
+          <TouchableOpacity style={styles.altBtn} onPress={signInWithGoogle}>
+            <Icon type="ant" name="google" size={18} />
+            <Text style={styles.altBtnText}>{t('login.google')}</Text>
+          </TouchableOpacity>
+          <View style={styles.altBtn}>
+            <Icon type="fa" name="facebook" size={18} />
+            <Text style={styles.altBtnText}>{t('login.facebook')}</Text>
+          </View>
         </View>
       </ScrollView>
-
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
@@ -151,7 +143,7 @@ const LoginScreen = ({navigation}: any) => {
           </View>
         </BottomSheetView>
       </BottomSheet>
-    </>
+    </View>
   );
 };
 
@@ -203,6 +195,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginBottom: 15,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+    marginBottom: 32,
   },
 });
 

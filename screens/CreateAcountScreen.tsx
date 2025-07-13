@@ -7,6 +7,7 @@ import CustomButton from '../components/CustomButton';
 import Icon from '../components/icon';
 import {register} from '../lib/api';
 import {useTranslation} from 'react-i18next';
+import Header from '../components/Header';
 
 const CreateAccountScreen = ({navigation}: any) => {
   const {t, i18n} = useTranslation();
@@ -58,73 +59,64 @@ const CreateAccountScreen = ({navigation}: any) => {
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={[
-        styles.container,
-        {direction: isRTL ? 'rtl' : 'ltr'},
-      ]}>
-      <Text style={styles.title}>{t('auth.create_account')}</Text>
-      <Text style={styles.subtitle}>{t('auth.create_account_subtitle')}</Text>
-
-      <CustomInput
-        label={t('auth.username')}
-        placeholder={t('auth.username_placeholder')}
-        iconType="feather"
-        iconName="user"
-        value={username}
-        onChangeText={setUsername}
-      />
-
-      <CustomInput
-        label={t('auth.email')}
-        placeholder={t('auth.email_placeholder')}
-        iconType="feather"
-        iconName="mail"
-        value={email}
-        onChangeText={setEmail}
-      />
-
-      <CustomInput
-        label={t('auth.password')}
-        placeholder={t('auth.password_placeholder')}
-        secureTextEntry
-        iconType="feather"
-        iconName="lock"
-        value={password}
-        onChangeText={setPassword}
-      />
-
-      <CustomInput
-        label={t('auth.phone_number')}
-        placeholder={t('auth.phone_placeholder')}
-        iconType="feather"
-        iconName="phone"
-        value={phoneNumber}
-        onChangeText={sePhoneNumber}
-      />
-
-      <View style={{width: '100%', alignItems: 'center'}}>
-        <CustomButton
-          text={
-            isLoading ? t('auth.creating_account') : t('auth.create_account')
-          }
-          onPress={handleRegister}
-          disabled={isLoading}
-        />
-      </View>
-
-      <Text style={styles.orText}>{t('auth.or_use_other')}</Text>
-
-      <View style={styles.altBtn}>
-        <Icon type="ant" name="google" size={18} />
-        <Text style={styles.altBtnText}>{t('auth.signup_google')}</Text>
-      </View>
-
-      <View style={styles.altBtn}>
-        <Icon type="fa" name="facebook" size={18} />
-        <Text style={styles.altBtnText}>{t('auth.signup_facebook')}</Text>
-      </View>
-    </ScrollView>
+    <View style={{flex: 1, backgroundColor: '#F7F7FB', paddingTop: 15}}>
+      <Header title={t('auth.create_account')} showBack={true} showImage={false} />
+      <ScrollView contentContainerStyle={{flexGrow: 1, alignItems: 'center', paddingTop: 24}}>
+        <View style={styles.card}>
+          <Text style={styles.title}>{t('auth.create_account')}</Text>
+          <Text style={styles.subtitle}>{t('auth.create_account_subtitle')}</Text>
+          <CustomInput
+            label={t('auth.username')}
+            placeholder={t('auth.username_placeholder')}
+            iconType="feather"
+            iconName="user"
+            value={username}
+            onChangeText={setUsername}
+          />
+          <CustomInput
+            label={t('auth.email')}
+            placeholder={t('auth.email_placeholder')}
+            iconType="feather"
+            iconName="mail"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <CustomInput
+            label={t('auth.password')}
+            placeholder={t('auth.password_placeholder')}
+            secureTextEntry
+            iconType="feather"
+            iconName="lock"
+            value={password}
+            onChangeText={setPassword}
+          />
+          <CustomInput
+            label={t('auth.phone_number')}
+            placeholder={t('auth.phone_placeholder')}
+            iconType="feather"
+            iconName="phone"
+            value={phoneNumber}
+            onChangeText={sePhoneNumber}
+          />
+          <View style={{width: '100%', alignItems: 'center'}}>
+            <CustomButton
+              text={isLoading ? t('auth.creating_account') : t('auth.create_account')}
+              onPress={handleRegister}
+              disabled={isLoading}
+            />
+          </View>
+          <Text style={styles.orText}>{t('auth.or_use_other')}</Text>
+          <View style={styles.altBtn}>
+            <Icon type="ant" name="google" size={18} />
+            <Text style={styles.altBtnText}>{t('auth.signup_google')}</Text>
+          </View>
+          <View style={styles.altBtn}>
+            <Icon type="fa" name="facebook" size={18} />
+            <Text style={styles.altBtnText}>{t('auth.signup_facebook')}</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -161,6 +153,19 @@ const styles = StyleSheet.create({
   altBtnText: {
     marginLeft: 10,
     fontWeight: '500',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+    marginBottom: 32,
   },
 });
 

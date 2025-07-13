@@ -1,8 +1,54 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {GoogleSignin} from '@react-native-google-signin/google-signin';
+
 import Toast from 'react-native-toast-message';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+
+export const signInWithGoogle = async () => {
+  try {
+    console.log('🔄 Checking Play Services availability...');
+    const isAvailable = await GoogleSignin.hasPlayServices({
+      showPlayServicesUpdateDialog: true,
+    });
+    console.log('✅ Play Services available:', isAvailable);
+
+    console.log('🚀 Attempting Google Sign-In...');
+    const result = await GoogleSignin.signIn();
+
+    // ✅ TypeScript workaround: treat as dynamic object (e.g., `any`)
+    const user = (result as any).user;
+    if (!user) {
+      console.warn('⚠️ Sign-in was cancelled or failed. No user returned.');
+      return;
+    }
+
+    console.log('👤 User Info:', user);
+    console.log('📧 Email:', user.email);
+    console.log('🧑 Name:', user.name);
+
+    const {idToken, accessToken} = await GoogleSignin.getTokens();
+    console.log('🆔 ID Token:', idToken);
+    console.log('🔑 Access Token:', accessToken);
+
+    // 👉 Send idToken to your backend here
+  } catch (error: any) {
+    console.error('❌ Google Sign-In error:', error);
+    if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      console.log('🛑 User cancelled the login process');
+    } else if (error.code === statusCodes.IN_PROGRESS) {
+      console.log('⏳ Sign-In already in progress');
+    } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+      console.log('❌ Google Play Services not available or outdated');
+    } else {
+      console.log('💥 Unknown Sign-In error occurred');
+    }
+  }
+};
 
 // ================= AUTH =================
+
 export const login = async (email: string, password: string) => {
   const apiUrl = 'https://api.sareh-nomow.website/api/client/v1/auth/login';
 
@@ -530,22 +576,6 @@ export const fetchUserProfile = async () => {
   } catch (error) {
     console.error('Error fetching user profile:', error);
     throw error;
-  }
-};
-
-export const signInWithGoogle = async () => {
-  try {
-    await GoogleSignin.hasPlayServices(); // Ensure device has Google Play Services
-    const userInfo = await GoogleSignin.signIn();
-    console.log('Google user info:', userInfo);
-    const isAvailable = await GoogleSignin.hasPlayServices({
-      showPlayServicesUpdateDialog: true,
-    });
-    console.log('Play Services available:', isAvailable);
-
-    // 👉 Send userInfo.idToken to your backend API for verification or login
-  } catch (error) {
-    console.error('Google Sign-In error:', error);
   }
 };
 
