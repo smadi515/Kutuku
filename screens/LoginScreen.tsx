@@ -1,4 +1,4 @@
-import React, {useState, useRef, useMemo} from 'react';
+import React, {useState, useRef, useMemo, useEffect} from 'react';
 import {
   View,
   Text,
@@ -7,16 +7,21 @@ import {
   Alert,
   TextInput,
   TouchableOpacity,
+  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import Icon from '../components/icon';
-import {login, signInWithGoogle} from '../lib/api';
+import {login,} from '../lib/api';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 import {useTranslation} from 'react-i18next';
 import Header from '../components/Header';
+
+
+const GOOGLE_LOGIN_URL = 'https://api.sareh-nomow.website/api/client/v1/auth/google';
+const REDIRECT_URI = 'kutuku://auth-callback'; // Make sure this is registered in your app
 
 const LoginScreen = ({navigation}: any) => {
   const {t, i18n} = useTranslation();
@@ -27,6 +32,24 @@ const LoginScreen = ({navigation}: any) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['40%'], []);
   const openPaymentMethodSheet = () => bottomSheetRef.current?.expand();
+
+  useEffect(() => {
+    const handleDeepLink = (event: { url: string }) => {
+      if (event.url.startsWith(REDIRECT_URI)) {
+        // Example: kutuku://auth-callback?token=YOUR_TOKEN
+        const match = event.url.match(/[?&]token=([^&]+)/);
+        const token = match ? match[1] : null;
+        if (token) {
+          AsyncStorage.setItem('token', token);
+          navigation.replace('TabNavigationScreen');
+        }
+      }
+    };
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   const handleResetPassword = async () => {
     try {
@@ -79,6 +102,14 @@ const LoginScreen = ({navigation}: any) => {
     }
   };
 
+  const handleGoogleWebLogin = async () => {
+    try {
+      await Linking.openURL(GOOGLE_LOGIN_URL);
+    } catch (error) {
+      Alert.alert('Error', 'Could not open Google login.');
+    }
+  };
+
   return (
     <View style={{flex: 1, backgroundColor: '#F7F7FB', paddingTop: 15}}>
       <Header title={t('login.title')} showBack={true} showImage={false} />
@@ -112,7 +143,7 @@ const LoginScreen = ({navigation}: any) => {
             <CustomButton text={t('login.signIn')} onPress={handleLogin} />
           </View>
           <Text style={styles.orText}>{t('login.orOtherMethods')}</Text>
-          <TouchableOpacity style={styles.altBtn} onPress={signInWithGoogle}>
+          <TouchableOpacity style={styles.altBtn} onPress={handleGoogleWebLogin}>
             <Icon type="ant" name="google" size={18} />
             <Text style={styles.altBtnText}>{t('login.google')}</Text>
           </TouchableOpacity>
