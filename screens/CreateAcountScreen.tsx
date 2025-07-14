@@ -106,14 +106,6 @@ const CreateAccountScreen = ({navigation}: any) => {
             />
           </View>
           <Text style={styles.orText}>{t('auth.or_use_other')}</Text>
-          <View style={styles.altBtn}>
-            <Icon type="ant" name="google" size={18} />
-            <Text style={styles.altBtnText}>{t('auth.signup_google')}</Text>
-          </View>
-          <View style={styles.altBtn}>
-            <Icon type="fa" name="facebook" size={18} />
-            <Text style={styles.altBtnText}>{t('auth.signup_facebook')}</Text>
-          </View>
         </View>
       </ScrollView>
     </View>

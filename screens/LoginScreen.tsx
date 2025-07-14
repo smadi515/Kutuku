@@ -116,10 +116,6 @@ const LoginScreen = ({navigation}: any) => {
             <Icon type="ant" name="google" size={18} />
             <Text style={styles.altBtnText}>{t('login.google')}</Text>
           </TouchableOpacity>
-          <View style={styles.altBtn}>
-            <Icon type="fa" name="facebook" size={18} />
-            <Text style={styles.altBtnText}>{t('login.facebook')}</Text>
-          </View>
         </View>
       </ScrollView>
       <BottomSheet
