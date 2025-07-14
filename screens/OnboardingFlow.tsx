@@ -1,88 +1,132 @@
-import React, {useRef, useEffect} from 'react';
+import React, {useRef, useEffect, useState} from 'react';
 import {
   SafeAreaView,
   View,
   Text,
   Image,
   StyleSheet,
-  ScrollView,
   Dimensions,
+  TouchableOpacity,
 } from 'react-native';
 import CustomButton from '../components/CustomButton';
 import {useTranslation} from 'react-i18next';
 
-const {width} = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
+const ONBOARDING_SCREENS = [
+  {
+    // Suggestion: upload a shopping bags or happy shopper image as 'onboarding1.png'
+    image: require('../assets/webshop.jpg'),
+    title1: 'Welcome to Your One-Stop Shop',
+    title2: '',
+    desc1: 'Discover everything you need, all in one place.',
+    desc2: '',
+  },
+  {
+    // Suggestion: upload a groceries/electronics/fashion collage as 'onboarding2.png'
+    image: require('../assets/OnBoarding2.png'),
+    title1: 'Endless Variety, Best Prices',
+    title2: '',
+    desc1: 'From groceries to gadgets, fashion to furniture—find it all here.',
+    desc2: '',
+  },
+  {
+    // Suggestion: upload a delivery or happy customer image as 'onboarding3.png'
+    image: require('../assets/OnBoarding3.png'),
+    title1: 'Fast Delivery, Easy Shopping',
+    title2: '',
+    desc1: 'Shop from home and get your order delivered to your door.',
+    desc2: '',
+  },
+];
 
 const OnboardingFlow: React.FC = ({navigation}: any) => {
   const {t} = useTranslation();
-  const scrollRef = useRef<ScrollView>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const autoScrollRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Auto-scroll logic
   useEffect(() => {
-    const timer = setTimeout(() => {
-      scrollRef.current?.scrollTo({x: width, animated: false});
-    }, 100);
+    if (!autoScroll) return;
+    if (autoScrollRef.current) clearInterval(autoScrollRef.current);
+    autoScrollRef.current = setInterval(() => {
+      setCurrentIndex(prev => {
+        if (prev === ONBOARDING_SCREENS.length - 1) {
+          setAutoScroll(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 2500);
+    return () => {
+      if (autoScrollRef.current) clearInterval(autoScrollRef.current);
+    };
+  }, [autoScroll]);
 
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleNext = () => {
-    navigation.navigate('CreateAcount');
+  // Pause auto-scroll on user interaction, resume after 5s
+  const handleUserInteraction = () => {
+    setAutoScroll(false);
+    if (autoScrollRef.current) clearInterval(autoScrollRef.current);
+    setTimeout(() => setAutoScroll(true), 5000);
   };
 
+  const handleNext = () => {
+    if (currentIndex === ONBOARDING_SCREENS.length - 1) {
+      navigation.navigate('CreateAcount');
+    } else {
+      setCurrentIndex(currentIndex + 1);
+      handleUserInteraction();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      handleUserInteraction();
+    }
+  };
+
+  const screen = ONBOARDING_SCREENS[currentIndex];
+
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{flexDirection: 'row-reverse'}}>
-        {/* Screen 3 */}
-        <View style={[styles.logoContainer, {width}]}>
+    <SafeAreaView style={styles.bg}>
+      <View style={styles.centerWrapper}>
+        <View style={styles.card}>
           <Image
-            source={require('../assets/Maskgroup1.png')}
+            source={screen.image}
             style={styles.logo}
-            resizeMode="contain"
+            resizeMode="cover"
           />
-          <Text style={styles.textStyle}>{t('Onboarding.screen3.title1')}</Text>
-          <Text style={styles.textStyle}>{t('Onboarding.screen3.title2')}</Text>
-          <Text style={styles.subText}>{t('Onboarding.screen3.desc1')}</Text>
-          <Text style={styles.subText}>{t('Onboarding.screen3.desc2')}</Text>
+          <Text style={styles.title}>{t(screen.title1)}</Text>
+          <Text style={styles.title}>{t(screen.title2)}</Text>
+          <Text style={styles.desc}>{t(screen.desc1)}</Text>
+          <Text style={styles.desc}>{t(screen.desc2)}</Text>
+          <View style={styles.paginationRow}>
+            {ONBOARDING_SCREENS.map((_, idx) => (
+              <View
+                key={idx}
+                style={[styles.dot, currentIndex === idx && styles.activeDot]}
+              />
+            ))}
+          </View>
+          <View style={styles.navRow}>
+            <TouchableOpacity
+              onPress={handleBack}
+              disabled={currentIndex === 0}
+              style={[styles.navBtn, currentIndex === 0 && styles.navBtnDisabled]}
+            >
+              <Text style={styles.navBtnText}>{currentIndex > 0 ? 'Back' : ''}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleNext}
+              style={styles.navBtn}
+            >
+              <Text style={styles.navBtnText}>{currentIndex === ONBOARDING_SCREENS.length - 1 ? t('Onboarding.createAccount') : 'Next'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Screen 2 */}
-        <View style={[styles.logoContainer, {width}]}>
-          <Image
-            source={require('../assets/Maskgroup1.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.textStyle}>{t('Onboarding.screen2.title1')}</Text>
-          <Text style={styles.textStyle}>{t('Onboarding.screen2.title2')}</Text>
-          <Text style={styles.subText}>{t('Onboarding.screen2.desc1')}</Text>
-          <Text style={styles.subText}>{t('Onboarding.screen2.desc2')}</Text>
-        </View>
-
-        {/* Screen 1 */}
-        <View style={[styles.logoContainer, {width}]}>
-          <Image
-            source={require('../assets/Maskgroup2.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.textStyle}>{t('Onboarding.screen1.title1')}</Text>
-          <Text style={styles.textStyle}>{t('Onboarding.screen1.title2')}</Text>
-          <Text style={styles.subText}>{t('Onboarding.screen1.desc1')}</Text>
-          <Text style={styles.subText}>{t('Onboarding.screen1.desc2')}</Text>
-        </View>
-      </ScrollView>
-
+      </View>
       <View style={styles.buttonContainer}>
-        <CustomButton
-          type="PRIMARY"
-          onPress={handleNext}
-          text={t('Onboarding.createAccount')}
-        />
         <CustomButton
           onPress={() => navigation.navigate('Login')}
           type="TERTIARY"
@@ -94,29 +138,108 @@ const OnboardingFlow: React.FC = ({navigation}: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#fff'},
-  logoContainer: {
-    paddingHorizontal: 50,
+  bg: {
+    flex: 1,
+    backgroundColor: '#F7F7FB',
+  },
+  centerWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    height: '80%',
-  },
-  subText: {
-    textAlign: 'center',
-    color: 'gray',
-    fontWeight: '300',
+    paddingHorizontal: 24,
+    paddingVertical: 40,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+    maxWidth: 500,
+    width: '95%',
+    maxHeight: 500,
+    alignSelf: 'center',
   },
   logo: {
-    width: '100%',
-    height: '70%',
-    borderRadius: 80,
+  
+    width: "100%",
+    height: 250,
+    borderRadius: 32,
+    marginBottom: 24,
+    marginTop: 8,
+    backgroundColor: '#F7F0FF',
+    borderWidth: 2,
+    borderColor: '#F7F0FF',
   },
-  textStyle: {
-    fontSize: 20,
+  title: {
+    fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
+    color: '#7B2FF2',
+    letterSpacing: 0.2,
+    marginBottom: 2,
   },
-  buttonContainer: {alignItems: 'center', paddingTop: 15},
+  desc: {
+    fontSize: 15,
+    color: '#F357A8',
+    textAlign: 'center',
+    marginBottom: 2,
+    fontWeight: '500',
+    opacity: 0.85,
+    marginTop: 2,
+  },
+  paginationRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 0,
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#E9D7FF',
+    marginHorizontal: 5,
+  },
+  activeDot: {
+    backgroundColor: '#7B2FF2',
+    width: 18,
+    borderRadius: 9,
+  },
+  navRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 18,
+    marginBottom: 2,
+  },
+  navBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 22,
+    backgroundColor: '#F7F0FF',
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  navBtnDisabled: {
+    opacity: 0.4,
+  },
+  navBtnText: {
+    color: '#7B2FF2',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textDecorationLine: 'underline',
+  },
+  buttonContainer: {
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 30,
+    backgroundColor: 'transparent',
+  },
 });
 
 export default OnboardingFlow;
