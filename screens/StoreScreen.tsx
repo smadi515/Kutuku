@@ -83,15 +83,14 @@ const StoreScreen = () => {
 
   const categoryId = route.params?.categoryId;
   const brandId = route.params?.brandId;
+  const initialSubcategoryId = route.params?.subcategoryId;
   const [products, setProducts] = useState<ExtendedProduct[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [subcategories, setSubcategories] = useState<Category[]>([]);
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<
-    number | null
-  >(null);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number | null>(initialSubcategoryId ?? null);
   const [page, setPage] = useState(1);
 
   const [searchText, setSearchText] = useState('');
@@ -135,8 +134,12 @@ const StoreScreen = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const categoryIdNum =
-          selectedSubcategoryId !== null ? selectedSubcategoryId : categoryId;
+        let categoryIdNum: number | undefined;
+        if (categoryId) {
+          categoryIdNum = selectedSubcategoryId !== null ? selectedSubcategoryId ?? undefined : categoryId;
+        } else {
+          categoryIdNum = selectedCategory !== null ? selectedCategory : undefined;
+        }
 
         const result = await getProducts(
           'en', // or i18n.language
@@ -184,7 +187,7 @@ const StoreScreen = () => {
     };
 
     fetchData();
-  }, [page, selectedSubcategoryId, categoryId, brandId]);
+  }, [page, selectedSubcategoryId, categoryId, brandId, selectedCategory]);
 
   useEffect(() => {
     getParentCategories()
@@ -206,6 +209,13 @@ const StoreScreen = () => {
         setBrands([]);
       });
   }, []);
+
+  // If subcategoryId param changes (e.g., navigating from home), update selectedSubcategoryId
+  useEffect(() => {
+    if (initialSubcategoryId !== undefined && initialSubcategoryId !== null) {
+      setSelectedSubcategoryId(initialSubcategoryId);
+    }
+  }, [initialSubcategoryId]);
 
   // Load cart count every time StoreScreen is focused
   useFocusEffect(
@@ -333,48 +343,92 @@ const StoreScreen = () => {
           }]}
         />
       </LinearGradient>
-      {/* Subcategory Filter */}
-      {categoryId && subcategories.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.subcategoryContainer}>
-          <TouchableOpacity
-            style={[styles.pillButton, selectedSubcategoryId === null && styles.pillButtonSelected]}
-            onPress={() => setSelectedSubcategoryId(null)}>
-            <Text style={[styles.pillButtonText, selectedSubcategoryId === null && styles.pillButtonTextSelected]}>All</Text>
-          </TouchableOpacity>
-          {subcategories.map(sub => (
+      <View>
+        {categoryId && subcategories.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.subcategoryContainer}>
             <TouchableOpacity
-              key={sub.id}
-              style={[styles.pillButton, selectedSubcategoryId === sub.id && styles.pillButtonSelected]}
-              onPress={() => setSelectedSubcategoryId(sub.id)}>
-              <Image
-                source={{uri: sub.image}}
-                style={styles.pillImage}
-              />
-              <Text style={[styles.pillButtonText, selectedSubcategoryId === sub.id && styles.pillButtonTextSelected]}>{sub.name}</Text>
+              style={[styles.pillButton, selectedSubcategoryId === null && styles.pillButtonSelected]}
+              onPress={() => setSelectedSubcategoryId(null)}>
+              <Text style={[styles.pillButtonText, selectedSubcategoryId === null && styles.pillButtonTextSelected]}>All</Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-      {/* Search Bar */}
-      <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 36, marginBottom: 18, zIndex: 1, paddingHorizontal: 8}}>
-        <View style={[styles.searchBar, {flex: 1}]}>
-          <Icon type="ant" name="search1" size={20} style={{marginRight: 8}} />
-          <TextInput
-            placeholder={'Search products'}
-            style={styles.searchInput}
-            placeholderTextColor="#aaa"
-            value={searchText}
-            onChangeText={setSearchText}
-          />
-          <TouchableOpacity onPress={() => bottomSheetRef.current?.snapToIndex(0)}>
-            <Icon type="ant" name="filter" size={20} />
-          </TouchableOpacity>
+            {subcategories.map(sub => (
+              <TouchableOpacity
+                key={sub.id}
+                style={[styles.pillButton, selectedSubcategoryId === sub.id && styles.pillButtonSelected]}
+                onPress={() => setSelectedSubcategoryId(sub.id)}>
+                <Image
+                  source={{uri: sub.image}}
+                  style={styles.pillImage}
+                />
+                <Text
+                  style={[
+                    styles.pillButtonText,
+                    selectedSubcategoryId === sub.id && styles.pillButtonTextSelected,
+                    {maxWidth: 60, flexShrink: 1}
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {sub.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+        {!categoryId && categories.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.subcategoryContainer}>
+            <TouchableOpacity
+              style={[styles.pillButton, selectedCategory === null && styles.pillButtonSelected]}
+              onPress={() => setSelectedCategory(null)}>
+              <Text style={[styles.pillButtonText, selectedCategory === null && styles.pillButtonTextSelected]}>All</Text>
+            </TouchableOpacity>
+            {categories.map(cat => (
+              <TouchableOpacity
+                key={cat.id}
+                style={[styles.pillButton, selectedCategory === cat.id && styles.pillButtonSelected]}
+                onPress={() => setSelectedCategory(cat.id)}>
+                <Image
+                  source={{uri: cat.image}}
+                  style={styles.pillImage}
+                />
+                <Text
+                  style={[
+                    styles.pillButtonText,
+                    selectedCategory === cat.id && styles.pillButtonTextSelected,
+                    {maxWidth: 60, flexShrink: 1}
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+        
+        <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 18, zIndex: 1, paddingHorizontal: 8}}>
+          <View style={[styles.searchBar, {flex: 1}]}> 
+            <Icon type="ant" name="search1" size={20} style={{marginRight: 8}} />
+            <TextInput
+              placeholder={'Search products'}
+              style={styles.searchInput}
+              placeholderTextColor="#aaa"
+              value={searchText}
+              onChangeText={setSearchText}
+            />
+            <TouchableOpacity onPress={() => bottomSheetRef.current?.snapToIndex(0)}>
+              <Icon type="ant" name="filter" size={20} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-      {/* Products List */}
       {loading ? (
         <ActivityIndicator
           size="large"
@@ -389,30 +443,34 @@ const StoreScreen = () => {
           numColumns={2}
           keyExtractor={item => item.product_id.toString()}
           columnWrapperStyle={styles.productRow}
-          contentContainerStyle={{padding: 16}}
-          renderItem={({item}) => (
-            <View style={styles.productCardWrapper}>
-              <ProductCard
-                product_id={item.product_id}
-                urlKey={item.urlKey}
-                title={item.name}
-                designer={item.brandName}
-                price={Math.round(item.price * rate)}
-                currencySymbol={symbol}
-                image={item.image ?? ''}
-                description={item.description}
-                stock_availability={item.inventory?.stock_availability ?? false}
-                onPressCart={() => handleAddToCart(item)}
-              />
-            </View>
-          )}
+          contentContainerStyle={{padding: 16, paddingBottom: 90}}
+          renderItem={({item, index}) => {
+            // If odd number of products, last item should not stretch
+            const isLastOdd = filteredProducts.length % 2 === 1 && index === filteredProducts.length - 1;
+            return (
+              <View style={[styles.productCardWrapper, isLastOdd && {flex: 0.48}]}> 
+                <ProductCard
+                  product_id={item.product_id}
+                  urlKey={item.urlKey}
+                  title={item.name}
+                  designer={item.brandName}
+                  price={Math.round(item.price * rate)}
+                  currencySymbol={symbol}
+                  image={item.image ?? ''}
+                  description={item.description}
+                  stock_availability={item.inventory?.stock_availability ?? false}
+                  onPressCart={() => handleAddToCart(item)}
+                />
+              </View>
+            );
+          }}
           ListFooterComponent={
             loadingMore ? <ActivityIndicator size="small" color="#7B2FF2" /> : null
           }
           ListEmptyComponent={!loading && <Text style={styles.emptyText}>No products found.</Text>}
         />
       )}
-      <View style={styles.paginationRow}>
+      <View style={[styles.paginationRow, {position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#F7F7FB', paddingBottom: 18, zIndex: 10}]}> 
         <TouchableOpacity
           style={[styles.paginationBtn, page === 1 && styles.paginationBtnDisabled]}
           onPress={() => setPage(p => Math.max(p - 1, 1))}
@@ -431,7 +489,7 @@ const StoreScreen = () => {
           <Icon name="chevron-right" type="Feather" size={22} color={!hasMore ? '#ccc' : '#fff'} />
         </TouchableOpacity>
       </View>
-      {/* Filter Bottom Sheet */}
+    
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
@@ -442,7 +500,7 @@ const StoreScreen = () => {
         <BottomSheetView style={{padding: 20, flex: 1}}>
           <ScrollView contentContainerStyle={{paddingBottom: 32}} showsVerticalScrollIndicator={false}>
             <Text style={styles.sectionTitle}>Filter Products</Text>
-            {/* Price Sort */}
+         
             <Text style={{marginTop: 16, fontWeight: 'bold'}}>Sort by Price</Text>
             <View style={{flexDirection: 'row', marginVertical: 8}}>
               <TouchableOpacity onPress={() => setSortOrder('asc')} style={[styles.filterOption, sortOrder === 'asc' && styles.selectedFilterOption]}>
@@ -452,7 +510,7 @@ const StoreScreen = () => {
                 <Text>Largest to Smallest</Text>
               </TouchableOpacity>
             </View>
-            {/* Category Filter */}
+           
             <Text style={{marginTop: 16, fontWeight: 'bold'}}>Category</Text>
             <View style={{marginVertical: 8, minHeight: 56, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
               <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}}>
@@ -463,7 +521,7 @@ const StoreScreen = () => {
                 ))}
               </ScrollView>
             </View>
-            {/* Brand Filter */}
+           
             <Text style={{marginTop: 16, fontWeight: 'bold'}}>Brand</Text>
             <View style={{marginVertical: 8, minHeight: 56, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
               <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}}>
@@ -504,8 +562,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 22,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
+    width: 110, // fixed width for consistency
+    height: 44, // fixed height for consistency
+    justifyContent: 'center',
+    paddingHorizontal: 0,
     marginRight: 12,
     borderWidth: 1.5,
     borderColor: '#eee',
@@ -513,6 +573,7 @@ const styles = StyleSheet.create({
     shadowColor: '#7B2FF2',
     shadowOpacity: 0.06,
     shadowRadius: 6,
+    overflow: 'hidden', // ensure children are clipped
   },
   pillButtonSelected: {
     backgroundColor: '#7B2FF2',
