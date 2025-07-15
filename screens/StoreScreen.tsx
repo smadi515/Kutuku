@@ -536,7 +536,7 @@ const StoreScreen = () => {
           )}
         />
       )}
-      {/* Hide pagination row when filterSheetVisible is true */}
+      
       {!filterSheetVisible && (
         <View style={[styles.paginationRow, {position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#F7F7FB', paddingBottom: 18, zIndex: 10}]}> 
           <TouchableOpacity
@@ -587,6 +587,7 @@ const StoreScreen = () => {
                   <Text>All Categories</Text>
                 </TouchableOpacity>
                 {categories.map(cat => (
+                  console.log("cat.name",cat.name),
                   <TouchableOpacity key={cat.id} onPress={() => setSelectedCategory(cat.id)} style={[styles.filterOption, {marginRight: 10}, selectedCategory === cat.id && styles.selectedFilterOption]}>
                     <Text>{cat.name}</Text>
                   </TouchableOpacity>
