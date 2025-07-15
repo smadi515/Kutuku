@@ -210,6 +210,14 @@ const StoreScreen = () => {
       });
   }, []);
 
+  // When categoryId changes, set selectedSubcategoryId and selectedCategory to categoryId (for pill selection and filter)
+  useEffect(() => {
+    if (categoryId !== undefined && categoryId !== null) {
+      setSelectedSubcategoryId(categoryId);
+      setSelectedCategory(categoryId);
+    }
+  }, [categoryId]);
+
   // If subcategoryId param changes (e.g., navigating from home), update selectedSubcategoryId
   useEffect(() => {
     if (initialSubcategoryId !== undefined && initialSubcategoryId !== null) {
@@ -470,32 +478,35 @@ const StoreScreen = () => {
           ListEmptyComponent={!loading && <Text style={styles.emptyText}>No products found.</Text>}
         />
       )}
-      <View style={[styles.paginationRow, {position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#F7F7FB', paddingBottom: 18, zIndex: 10}]}> 
-        <TouchableOpacity
-          style={[styles.paginationBtn, page === 1 && styles.paginationBtnDisabled]}
-          onPress={() => setPage(p => Math.max(p - 1, 1))}
-          disabled={page === 1}
-        >
-          <Icon name="chevron-left" type="Feather" size={22} color={page === 1 ? '#ccc' : '#fff'} />
-          <Text style={styles.paginationBtnText}>Previous</Text>
-        </TouchableOpacity>
-        <Text style={styles.pageNumber}>Page {page}</Text>
-        <TouchableOpacity
-          style={[styles.paginationBtn, !hasMore && styles.paginationBtnDisabled]}
-          onPress={() => setPage(p => p + 1)}
-          disabled={!hasMore}
-        >
-          <Text style={styles.paginationBtnText}>Next</Text>
-          <Icon name="chevron-right" type="Feather" size={22} color={!hasMore ? '#ccc' : '#fff'} />
-        </TouchableOpacity>
-      </View>
+      {/* Hide pagination row when filterSheetVisible is true */}
+      {!filterSheetVisible && (
+        <View style={[styles.paginationRow, {position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#F7F7FB', paddingBottom: 18, zIndex: 10}]}> 
+          <TouchableOpacity
+            style={[styles.paginationBtn, page === 1 && styles.paginationBtnDisabled]}
+            onPress={() => setPage(p => Math.max(p - 1, 1))}
+            disabled={page === 1}
+          >
+            <Icon name="chevron-left" type="Feather" size={22} color={page === 1 ? '#ccc' : '#fff'} />
+            <Text style={styles.paginationBtnText}>Previous</Text>
+          </TouchableOpacity>
+          <Text style={styles.pageNumber}>Page {page}</Text>
+          <TouchableOpacity
+            style={[styles.paginationBtn, !hasMore && styles.paginationBtnDisabled]}
+            onPress={() => setPage(p => p + 1)}
+            disabled={!hasMore}
+          >
+            <Text style={styles.paginationBtnText}>Next</Text>
+            <Icon name="chevron-right" type="Feather" size={22} color={!hasMore ? '#ccc' : '#fff'} />
+          </TouchableOpacity>
+        </View>
+      )}
     
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
         snapPoints={snapPoints}
         enablePanDownToClose
-        onClose={() => setFilterSheetVisible(false)}
+        onChange={index => setFilterSheetVisible(index !== -1)}
       >
         <BottomSheetView style={{padding: 20, flex: 1}}>
           <ScrollView contentContainerStyle={{paddingBottom: 32}} showsVerticalScrollIndicator={false}>
@@ -512,8 +523,8 @@ const StoreScreen = () => {
             </View>
            
             <Text style={{marginTop: 16, fontWeight: 'bold'}}>Category</Text>
-            <View style={{marginVertical: 8, minHeight: 56, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}}>
+            <View style={{marginVertical: 8, minHeight: 56, maxHeight: 120, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}} nestedScrollEnabled={true}>
                 {categories.map(cat => (
                   <TouchableOpacity key={cat.id} onPress={() => setSelectedCategory(cat.id)} style={[styles.filterOption, {marginRight: 10}, selectedCategory === cat.id && styles.selectedFilterOption]}>
                     <Text>{cat.name}</Text>
@@ -523,8 +534,8 @@ const StoreScreen = () => {
             </View>
            
             <Text style={{marginTop: 16, fontWeight: 'bold'}}>Brand</Text>
-            <View style={{marginVertical: 8, minHeight: 56, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}}>
+            <View style={{marginVertical: 8, minHeight: 56, maxHeight: 120, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}} nestedScrollEnabled={true}>
                 {brands.map(brand => (
                   <TouchableOpacity key={brand.id} onPress={() => setSelectedBrand(brand.id)} style={[styles.filterOption, {marginRight: 10}, selectedBrand === brand.id && styles.selectedFilterOption]}>
                     <Text>{brand.name}</Text>
