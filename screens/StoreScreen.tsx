@@ -307,24 +307,67 @@ const StoreScreen = () => {
   };
 
   // Filtering logic (runs only when Apply is pressed)
-  const applyFilters = () => {
-    let result = [...products];
-    if (searchText.length >= 3) {
-      result = result.filter(p => p.name.toLowerCase().includes(searchText.toLowerCase()));
+  const applyFilters = async () => {
+    setLoading(true);
+    setPage(1); // Reset to first page when filters are applied
+    try {
+      let categoryIdNum: number | undefined;
+      if (selectedCategory !== null) {
+        categoryIdNum = selectedCategory;
+      } else if (categoryId) {
+        categoryIdNum = selectedSubcategoryId !== null ? selectedSubcategoryId ?? undefined : categoryId;
+      }
+      const result = await getProducts(
+        'en',
+        categoryIdNum,
+        selectedBrand !== null ? selectedBrand : undefined,
+        1, // always fetch first page on filter
+        PAGE_SIZE,
+      );
+      let filtered = result.map((product: any) => {
+        const mainImage =
+          product.images?.find((img: ProductImage) => img.is_main) ||
+          product.images?.[0];
+        const desc: ProductDescription =
+          typeof product.description === 'object'
+            ? product.description
+            : {
+                name: '',
+                description: '',
+                short_description: '',
+                url_key: '',
+              };
+        return {
+          ...product,
+          image: mainImage?.origin_image || '',
+          name: desc.name || 'No name',
+          description: desc.description || 'No description available',
+          short_description: desc.short_description || '',
+          urlKey: desc.url_key || '',
+          brandName: product.brand?.name || '',
+        };
+      });
+      // Only apply searchText locally
+      if (searchText.length >= 3) {
+        filtered = filtered.filter((p: ExtendedProduct) => p.name.toLowerCase().includes(searchText.toLowerCase()));
+      }
+      // Sort
+      if (sortOrder === 'asc') {
+        filtered = filtered.sort((a: ExtendedProduct, b: ExtendedProduct) => a.price - b.price);
+      } else {
+        filtered = filtered.sort((a: ExtendedProduct, b: ExtendedProduct) => b.price - a.price);
+      }
+      setProducts(filtered);
+      setFilteredProducts(filtered);
+      setHasMore(filtered.length === PAGE_SIZE);
+    } catch (error) {
+      setProducts([]);
+      setFilteredProducts([]);
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+      bottomSheetRef.current?.close();
     }
-    if (selectedCategory) {
-      result = result.filter(p => p.category_id === selectedCategory);
-    }
-    if (selectedBrand) {
-      result = result.filter(p => p.brand?.id === selectedBrand);
-    }
-    if (sortOrder === 'asc') {
-      result = result.sort((a, b) => a.price - b.price);
-    } else {
-      result = result.sort((a, b) => b.price - a.price);
-    }
-    setFilteredProducts(result);
-    bottomSheetRef.current?.close();
   };
 
   return (
@@ -356,7 +399,9 @@ const StoreScreen = () => {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={styles.subcategoryContainer}>
+            style={styles.subcategoryContainer}
+            nestedScrollEnabled={true}
+          >
             <TouchableOpacity
               style={[styles.pillButton, selectedSubcategoryId === null && styles.pillButtonSelected]}
               onPress={() => setSelectedSubcategoryId(null)}>
@@ -390,7 +435,9 @@ const StoreScreen = () => {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={styles.subcategoryContainer}>
+            style={styles.subcategoryContainer}
+            nestedScrollEnabled={true}
+          >
             <TouchableOpacity
               style={[styles.pillButton, selectedCategory === null && styles.pillButtonSelected]}
               onPress={() => setSelectedCategory(null)}>
@@ -438,11 +485,14 @@ const StoreScreen = () => {
         </View>
       </View>
       {loading ? (
-        <ActivityIndicator
-          size="large"
-          color="#7B2FF2"
-          style={{marginTop: 20}}
-        />
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 200}}>
+          <ActivityIndicator
+            size="large"
+            color="#7B2FF2"
+            style={{marginTop: 20}}
+          />
+          <Text style={{marginTop: 16, color: '#7B2FF2', fontWeight: '600', fontSize: 16}}>Loading products...</Text>
+        </View>
       ) : (
         <FlatList
           data={filteredProducts}
@@ -451,7 +501,7 @@ const StoreScreen = () => {
           numColumns={2}
           keyExtractor={item => item.product_id.toString()}
           columnWrapperStyle={styles.productRow}
-          contentContainerStyle={{padding: 16, paddingBottom: 90}}
+          contentContainerStyle={{padding: 16, paddingBottom: 90, minHeight: 200}}
           renderItem={({item, index}) => {
             // If odd number of products, last item should not stretch
             const isLastOdd = filteredProducts.length % 2 === 1 && index === filteredProducts.length - 1;
@@ -475,7 +525,15 @@ const StoreScreen = () => {
           ListFooterComponent={
             loadingMore ? <ActivityIndicator size="small" color="#7B2FF2" /> : null
           }
-          ListEmptyComponent={!loading && <Text style={styles.emptyText}>No products found.</Text>}
+          ListEmptyComponent={!loading && (
+            <View style={{alignItems: 'center', marginTop: 40}}>
+              <Icon name="search1" type="ant" size={40} color="#bbb" />
+              <Text style={{color: '#888', fontSize: 18, fontWeight: '600', marginTop: 12}}>No products found.</Text>
+              <Text style={{color: '#aaa', fontSize: 14, marginTop: 4, textAlign: 'center', maxWidth: 220}}>
+                Try adjusting your filters or search keywords.
+              </Text>
+            </View>
+          )}
         />
       )}
       {/* Hide pagination row when filterSheetVisible is true */}
@@ -524,7 +582,10 @@ const StoreScreen = () => {
            
             <Text style={{marginTop: 16, fontWeight: 'bold'}}>Category</Text>
             <View style={{marginVertical: 8, minHeight: 56, maxHeight: 120, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}} nestedScrollEnabled={true}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}} nestedScrollEnabled={true}>
+                <TouchableOpacity onPress={() => setSelectedCategory(null)} style={[styles.filterOption, {marginRight: 10}, selectedCategory === null && styles.selectedFilterOption]}>
+                  <Text>All Categories</Text>
+                </TouchableOpacity>
                 {categories.map(cat => (
                   <TouchableOpacity key={cat.id} onPress={() => setSelectedCategory(cat.id)} style={[styles.filterOption, {marginRight: 10}, selectedCategory === cat.id && styles.selectedFilterOption]}>
                     <Text>{cat.name}</Text>
@@ -535,7 +596,10 @@ const StoreScreen = () => {
            
             <Text style={{marginTop: 16, fontWeight: 'bold'}}>Brand</Text>
             <View style={{marginVertical: 8, minHeight: 56, maxHeight: 120, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}} nestedScrollEnabled={true}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}} nestedScrollEnabled={true}>
+                <TouchableOpacity onPress={() => setSelectedBrand(null)} style={[styles.filterOption, {marginRight: 10}, selectedBrand === null && styles.selectedFilterOption]}>
+                  <Text>All Brands</Text>
+                </TouchableOpacity>
                 {brands.map(brand => (
                   <TouchableOpacity key={brand.id} onPress={() => setSelectedBrand(brand.id)} style={[styles.filterOption, {marginRight: 10}, selectedBrand === brand.id && styles.selectedFilterOption]}>
                     <Text>{brand.name}</Text>
@@ -564,37 +628,39 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subcategoryContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    marginBottom: 10,
+    paddingHorizontal: 10,
+    paddingTop: 12,
+    marginBottom: 8,
   },
   pillButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 22,
-    width: 110, // fixed width for consistency
-    height: 44, // fixed height for consistency
+    minWidth: 80,
+    maxWidth: 140,
+    height: 44,
     justifyContent: 'center',
-    paddingHorizontal: 0,
-    marginRight: 12,
+    paddingHorizontal: 12,
+    marginRight: 10,
     borderWidth: 1.5,
     borderColor: '#eee',
     elevation: 2,
     shadowColor: '#7B2FF2',
     shadowOpacity: 0.06,
     shadowRadius: 6,
-    overflow: 'hidden', // ensure children are clipped
+    overflow: 'hidden',
   },
   pillButtonSelected: {
     backgroundColor: '#7B2FF2',
     borderColor: '#7B2FF2',
   },
   pillButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#7B2FF2',
     marginLeft: 6,
+    flexShrink: 1,
   },
   pillButtonTextSelected: {
     color: '#fff',
@@ -685,27 +751,40 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   sectionTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    fontSize: 16,
     color: '#7B2FF2',
+    marginBottom: 8,
+    marginTop: 4,
+    letterSpacing: 0.2,
   },
   filterOption: {
-    backgroundColor: '#eee',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    marginRight: 10,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginVertical: 4,
+    borderWidth: 1,
+    borderColor: '#E0D7F7',
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   selectedFilterOption: {
     backgroundColor: '#7B2FF2',
     borderColor: '#7B2FF2',
-    borderWidth: 1.5,
   },
   applyButton: {
-    backgroundColor: '#F357A8',
-    borderRadius: 16,
-    paddingVertical: 12,
+    backgroundColor: '#7B2FF2',
+    borderRadius: 22,
+    paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 0,
+    elevation: 2,
+    shadowColor: '#7B2FF2',
+    shadowOpacity: 0.13,
+    shadowRadius: 8,
   },
   cartBadge: {
     position: 'absolute',
