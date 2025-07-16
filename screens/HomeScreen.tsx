@@ -497,27 +497,36 @@ const HomeScreen = ({navigation}: any) => {
       </Modal>
       {/* Tabs */}
       <View style={styles.tabSwitch}>
-        <TouchableOpacity onPress={() => setActiveTab('Home')}>
+        <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('Home')}>
           <Text
             style={
               activeTab === 'Home' ? styles.activeTab : styles.inactiveTab
-            }>
+            }
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {t('HomeScreen.home')}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setActiveTab('category')}>
+        <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('category')}>
           <Text
             style={
               activeTab === 'category' ? styles.activeTab : styles.inactiveTab
-            }>
+            }
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {t('HomeScreen.category')}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setActiveTab('brands')}>
+        <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('brands')}>
           <Text
             style={
               activeTab === 'brands' ? styles.activeTab : styles.inactiveTab
-            }>
+            }
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {t('HomeScreen.brands')}
           </Text>
         </TouchableOpacity>
@@ -704,18 +713,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#ddd',
   },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   activeTab: {
-    marginRight: 20,
     fontWeight: 'bold',
     borderBottomWidth: 2,
     borderColor: 'purple',
     paddingBottom: 4,
     color: '#000',
+    paddingHorizontal: 4,
   },
   inactiveTab: {
-    marginRight: 20,
     color: '#888',
     paddingBottom: 4,
+    paddingHorizontal: 4,
   },
   sectionHeader: {
     flexDirection: 'row',
