@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,6 +11,7 @@ import {
   Button,
   StatusBar,
   TextInput,
+  Dimensions,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp, useFocusEffect} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -30,6 +31,7 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from '../components/icon';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import Toast from 'react-native-toast-message';
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -117,6 +119,10 @@ const StoreScreen = () => {
   };
   const symbol = currencySymbols[currency] || '';
 
+  const screenWidth = Dimensions.get('window').width;
+  const cardMargin = 12;
+  const cardWidth = (screenWidth - cardMargin * 4) / 2; // 2 cards, 3 margins
+
   useEffect(() => {
     const fetchSubcategories = async () => {
       if (!categoryId) return;
@@ -136,11 +142,11 @@ const StoreScreen = () => {
       try {
         let categoryIdNum: number | undefined;
         if (categoryId) {
-          categoryIdNum = selectedSubcategoryId !== null ? selectedSubcategoryId ?? undefined : categoryId;
+          // Always use categoryId if present and no subcategory selected
+          categoryIdNum = selectedSubcategoryId !== null ? selectedSubcategoryId : categoryId;
         } else {
           categoryIdNum = selectedCategory !== null ? selectedCategory : undefined;
         }
-
         const result = await getProducts(
           'en', // or i18n.language
           categoryIdNum,
@@ -148,12 +154,10 @@ const StoreScreen = () => {
           page,
           PAGE_SIZE,
         );
-
         const transformed = result.map((product: any) => {
           const mainImage =
             product.images?.find((img: ProductImage) => img.is_main) ||
             product.images?.[0];
-
           const desc: ProductDescription =
             typeof product.description === 'object'
               ? product.description
@@ -163,7 +167,6 @@ const StoreScreen = () => {
                   short_description: '',
                   url_key: '',
                 };
-
           return {
             ...product,
             image: mainImage?.origin_image || '',
@@ -174,7 +177,6 @@ const StoreScreen = () => {
             brandName: product.brand?.name || '',
           };
         });
-
         setProducts(transformed);
         setHasMore(transformed.length === PAGE_SIZE); // assume more pages if full
       } catch (error) {
@@ -185,7 +187,6 @@ const StoreScreen = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [page, selectedSubcategoryId, categoryId, brandId, selectedCategory]);
 
@@ -225,6 +226,11 @@ const StoreScreen = () => {
     }
   }, [initialSubcategoryId]);
 
+  // Reset subcategory selection when categoryId changes
+  useEffect(() => {
+    setSelectedSubcategoryId(null);
+  }, [categoryId]);
+
   // Load cart count every time StoreScreen is focused
   useFocusEffect(
     React.useCallback(() => {
@@ -242,7 +248,7 @@ const StoreScreen = () => {
   );
 
   // Debounced live search effect
-  React.useEffect(() => {
+  useEffect(() => {
     // Only filter if not using the filter sheet (i.e., when not applying advanced filters)
     // This effect will run on every searchText change
     const handler = setTimeout(() => {
@@ -299,10 +305,19 @@ const StoreScreen = () => {
       const updatedCart = [...parsedCart, newItem];
       await AsyncStorage.setItem('cart', JSON.stringify(updatedCart));
       setCartCount(updatedCart.length);
-
+      Toast.show({
+        type: 'success',
+        text1: 'Added to Cart',
+        text2: `${item.name} has been added to your cart.`,
+      });
       navigation.navigate('CartScreen');
     } catch (error) {
       console.error('Error in handleAddToCart:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong while adding to cart.',
+      });
     }
   };
 
@@ -369,6 +384,26 @@ const StoreScreen = () => {
       bottomSheetRef.current?.close();
     }
   };
+
+  const renderProductItem = useCallback(({item, index}: {item: ExtendedProduct; index: number}) => {
+    // If odd number of products, last item should not stretch
+    const isLastOdd = filteredProducts.length % 2 === 1 && index === filteredProducts.length - 1;
+    return (
+        <ProductCard
+          product_id={item.product_id}
+          urlKey={item.urlKey}
+          title={item.name}
+          designer={item.brandName}
+          price={Math.round(item.price * rate)}
+          currencySymbol={symbol}
+          image={item.image ?? ''}
+          description={item.description}
+          stock_availability={item.inventory?.stock_availability ?? false}
+          onPressCart={() => handleAddToCart(item)}
+          cardWidth={cardWidth}
+        />
+    );
+  }, [filteredProducts, rate, symbol, cardWidth, handleAddToCart]);
 
   return (
     <View style={styles.container}>
@@ -502,26 +537,7 @@ const StoreScreen = () => {
           keyExtractor={item => item.product_id.toString()}
           columnWrapperStyle={styles.productRow}
           contentContainerStyle={{padding: 16, paddingBottom: 90, minHeight: 200}}
-          renderItem={({item, index}) => {
-            // If odd number of products, last item should not stretch
-            const isLastOdd = filteredProducts.length % 2 === 1 && index === filteredProducts.length - 1;
-            return (
-              <View style={[styles.productCardWrapper, isLastOdd && {flex: 0.48}]}> 
-                <ProductCard
-                  product_id={item.product_id}
-                  urlKey={item.urlKey}
-                  title={item.name}
-                  designer={item.brandName}
-                  price={Math.round(item.price * rate)}
-                  currencySymbol={symbol}
-                  image={item.image ?? ''}
-                  description={item.description}
-                  stock_availability={item.inventory?.stock_availability ?? false}
-                  onPressCart={() => handleAddToCart(item)}
-                />
-              </View>
-            );
-          }}
+          renderItem={renderProductItem}
           ListFooterComponent={
             loadingMore ? <ActivityIndicator size="small" color="#7B2FF2" /> : null
           }
@@ -538,7 +554,7 @@ const StoreScreen = () => {
       )}
       
       {!filterSheetVisible && (
-        <View style={[styles.paginationRow, {position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#F7F7FB', paddingBottom: 18, zIndex: 10}]}> 
+        <View style={[styles.paginationRow, {position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#F7F7FB', paddingBottom: 18, zIndex: 10, paddingTop: 16}]}> 
           <TouchableOpacity
             style={[styles.paginationBtn, page === 1 && styles.paginationBtnDisabled]}
             onPress={() => setPage(p => Math.max(p - 1, 1))}
@@ -573,23 +589,22 @@ const StoreScreen = () => {
             <Text style={{marginTop: 16, fontWeight: 'bold'}}>Sort by Price</Text>
             <View style={{flexDirection: 'row', marginVertical: 8}}>
               <TouchableOpacity onPress={() => setSortOrder('asc')} style={[styles.filterOption, sortOrder === 'asc' && styles.selectedFilterOption]}>
-                <Text>Smallest to Largest</Text>
+                <Text>Lowest to Highest</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setSortOrder('desc')} style={[styles.filterOption, sortOrder === 'desc' && styles.selectedFilterOption]}>
-                <Text>Largest to Smallest</Text>
+                <Text>Highest to Lowest</Text>
               </TouchableOpacity>
             </View>
            
             <Text style={{marginTop: 16, fontWeight: 'bold'}}>Category</Text>
             <View style={{marginVertical: 8, minHeight: 56, maxHeight: 120, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}} nestedScrollEnabled={true}>
-                <TouchableOpacity onPress={() => setSelectedCategory(null)} style={[styles.filterOption, {marginRight: 10}, selectedCategory === null && styles.selectedFilterOption]}>
+                <TouchableOpacity onPress={() => setSelectedCategory(selectedCategory === null ? null : null)} style={[styles.filterOption, {marginRight: 10}, selectedCategory === null && styles.selectedFilterOption]}>
                   <Text>All Categories</Text>
                 </TouchableOpacity>
                 {categories.map(cat => (
-                  console.log("cat.name",cat.name),
-                  <TouchableOpacity key={cat.id} onPress={() => setSelectedCategory(cat.id)} style={[styles.filterOption, {marginRight: 10}, selectedCategory === cat.id && styles.selectedFilterOption]}>
-                    <Text>{cat.name}</Text>
+                  <TouchableOpacity key={cat.id} onPress={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)} style={[styles.filterOption, {marginRight: 10}, selectedCategory === cat.id && styles.selectedFilterOption]}>
+                    <Text numberOfLines={1} ellipsizeMode="tail" style={{maxWidth: 80}}>{cat.name}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -598,11 +613,11 @@ const StoreScreen = () => {
             <Text style={{marginTop: 16, fontWeight: 'bold'}}>Brand</Text>
             <View style={{marginVertical: 8, minHeight: 56, maxHeight: 120, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}} nestedScrollEnabled={true}>
-                <TouchableOpacity onPress={() => setSelectedBrand(null)} style={[styles.filterOption, {marginRight: 10}, selectedBrand === null && styles.selectedFilterOption]}>
+                <TouchableOpacity onPress={() => setSelectedBrand(selectedBrand === null ? null : null)} style={[styles.filterOption, {marginRight: 10}, selectedBrand === null && styles.selectedFilterOption]}>
                   <Text>All Brands</Text>
                 </TouchableOpacity>
                 {brands.map(brand => (
-                  <TouchableOpacity key={brand.id} onPress={() => setSelectedBrand(brand.id)} style={[styles.filterOption, {marginRight: 10}, selectedBrand === brand.id && styles.selectedFilterOption]}>
+                  <TouchableOpacity key={brand.id} onPress={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)} style={[styles.filterOption, {marginRight: 10}, selectedBrand === brand.id && styles.selectedFilterOption]}>
                     <Text>{brand.name}</Text>
                   </TouchableOpacity>
                 ))}
@@ -678,18 +693,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     paddingHorizontal: 8,
   },
-  productCardWrapper: {
-    flex: 1,
-    marginHorizontal: 6,
-    marginBottom: 12,
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    elevation: 3,
-    shadowColor: '#7B2FF2',
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    padding: 4,
-  },
+
   emptyText: {
     textAlign: 'center',
     color: '#888',

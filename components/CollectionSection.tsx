@@ -228,6 +228,7 @@ const CollectionSection = () => {
         stock_availability={stockAvailability}
         onPressCart={() => handleAddToCart(item)}
         cardWidth={cardWidth}
+        cartIconSize={18}
       />
     );
   };
@@ -315,7 +316,7 @@ const CollectionSection = () => {
                 )}
                 horizontal
                 pagingEnabled
-                showsHorizontalScrollIndicator={true}
+                showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{paddingBottom: 8}}
               />
             </View>

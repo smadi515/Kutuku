@@ -9,20 +9,15 @@ const ChangePassword = () => {
   const {t, i18n} = useTranslation();
   const isRTL = i18n.language === 'ar';
   return (
-    <View style={{flex: 1}}>
+    <View style={{flex: 1, paddingTop: 10}}>
       <Header
         showImage={false}
         title={t('ChangePassword.title')}
         showBack={true}
-        rightIcons={[
-          {
-            name: 'info',
-            type: 'AntDesign',
-            onPress: () => {},
-          },
-        ]}
+      
+
       />
-      <View style={{padding: 1, direction: isRTL ? 'rtl' : 'ltr'}}>
+      <View style={{paddingHorizontal: 15,  direction: isRTL ? 'rtl' : 'ltr'}}>
         <CustomInput
           label={t('ChangePassword.newPassword')}
           placeholder={t('ChangePassword.newPasswordPlaceholder')}

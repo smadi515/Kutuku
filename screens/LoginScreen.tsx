@@ -29,6 +29,9 @@ const LoginScreen = ({navigation}: any) => {
   const [email, setEmail] = useState(__DEV__ ? 'senan.smadi515@gmail.com' : '');
   const [password, setPassword] = useState(__DEV__ ? 'Kappa4Head123' : '');
   const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotEmailError, setForgotEmailError] = useState('');
+  const [lastResetRequestTime, setLastResetRequestTime] = useState<number | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['40%'], []);
   const openPaymentMethodSheet = () => bottomSheetRef.current?.expand();
@@ -51,7 +54,29 @@ const LoginScreen = ({navigation}: any) => {
     };
   }, []);
 
+  const validateEmail = (email: string) => {
+    const re = /^(([^<>()\[\]\\.,;:\s@\"]+(\.[^<>()\[\]\\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\\.,;:\s@\"]+\.)+[^<>()[\]\\.,;:\s@\"]{2,})$/i;
+    return re.test(String(email).toLowerCase());
+  };
+
   const handleResetPassword = async () => {
+    const now = Date.now();
+    if (lastResetRequestTime && now - lastResetRequestTime < 60000) {
+      Alert.alert(
+        t('login.tooSoonTitle') || 'Please wait',
+        t('login.tooSoonMsg') || 'You can request a new password only once per minute.'
+      );
+      return;
+    }
+    if (!forgotEmail) {
+      setForgotEmailError(t('login.emailRequired') || 'Email is required');
+      return;
+    }
+    if (!validateEmail(forgotEmail)) {
+      setForgotEmailError(t('login.invalidEmail') || 'Invalid email address');
+      return;
+    }
+    setForgotEmailError('');
     try {
       const response = await fetch(
         'https://api.sareh-nomow.xyz/api/auth/password-reset/request',
@@ -61,13 +86,12 @@ const LoginScreen = ({navigation}: any) => {
           body: JSON.stringify({email: forgotEmail}),
         },
       );
-      console.log('email', email);
-
       const data = await response.json();
-
       if (response.ok) {
+        setLastResetRequestTime(now);
         Alert.alert(t('login.success'), t('login.checkEmail'));
         setForgotEmail('');
+        bottomSheetRef.current?.close();
       } else {
         Alert.alert(t('login.error'), data.message || t('login.emailNotExist'));
       }
@@ -77,6 +101,7 @@ const LoginScreen = ({navigation}: any) => {
   };
 
   const handleLogin = async () => {
+    setLoginLoading(true);
     try {
       const response = await login(email, password);
 
@@ -92,13 +117,23 @@ const LoginScreen = ({navigation}: any) => {
 
         navigation.replace('TabNavigationScreen');
       } else {
-        Alert.alert(
-          t('login.failed'),
-          response.message || t('login.invalidCredentials'),
-        );
+        const msg = (response && response.message) ? response.message.toLowerCase() : '';
+        if (msg.includes('incorrect') || msg.includes('invalid credentials') || msg.includes('wrong password')) {
+          Alert.alert(
+            t('login.failed'),
+            t('login.invalidCredentials') || 'Incorrect email or password.'
+          );
+        } else {
+          Alert.alert(
+            t('login.failed'),
+            response.message || t('login.somethingWrong')
+          );
+        }
       }
     } catch (error) {
       Alert.alert(t('login.error'), t('login.somethingWrong'));
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -140,7 +175,7 @@ const LoginScreen = ({navigation}: any) => {
             onPress={openPaymentMethodSheet}
           />
           <View style={{width: '100%', alignItems: 'center'}}>
-            <CustomButton text={t('login.signIn')} onPress={handleLogin} />
+            <CustomButton text={t('login.signIn')} onPress={handleLogin} loading={loginLoading} disabled={loginLoading} />
           </View>
           <Text style={styles.orText}>{t('login.orOtherMethods')}</Text>
           <TouchableOpacity style={styles.altBtn} onPress={handleGoogleWebLogin}>
@@ -157,12 +192,20 @@ const LoginScreen = ({navigation}: any) => {
         <BottomSheetView style={{alignItems: 'center', padding: 10}}>
           <View style={styles.sheetContent}>
             <Text style={styles.sheetTitle}>{t('login.resetPassword')}</Text>
+            <Text style={{marginBottom: 8, color: '#555', textAlign: 'center'}}>
+              {t('login.forgotPasswordInstruction') || 'Enter your email to receive a password reset link.'}
+            </Text>
             <TextInput
               placeholder={t('login.enterEmail')}
               value={forgotEmail}
-              onChangeText={setForgotEmail}
+              onChangeText={text => { setForgotEmail(text); setForgotEmailError(''); }}
               style={styles.sheetInput}
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
+            {!!forgotEmailError && (
+              <Text style={{color: 'red', marginBottom: 8}}>{forgotEmailError}</Text>
+            )}
             <CustomButton
               text={t('login.submit')}
               onPress={handleResetPassword}

@@ -37,7 +37,10 @@ type ProductCardProps = {
   onPressCart: () => void;
   colors?: ColorOption[];
   cardWidth?: number;
+  cartIconSize?: number;
 };
+
+const CARD_HEIGHT = 260;
 
 const ProductCard: React.FC<ProductCardProps> = ({
   title,
@@ -50,6 +53,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   urlKey,
   currencySymbol,
   cardWidth,
+  cartIconSize = 24,
 }) => {
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
   console.log('ProductCard rendered with urlKey:', urlKey);
@@ -85,7 +89,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           resizeMode="cover"
         />
         <TouchableOpacity style={styles.cartIcon} onPress={handleCartPress} activeOpacity={0.85}>
-          <Icon name="shoppingcart" type="ant" size={24} color="#fff" />
+          <Icon name="shoppingcart" type="ant" size={cartIconSize} color="#fff" />
         </TouchableOpacity>
       </View>
       <View style={styles.infoContainer}>
@@ -107,6 +111,7 @@ const styles = StyleSheet.create({
   card: {
     width: 148,
     minWidth: 130,
+    height: CARD_HEIGHT,
     backgroundColor: '#fff',
     borderRadius: 20,
     marginBottom: 12,
@@ -124,6 +129,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     overflow: 'hidden',
+    height: 140,
   },
   productImage: {
     width: '100%',
@@ -148,7 +154,9 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   infoContainer: {
+    flex: 1,
     padding: 14,
+    justifyContent: 'space-between',
   },
   title: {
     fontWeight: '700',
@@ -191,4 +199,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProductCard;
+export default React.memo(ProductCard);

@@ -143,6 +143,7 @@ const HomeScreen = ({navigation}: any) => {
   const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [showFirstOpenModal, setShowFirstOpenModal] = useState(false);
 
   const {changeCurrency} = useCurrency();
 
@@ -261,6 +262,21 @@ const HomeScreen = ({navigation}: any) => {
       loadCartCount();
     }, [])
   );
+
+  useEffect(() => {
+    const checkFirstOpen = async () => {
+      try {
+        const hasOpened = await AsyncStorage.getItem('hasOpenedApp');
+        if (!hasOpened) {
+          setShowFirstOpenModal(true);
+          await AsyncStorage.setItem('hasOpenedApp', 'true');
+        }
+      } catch (error) {
+        // fail silently
+      }
+    };
+    checkFirstOpen();
+  }, []);
 
   const handleAddToCart = async (item: Product) => {
     try {
@@ -448,20 +464,28 @@ const HomeScreen = ({navigation}: any) => {
         transparent
         animationType="slide"
         onRequestClose={() => setCurrencyModalVisible(false)}>
-        <View
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setCurrencyModalVisible(false)}
           style={{
             flex: 1,
             backgroundColor: 'rgba(0,0,0,0.3)',
             justifyContent: 'center',
             padding: 20,
-          }}>
-          <View
+          }}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={e => e.stopPropagation()}
             style={{
               backgroundColor: 'white',
               borderRadius: 10,
               padding: 20,
               maxHeight: '60%',
-            }}>
+              alignSelf: 'center',
+              minWidth: 220,
+            }}
+          >
             <Text style={{fontSize: 18, fontWeight: 'bold', marginBottom: 10}}>
               Select Currency
             </Text>
@@ -492,6 +516,22 @@ const HomeScreen = ({navigation}: any) => {
                 )}
               />
             )}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+      <Modal
+        visible={showFirstOpenModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFirstOpenModal(false)}
+      >
+        <View style={{flex:1, backgroundColor:'rgba(0,0,0,0.4)', justifyContent:'center', alignItems:'center'}}>
+          <View style={{backgroundColor:'#fff', borderRadius:16, padding:24, alignItems:'center', maxWidth:320}}>
+            <Text style={{fontSize:18, fontWeight:'bold', marginBottom:12}}>{t('home.welcomeTitle') || 'Welcome to Kutuku!'}</Text>
+            <Text style={{fontSize:15, color:'#555', marginBottom:20, textAlign:'center'}}>{t('home.welcomeMsg') || 'Here are some notifications or tips for you.'}</Text>
+            <TouchableOpacity onPress={() => setShowFirstOpenModal(false)} style={{backgroundColor:'#7B2FF2', borderRadius:8, paddingVertical:10, paddingHorizontal:24}}>
+              <Text style={{color:'#fff', fontWeight:'bold'}}>{t('home.close') || 'Close'}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>

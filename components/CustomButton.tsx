@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   container_TERTIARY: {
-    borderColor: 'purple',
+    borderColor: '#7B2FF2',
     paddingHorizontal: 15,
     paddingVertical: 10,
   },
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     borderRadius: 40,
     width: '70%',
-    backgroundColor: 'purple',
+    backgroundColor: '#7B2FF2',
   },
   container_ICON_ROW: {
     backgroundColor: '#e0e0e0',
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   text_TERTIARY: {
-    color: 'purple',
+    color: '#7B2FF2',
     textDecorationLine: 'underline',
   },
   text_ICON_ROW: {
