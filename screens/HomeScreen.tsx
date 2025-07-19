@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -24,10 +24,10 @@ import {
   getAvailableCurrencies,
 } from '../lib/api';
 import BrandTab from './BrandTab';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import CollectionSection from '../components/CollectionSection';
 import Toast from 'react-native-toast-message';
-import {useCurrency} from '../contexts/CurrencyContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import LinearGradient from 'react-native-linear-gradient';
 
 type LocalCartItem = {
@@ -36,7 +36,7 @@ type LocalCartItem = {
   price: number;
   quantity: number;
   selected: boolean;
-  image: {uri?: string};
+  image: { uri?: string };
   cart_item_id: number | null;
 };
 
@@ -117,7 +117,7 @@ type ExtendedProduct = Product & {
   short_description: string;
 };
 
-const HomeScreen = ({navigation}: any) => {
+const HomeScreen = ({ navigation }: any) => {
   const currencyFlags: Record<string, string> = {
     USD: '🇺🇸',
     EUR: '🇪🇺',
@@ -139,58 +139,24 @@ const HomeScreen = ({navigation}: any) => {
     JOD: 'JD',
     SAR: '﷼',
   };
-  const [currencies, setCurrencies] = useState<string[]>([]);
-  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
-  const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
+
   const [cartCount, setCartCount] = useState(0);
   const [showFirstOpenModal, setShowFirstOpenModal] = useState(false);
 
-  const {changeCurrency} = useCurrency();
+  const { changeCurrency } = useCurrency();
 
-  const rate = selectedCurrency ? currencyRates[selectedCurrency] || 1 : 1;
+  const rate = 1; // Default rate since currency is now handled in settings
 
   const [quantity] = useState(1);
   const [firstName, setFirstName] = useState('');
   const [products, setProducts] = useState<ExtendedProduct[]>([]);
   const [activeTab, setActiveTab] = useState('Home');
   const [loading, setLoading] = useState(true);
-  const {t, i18n} = useTranslation();
+  const { t, i18n } = useTranslation();
   // const isRTL = i18n.language === 'ar';
   console.log('products', products);
 
-  useEffect(() => {
-    const loadCurrencies = async () => {
-      try {
-        const res = await getAvailableCurrencies(); // ['USD', 'EUR', 'JOD', ...]
-        console.log('Available currencies:', res);
 
-        if (res?.length > 0) {
-          setCurrencies(res);
-
-          // Get saved currency from AsyncStorage
-          const saved = await AsyncStorage.getItem('selectedCurrency');
-
-          if (saved && res.includes(saved)) {
-            setSelectedCurrency(saved); // Use saved value
-          } else {
-            // If no saved or invalid, set the first currency
-            setSelectedCurrency(res[0]);
-            await AsyncStorage.setItem('selectedCurrency', res[0]); // Save fallback
-          }
-        }
-      } catch (error) {
-        console.error('Error loading currencies:', error);
-      }
-    };
-
-    loadCurrencies();
-  }, []);
-
-  useEffect(() => {
-    if (selectedCurrency) {
-      AsyncStorage.setItem('selectedCurrency', selectedCurrency);
-    }
-  }, [selectedCurrency]);
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -392,14 +358,14 @@ const HomeScreen = ({navigation}: any) => {
 
   if (loading) {
     return (
-      <ActivityIndicator size="large" color="#7B2FF2" style={{marginTop: 20}} />
+      <ActivityIndicator size="large" color="#7B2FF2" style={{ marginTop: 20 }} />
     );
   }
   const screenWidth = Dimensions.get('window').width;
   const cardMargin = 8;
   const cardWidth = (screenWidth - cardMargin * 4) / 2; // 2 cards, 3 margins (left, middle, right)
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: '#F7F7FB'}}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F7FB' }}>
       <LinearGradient
         colors={['#7B2FF2', '#F357A8']}
         style={styles.headerGradient}>
@@ -410,7 +376,7 @@ const HomeScreen = ({navigation}: any) => {
               source={require('../assets/Maskgroup4.png')}
               style={styles.avatar}
             />
-            <View style={{marginLeft: 10}}>
+            <View style={{ marginLeft: 10 }}>
               <Text style={styles.topBarHi}>
                 {t('HomeScreen.hi')} {firstName || 'Guest'}
               </Text>
@@ -418,20 +384,7 @@ const HomeScreen = ({navigation}: any) => {
                 {t('HomeScreen.letsGoShopping')}
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => setCurrencyModalVisible(true)}
-              style={styles.currencyBtn}>
-              {selectedCurrency ? (
-                <Text style={styles.currencyText}>
-                  {currencyFlags[selectedCurrency] || '🏳️'} {selectedCurrency}
-                </Text>
-              ) : (
-                <Text style={[styles.currencyText, {color: '#aaa'}]}>
-                  Loading...
-                </Text>
-              )}
-              <Icon name="chevron-down" type="feather" size={18} color="#fff" />
-            </TouchableOpacity>
+
           </View>
           {/* Right side: Search and Cart icons */}
           <View style={styles.headerRight}>
@@ -460,77 +413,17 @@ const HomeScreen = ({navigation}: any) => {
         </View>
       </LinearGradient>
       <Modal
-        visible={currencyModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCurrencyModalVisible(false)}>
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setCurrencyModalVisible(false)}
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.3)',
-            justifyContent: 'center',
-            padding: 20,
-          }}
-        >
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={e => e.stopPropagation()}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: 10,
-              padding: 20,
-              maxHeight: '60%',
-              alignSelf: 'center',
-              minWidth: 220,
-            }}
-          >
-            <Text style={{fontSize: 18, fontWeight: 'bold', marginBottom: 10}}>
-              Select Currency
-            </Text>
-            {currencies.length === 0 ? (
-              <Text>No currencies found.</Text>
-            ) : (
-              <FlatList
-                data={currencies}
-                keyExtractor={item => item}
-                renderItem={({item}) => (
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSelectedCurrency(item);
-                      setCurrencyModalVisible(false);
-                      changeCurrency(item, currencyRates[item] || 1);
-                    }}
-                    style={{
-                      paddingVertical: 10,
-                      borderBottomWidth: 0.5,
-                      borderBottomColor: '#ccc',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                    }}>
-                    <Text style={{fontSize: 16}}>
-                      {currencyFlags[item] || '🏳️'} {item}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              />
-            )}
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
-      <Modal
         visible={showFirstOpenModal}
         transparent
         animationType="fade"
         onRequestClose={() => setShowFirstOpenModal(false)}
       >
-        <View style={{flex:1, backgroundColor:'rgba(0,0,0,0.4)', justifyContent:'center', alignItems:'center'}}>
-          <View style={{backgroundColor:'#fff', borderRadius:16, padding:24, alignItems:'center', maxWidth:320}}>
-            <Text style={{fontSize:18, fontWeight:'bold', marginBottom:12}}>{t('home.welcomeTitle') || 'Welcome to Kutuku!'}</Text>
-            <Text style={{fontSize:15, color:'#555', marginBottom:20, textAlign:'center'}}>{t('home.welcomeMsg') || 'Here are some notifications or tips for you.'}</Text>
-            <TouchableOpacity onPress={() => setShowFirstOpenModal(false)} style={{backgroundColor:'#7B2FF2', borderRadius:8, paddingVertical:10, paddingHorizontal:24}}>
-              <Text style={{color:'#fff', fontWeight:'bold'}}>{t('home.close') || 'Close'}</Text>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', maxWidth: 320 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>{t('home.welcomeTitle') || 'Welcome to Kutuku!'}</Text>
+            <Text style={{ fontSize: 15, color: '#555', marginBottom: 20, textAlign: 'center' }}>{t('home.welcomeMsg') || 'Here are some notifications or tips for you.'}</Text>
+            <TouchableOpacity onPress={() => setShowFirstOpenModal(false)} style={{ backgroundColor: '#7B2FF2', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 24 }}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('home.close') || 'Close'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -593,14 +486,12 @@ const HomeScreen = ({navigation}: any) => {
               </View>
             </View>
           }
-          renderItem={({item}) => {
-            const {product_id, price, description, brand, images, inventory} =
+          renderItem={({ item }) => {
+            const { product_id, price, description, brand, images, inventory } =
               item;
 
             const convertedPrice = Math.round(price * rate);
-            const currencySymbol = selectedCurrency
-              ? currencySymbols[selectedCurrency] || ''
-              : '';
+            const currencySymbol = '$'; // Default currency symbol
 
             const urlKey = description?.url_key || '';
             const title = description?.name || 'Unnamed Product';
@@ -627,8 +518,8 @@ const HomeScreen = ({navigation}: any) => {
               />
             );
           }}
-          columnWrapperStyle={{justifyContent: 'space-between', marginBottom: 12, paddingHorizontal: cardMargin}}
-          contentContainerStyle={{paddingBottom: 16}}
+          columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 12, paddingHorizontal: cardMargin }}
+          contentContainerStyle={{ paddingBottom: 16 }}
         />
       ) : activeTab === 'category' ? (
         <CategoryTab />
@@ -693,28 +584,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 2,
   },
-  currencyBtn: {
-    backgroundColor: '#F357A8',
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    marginLeft: 16,
-    marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowColor: '#F357A8',
-    shadowOpacity: 0.13,
-    shadowOffset: {width: 0, height: 1},
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  currencyText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
-    marginRight: 4,
-  },
+
   subText: {
     fontSize: 12,
     color: '#eee',

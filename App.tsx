@@ -1,7 +1,7 @@
-import React, {useEffect, useState} from 'react';
-import {NavigationContainer} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import React, { useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   ActivityIndicator,
   View,
@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import './locales/i18n';
-import {I18nextProvider} from 'react-i18next';
+import { I18nextProvider } from 'react-i18next';
 import i18n from './locales/i18n';
 // Screens
 import StoreScreen from './screens/StoreScreen';
@@ -40,9 +40,12 @@ import AddressScreen from './screens/AddressScreen';
 import OTPScreen from './screens/OTPScreen';
 import EditAddressScreen from './screens/EditAddressScreen';
 import Home from './screens/HomeScreen';
+import CurrencyScreen from './screens/CurrencyScreen';
 import Toast from 'react-native-toast-message';
 import messaging from '@react-native-firebase/messaging';
-import {CurrencyProvider} from './contexts/CurrencyContext'; // adjust path if needed
+import { CurrencyProvider } from './contexts/CurrencyContext'; // adjust path if needed
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import colors from './utils/colors';
 
 
 // Prevent RTL layout
@@ -74,7 +77,7 @@ export type RootStackParamList = {
     birthday: string;
     phoneNumber: string;
   };
-  StoreScreen: {categoryId?: number; brandId?: number; collectionId?: number; subcategoryId?: number};
+  StoreScreen: { categoryId?: number; brandId?: number; collectionId?: number; subcategoryId?: number };
   ChangePassword: undefined;
   MyOrders: undefined;
   SettingsScreen: undefined;
@@ -83,7 +86,7 @@ export type RootStackParamList = {
   SecurityScreen: undefined;
   NotificationSetting: undefined;
   NotificationScreen: undefined;
-  ProductsDetails: {url_key: string; product_id?: number}; // Updated to include urlKey
+  ProductsDetails: { url_key: string; product_id?: number }; // Updated to include urlKey
   LegalPolicies: undefined;
   LanguageScreen: undefined;
   CartScreen: undefined;
@@ -95,10 +98,88 @@ export type RootStackParamList = {
     shippingZoneMethodId: number; // ✅ Add this line
   }; // <-- Add expected param
   SearchScreen: undefined;
-  EditAddressScreen: {addressId: number}; // New screen for editing address
+  EditAddressScreen: { addressId: number }; // New screen for editing address
+  CurrencyScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+
+
+const AppNavigation = () => {
+  const { top } = useSafeAreaInsets();
+
+  const [initialRoute, setInitialRoute] = useState<
+    keyof RootStackParamList | null
+  >(null);
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem('token');
+      setInitialRoute(token ? 'TabNavigationScreen' : 'Splash');
+    };
+    checkLoginStatus();
+  }, []);
+
+  if (!initialRoute) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.loading.secondary} />
+      </View>
+    );
+  }
+  return (
+
+    <GestureHandlerRootView style={{ flex: 1, paddingTop: top, backgroundColor: colors.background.secondary }}>
+      <NavigationContainer>
+        <Stack.Navigator
+          id={undefined}
+          initialRouteName={initialRoute}
+          screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Splash" component={SplashScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="OTPScreen" component={OTPScreen} />
+          <Stack.Screen name="CreateAcount" component={CreateAcountScreen} />
+          <Stack.Screen name="Onboarding" component={OnboardingFlow} />
+          <Stack.Screen
+            name="TabNavigationScreen"
+            component={TabNavigationScreen}
+          />
+          <Stack.Screen name="EditProfile" component={EditProfile} />
+          <Stack.Screen name="Profile" component={Profile} />
+          <Stack.Screen name="StoreScreen" component={StoreScreen} />
+          <Stack.Screen name="ChangePassword" component={ChangePassword} />
+          <Stack.Screen
+            name="EditAddressScreen"
+            component={EditAddressScreen}
+          />
+          <Stack.Screen name="MyOrders" component={MyOrders} />
+          <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+          <Stack.Screen name="HelpSupport" component={HelpSupport} />
+          <Stack.Screen name="AddressScreen" component={AddressScreen} />
+          <Stack.Screen name="SecurityScreen" component={SecurityScreen} />
+          <Stack.Screen
+            name="NotificationSetting"
+            component={NotificationSetting}
+          />
+          <Stack.Screen
+            name="NotificationScreen"
+            component={NotificationScreen}
+          />
+          <Stack.Screen name="Home" component={Home} />
+          <Stack.Screen name="ProductsDetails" component={ProductsDetails} />
+          <Stack.Screen name="LegalPolicies" component={LegalPolicies} />
+          <Stack.Screen name="LanguageScreen" component={LanguageScreen} />
+          <Stack.Screen name="CartScreen" component={CartScreen} />
+          <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+          <Stack.Screen name="SearchScreen" component={SearchScreen} />
+          <Stack.Screen name="CurrencyScreen" component={CurrencyScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <Toast />
+    </GestureHandlerRootView>
+  )
+}
 
 export default function App() {
   messaging().setBackgroundMessageHandler(async remoteMessage => {
@@ -171,75 +252,12 @@ export default function App() {
   }, []);
   <I18nextProvider i18n={i18n}>{/* your app components */}</I18nextProvider>;
 
-  const [initialRoute, setInitialRoute] = useState<
-    keyof RootStackParamList | null
-  >(null);
-
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      const token = await AsyncStorage.getItem('token');
-      setInitialRoute(token ? 'TabNavigationScreen' : 'Splash');
-    };
-    checkLoginStatus();
-  }, []);
-
-  if (!initialRoute) {
-    return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        <ActivityIndicator size="large" color="#000" />
-      </View>
-    );
-  }
-
   return (
-    <CurrencyProvider>
-      <GestureHandlerRootView style={{flex: 1}}>
-        <NavigationContainer>
-          <Stack.Navigator
-            id={undefined}
-            initialRouteName={initialRoute}
-            screenOptions={{headerShown: false}}>
-            <Stack.Screen name="Splash" component={SplashScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="OTPScreen" component={OTPScreen} />
-            <Stack.Screen name="CreateAcount" component={CreateAcountScreen} />
-            <Stack.Screen name="Onboarding" component={OnboardingFlow} />
-            <Stack.Screen
-              name="TabNavigationScreen"
-              component={TabNavigationScreen}
-            />
-            <Stack.Screen name="EditProfile" component={EditProfile} />
-            <Stack.Screen name="Profile" component={Profile} />
-            <Stack.Screen name="StoreScreen" component={StoreScreen} />
-            <Stack.Screen name="ChangePassword" component={ChangePassword} />
-            <Stack.Screen
-              name="EditAddressScreen"
-              component={EditAddressScreen}
-            />
-            <Stack.Screen name="MyOrders" component={MyOrders} />
-            <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
-            <Stack.Screen name="HelpSupport" component={HelpSupport} />
-            <Stack.Screen name="AddressScreen" component={AddressScreen} />
-            <Stack.Screen name="SecurityScreen" component={SecurityScreen} />
-            <Stack.Screen
-              name="NotificationSetting"
-              component={NotificationSetting}
-            />
-            <Stack.Screen
-              name="NotificationScreen"
-              component={NotificationScreen}
-            />
-            <Stack.Screen name="Home" component={Home} />
-            <Stack.Screen name="ProductsDetails" component={ProductsDetails} />
-            <Stack.Screen name="LegalPolicies" component={LegalPolicies} />
-            <Stack.Screen name="LanguageScreen" component={LanguageScreen} />
-            <Stack.Screen name="CartScreen" component={CartScreen} />
-            <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
-            <Stack.Screen name="SearchScreen" component={SearchScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
-        <Toast />
-      </GestureHandlerRootView>
-    </CurrencyProvider>
+    <SafeAreaProvider>
+      <CurrencyProvider>
+        <AppNavigation />
+      </CurrencyProvider>
+    </SafeAreaProvider>
   );
 }
+

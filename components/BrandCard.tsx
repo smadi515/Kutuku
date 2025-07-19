@@ -1,6 +1,7 @@
 // components/BrandCard.tsx
 import React from 'react';
-import {Text, Image, StyleSheet, TouchableOpacity} from 'react-native';
+import { Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import colors from '../utils/colors';
 
 type BrandCardProps = {
   id: number;
@@ -9,10 +10,10 @@ type BrandCardProps = {
   onPress: (id: number) => void;
 };
 
-const BrandCard: React.FC<BrandCardProps> = ({id, name, image, onPress}) => {
+const BrandCard: React.FC<BrandCardProps> = ({ id, name, image, onPress }) => {
   return (
     <TouchableOpacity onPress={() => onPress(id)} style={styles.card}>
-      <Image source={{uri: image}} style={styles.image} />
+      <Image source={{ uri: image }} style={styles.image} />
       <Text style={styles.name}>{name}</Text>
     </TouchableOpacity>
   );
@@ -23,19 +24,19 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    backgroundColor: colors.card.background,
     elevation: 2,
   },
   image: {
     width: '100%',
     height: 180,
-    backgroundColor: '#eee',
+    backgroundColor: colors.gray[200],
   },
   name: {
     padding: 10,
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text.secondary,
   },
 });
 

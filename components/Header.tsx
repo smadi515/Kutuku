@@ -8,10 +8,11 @@ import {
   ImageBackground,
   StatusBar,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from '../components/icon'; // Adjust path as needed
-import type {RootStackParamList} from '../App';
+import type { RootStackParamList } from '../App';
+import colors from '../utils/colors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -44,37 +45,37 @@ const Header = ({
     <View
       style={[
         styles.container,
-        {position: 'absolute', top: 0, width: '100%', zIndex: 10},
+        { position: 'absolute', top: 0, width: '100%', zIndex: 10 },
       ]}>
       {showBack ? (
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon type="Ionicons" name="arrow-back" size={24} color="black" />
+          <Icon type="Ionicons" name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
       ) : (
-        <View style={{width: 24}} />
+        <View style={{ width: 24 }} />
       )}
 
       <Text
         style={[
           styles.title,
-          !!color && {color},
-          {fontFamily: 'regular', flex: 1, textAlign: 'center'},
+          !!color && { color },
+          { fontFamily: 'regular', flex: 1, textAlign: 'center' },
         ]}>
         {title}
       </Text>
 
-      <View style={{flexDirection: 'row', gap: 8}}>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
         {rightIcons.map((icon, index) => (
           <TouchableOpacity
             key={index}
             onPress={icon.onPress}
-            style={{marginLeft: 8}}>
+            style={{ marginLeft: 8 }}>
             {icon.render ? icon.render() : (
               <Icon
                 type={icon.type}
                 name={icon.name}
                 size={24}
-                color={icon.color ?? color ?? 'black'}
+                color={icon.color ?? color ?? colors.text.primary}
               />
             )}
           </TouchableOpacity>
@@ -116,12 +117,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'white',
+    backgroundColor: colors.background.secondary,
   },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: 'black',
+    color: colors.text.primary,
   },
 });
 

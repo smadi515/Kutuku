@@ -10,9 +10,10 @@ import {
   Alert,
 } from 'react-native';
 import Icon from './icon';
-import {useNavigation} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import type {RootStackParamList} from '../App';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import type { RootStackParamList } from '../App';
+import colors from '../utils/colors';
 
 type ProductDetailsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -80,16 +81,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <TouchableOpacity
       activeOpacity={0.88}
-      onPress={() => navigation.navigate('ProductsDetails', {url_key: urlKey})}
-      style={[styles.card, cardWidth ? {width: cardWidth} : {}]}>
+      onPress={() => navigation.navigate('ProductsDetails', { url_key: urlKey })}
+      style={[styles.card, cardWidth ? { width: cardWidth } : {}]}>
       <View style={styles.imageWrapper}>
         <Image
-          source={{uri: image || 'https://via.placeholder.com/150'}}
+          source={{ uri: image || 'https://via.placeholder.com/150' }}
           style={styles.productImage}
           resizeMode="cover"
         />
         <TouchableOpacity style={styles.cartIcon} onPress={handleCartPress} activeOpacity={0.85}>
-          <Icon name="shoppingcart" type="ant" size={cartIconSize} color="#fff" />
+          <Icon name="shoppingcart" type="ant" size={cartIconSize} color={colors.text.white} />
         </TouchableOpacity>
       </View>
       <View style={styles.infoContainer}>
@@ -112,20 +113,20 @@ const styles = StyleSheet.create({
     width: 148,
     minWidth: 130,
     height: CARD_HEIGHT,
-    backgroundColor: '#fff',
+    backgroundColor: colors.card.background,
     borderRadius: 20,
     marginBottom: 12,
     marginHorizontal: 4,
     overflow: 'hidden',
     elevation: 6,
-    shadowColor: '#7B2FF2',
-    shadowOffset: {width: 0, height: 4},
+    shadowColor: colors.shadow.primary,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.13,
     shadowRadius: 14,
   },
   imageWrapper: {
     position: 'relative',
-    backgroundColor: '#f7f7fb',
+    backgroundColor: colors.background.primary,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     overflow: 'hidden',
@@ -141,14 +142,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 14,
     left: 14,
-    backgroundColor: '#F357A8',
+    backgroundColor: colors.secondary.pink,
     width: 32,
     height: 32,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 3,
-    shadowColor: '#F357A8',
+    shadowColor: colors.secondary.pink,
     shadowOpacity: 0.13,
     shadowRadius: 6,
     zIndex: 2,
@@ -161,17 +162,17 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: '700',
     fontSize: 16,
-    color: '#222',
+    color: colors.text.primary,
     marginBottom: 2,
   },
   designer: {
     fontSize: 12,
-    color: '#888',
+    color: colors.text.gray,
     marginBottom: 2,
   },
   description: {
     fontSize: 12,
-    color: '#666',
+    color: colors.text.tertiary,
     marginTop: 2,
     marginBottom: 6,
   },
@@ -184,11 +185,11 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#7B2FF2',
+    color: colors.primary.main,
   },
   outOfStockBadge: {
-    backgroundColor: '#F357A8',
-    color: '#fff',
+    backgroundColor: colors.secondary.pink,
+    color: colors.text.white,
     fontSize: 11,
     fontWeight: '700',
     borderRadius: 10,

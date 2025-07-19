@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Icon from './icon'; // your custom icon.js
+import colors from '../utils/colors';
 
 type ButtonType = 'PRIMARY' | 'ICON_ROW' | 'TERTIARY';
 
@@ -50,14 +51,14 @@ const CustomButton: React.FC<Props> = ({
       disabled={isDisabled}>
       <View style={[styles.content, isIconRow && styles.content_iconRow]}>
         {loading ? (
-          <ActivityIndicator color={type === 'PRIMARY' ? '#fff' : 'gray'} />
+          <ActivityIndicator color={type === 'PRIMARY' ? colors.text.white : colors.gray[400]} />
         ) : (
           <>
             {icon && (
               <Icon
                 name={icon}
                 type={iconType}
-                color={isIconRow ? 'black' : iconColor}
+                color={isIconRow ? colors.text.primary : iconColor}
                 size={iconSize}
                 style={[styles.icon, isIconRow && styles.iconLeft]}
               />
@@ -67,7 +68,7 @@ const CustomButton: React.FC<Props> = ({
               <Icon
                 name="arrow-right"
                 type="feather"
-                color="gray"
+                color={colors.gray[400]}
                 size={20}
                 style={styles.iconRight}
               />
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   container_TERTIARY: {
-    borderColor: '#7B2FF2',
+    borderColor: colors.primary.main,
     paddingHorizontal: 15,
     paddingVertical: 10,
   },
@@ -95,10 +96,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     borderRadius: 40,
     width: '70%',
-    backgroundColor: '#7B2FF2',
+    backgroundColor: colors.primary.main,
   },
   container_ICON_ROW: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: colors.gray[200],
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderRadius: 12,
@@ -106,19 +107,19 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   text: {
-    color: 'black',
+    color: colors.text.primary,
     fontSize: 16,
   },
   text_PRIMARY: {
-    color: 'white',
+    color: colors.text.white,
   },
   text_TERTIARY: {
-    color: '#7B2FF2',
+    color: colors.primary.main,
     textDecorationLine: 'underline',
   },
   text_ICON_ROW: {
     flex: 1,
-    color: 'black',
+    color: colors.text.primary,
     fontSize: 16,
   },
   content: {

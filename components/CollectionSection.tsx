@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,15 +10,16 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import type {RootStackParamList} from '../App';
-import {useTranslation} from 'react-i18next';
-import {getParentCategories} from '../lib/api';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import type { RootStackParamList } from '../App';
+import { useTranslation } from 'react-i18next';
+import { getParentCategories } from '../lib/api';
 import { useCurrency } from '../contexts/CurrencyContext';
 import ProductCard from './ProductCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCustomerCart, addItemToCart, updateCartItemQuantity } from '../lib/api';
+import colors from '../utils/colors';
 
 type ProductDetailsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -78,17 +79,17 @@ const CollectionSection = () => {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<ProductDetailsScreenNavigationProp>();
-  const {i18n} = useTranslation();
+  const { i18n } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [quantity] = useState(1);
 
   const bannerRef = useRef<FlatList>(null);
   const currentBannerIndex = useRef(0);
-  const renderCategory = ({item}: {item: Category}) => (
+  const renderCategory = ({ item }: { item: Category }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('StoreScreen', {categoryId: item.id})}>
-      <Image source={{uri: item.image}} style={styles.image} />
+      onPress={() => navigation.navigate('StoreScreen', { categoryId: item.id })}>
+      <Image source={{ uri: item.image }} style={styles.image} />
       <Text style={styles.name}>{item.name}</Text>
     </TouchableOpacity>
   );
@@ -122,7 +123,7 @@ const CollectionSection = () => {
   useEffect(() => {
     const banners = collections.filter(c => c.type === 'banner');
     if (!banners.length) return;
-    
+
     const interval = setInterval(() => {
       currentBannerIndex.current =
         (currentBannerIndex.current + 1) % banners.length;
@@ -209,9 +210,9 @@ const CollectionSection = () => {
     }
   };
 
-  const renderProduct = ({item}: {item: ProductItem}) => {
-    const {product} = item;
-    const {description, price, images, inventory} = product;
+  const renderProduct = ({ item }: { item: ProductItem }) => {
+    const { product } = item;
+    const { description, price, images, inventory } = product;
     const stockAvailability = inventory.stock_availability;
     const urlKey = product?.description?.url_key || '';
     const imageUri = images[0]?.origin_image || '';
@@ -243,7 +244,7 @@ const CollectionSection = () => {
   }
 
   if (loading) {
-    return <ActivityIndicator size="large" style={{marginTop: 20}} />;
+    return <ActivityIndicator size="large" style={{ marginTop: 20 }} />;
   }
 
   const bannerCollections = collections.filter(c => c.type === 'banner');
@@ -252,7 +253,7 @@ const CollectionSection = () => {
   const cardWidth = (windowWidth * 0.9 - cardMargin * 3) / 2;
 
   return (
-    <ScrollView style={{flex: 1, backgroundColor: '#F5F0FF'}} contentContainerStyle={{paddingBottom: 24}}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.background.tertiary }} contentContainerStyle={{ paddingBottom: 24 }}>
       {/* Banner Section */}
       <FlatList
         ref={bannerRef}
@@ -262,7 +263,7 @@ const CollectionSection = () => {
         pagingEnabled
         onScrollToIndexFailed={handleScrollToIndexFailed}
         keyExtractor={item => item.collection_id.toString()}
-        renderItem={({item}) => (
+        renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() =>
               navigation.navigate('StoreScreen', {
@@ -272,13 +273,13 @@ const CollectionSection = () => {
             style={styles.bannerContainer}
           >
             <Image
-              source={{uri: item.image}}
+              source={{ uri: item.image }}
               style={styles.bannerImage}
               resizeMode="cover"
             />
           </TouchableOpacity>
         )}
-        contentContainerStyle={{marginTop: 16}}
+        contentContainerStyle={{ marginTop: 16 }}
       />
       <View>
         <Text style={styles.title}>Categories</Text>
@@ -288,7 +289,7 @@ const CollectionSection = () => {
           renderItem={renderCategory}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{paddingHorizontal: 12}}
+          contentContainerStyle={{ paddingHorizontal: 12 }}
         />
       </View>
 
@@ -305,11 +306,11 @@ const CollectionSection = () => {
               <FlatList
                 data={productPairs}
                 keyExtractor={(_, idx) => idx.toString()}
-                renderItem={({item: pair}) => (
-                  <View style={{flexDirection: 'row', width: windowWidth * 0.9, justifyContent: 'flex-start', alignSelf: 'center'}}>
+                renderItem={({ item: pair }) => (
+                  <View style={{ flexDirection: 'row', width: windowWidth * 0.9, justifyContent: 'flex-start', alignSelf: 'center' }}>
                     {pair.map((productItem: ProductItem, idx: number) => (
-                      <View key={productItem.product_id} style={{width: cardWidth, marginRight: idx === 0 && pair.length === 2 ? cardMargin : 0}}>
-                        {renderProduct({item: productItem})}
+                      <View key={productItem.product_id} style={{ width: cardWidth, marginRight: idx === 0 && pair.length === 2 ? cardMargin : 0 }}>
+                        {renderProduct({ item: productItem })}
                       </View>
                     ))}
                   </View>
@@ -317,7 +318,7 @@ const CollectionSection = () => {
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{paddingBottom: 8}}
+                contentContainerStyle={{ paddingBottom: 8 }}
               />
             </View>
           );
@@ -328,13 +329,13 @@ const CollectionSection = () => {
 
 const styles = StyleSheet.create({
   cardContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card.background,
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: colors.shadow.black,
     shadowOpacity: 0.1,
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowRadius: 6,
   },
   productInfo: {
@@ -385,21 +386,21 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text.secondary,
   },
   productPrice: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: 'blcak',
+    color: colors.text.primary,
   },
   outOfStock: {
     fontSize: 12,
-    color: 'red',
+    color: colors.status.error,
     fontWeight: '500',
   },
   productShort: {
     fontSize: 12,
-    color: '#666',
+    color: colors.text.tertiary,
     marginTop: 4,
   },
   priceRow: {

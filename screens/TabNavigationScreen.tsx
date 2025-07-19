@@ -1,27 +1,28 @@
 import React from 'react';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MyOrders from './MyOrders';
 import Profile from './Profile';
 import Home from '../screens/HomeScreen'; // Make sure path is correct
 import Icon from '../components/icon'; // Make sure path is correct
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import SettingsScreen from './SettingsScreen';
 import StoreScreen from './StoreScreen';
+import colors from '../utils/colors';
 
 const Tab = createBottomTabNavigator();
 
 const TabNavigationScreen = () => {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
-      screenOptions={({route}) => ({
+      screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: 'purple',
-        tabBarInactiveTintColor: '#999',
-        tabBarLabelStyle: {fontSize: 12},
-        tabBarStyle: {backgroundColor: '#eee'},
-        tabBarIcon: ({color, size}) => {
+        tabBarActiveTintColor: colors.tab.active,
+        tabBarInactiveTintColor: colors.tab.inactive,
+        tabBarLabelStyle: { fontSize: 12 },
+        tabBarStyle: { backgroundColor: colors.tab.background },
+        tabBarIcon: ({ color, size }) => {
           let iconName = '';
           let type = 'feather'; // default
 
@@ -50,14 +51,14 @@ const TabNavigationScreen = () => {
       <Tab.Screen
         name="Home"
         component={Home}
-        options={{tabBarLabel: t('TabNavigationScreen.home')}}
+        options={{ tabBarLabel: t('TabNavigationScreen.home') }}
       />
       <Tab.Screen
         name="Store"
         component={StoreScreen}
         options={{
           tabBarLabel: t('TabNavigationScreen.store') || 'Store',
-          tabBarIcon: ({color, size}) => (
+          tabBarIcon: ({ color, size }) => (
             <Icon name="shopping-bag" type="feather" color={color} size={size} />
           ),
         }}
@@ -65,17 +66,17 @@ const TabNavigationScreen = () => {
       <Tab.Screen
         name="MyOrders"
         component={MyOrders}
-        options={{tabBarLabel: t('TabNavigationScreen.my_orders')}}
+        options={{ tabBarLabel: t('TabNavigationScreen.my_orders') }}
       />
       <Tab.Screen
         name="Profile"
         component={Profile}
-        options={{tabBarLabel: t('TabNavigationScreen.profile')}}
+        options={{ tabBarLabel: t('TabNavigationScreen.profile') }}
       />
       <Tab.Screen
         name="SettingsScreen"
         component={SettingsScreen}
-        options={{tabBarLabel: t('TabNavigationScreen.Settings')}}
+        options={{ tabBarLabel: t('TabNavigationScreen.Settings') }}
       />
     </Tab.Navigator>
   );

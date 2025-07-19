@@ -1,6 +1,7 @@
-import React, {useState} from 'react';
-import {View, Text, TextInput, Button, StyleSheet} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import colors from '../utils/colors';
 
 type CouponSectionProps = {
   originalTotal: number;
@@ -99,23 +100,23 @@ const CouponSection: React.FC<CouponSectionProps> = ({
 export default CouponSection;
 
 const styles = StyleSheet.create({
-  container: {marginTop: 16},
+  container: { marginTop: 16 },
   input: {
-    borderColor: '#ccc',
+    borderColor: colors.border.gray,
     borderWidth: 1,
     padding: 8,
     borderRadius: 8,
     marginBottom: 8,
   },
-  error: {color: 'red', marginTop: 4},
-  priceContainer: {marginTop: 10},
+  error: { color: colors.status.error, marginTop: 4 },
+  priceContainer: { marginTop: 10 },
   oldPrice: {
     textDecorationLine: 'line-through',
-    color: '#888',
+    color: colors.text.gray,
     fontSize: 16,
   },
   newPrice: {
-    color: 'green',
+    color: colors.status.success,
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 4,

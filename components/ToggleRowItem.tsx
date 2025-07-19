@@ -1,5 +1,6 @@
-import React, {useState} from 'react';
-import {View, Text, StyleSheet, Switch} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Switch } from 'react-native';
+import colors from '../utils/colors';
 
 interface ToggleRowItemProps {
   title: string;
@@ -27,7 +28,7 @@ const ToggleRowItem: React.FC<ToggleRowItemProps> = ({
         value={isEnabled}
         onValueChange={toggleSwitch}
         thumbColor="#fff"
-        trackColor={{false: '#ccc', true: 'purple'}}
+        trackColor={{ false: colors.gray[400], true: colors.primary.main }}
       />
     </View>
   );
@@ -40,13 +41,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 18,
-    borderBottomColor: '#eee',
+    borderBottomColor: colors.border.light,
     borderBottomWidth: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background.secondary,
   },
   text: {
     fontSize: 16,
-    color: '#333',
+    color: colors.text.secondary,
   },
 });
 

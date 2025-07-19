@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import Icon from './icon'; // adjust the import path as needed
+import colors from '../utils/colors';
 
 interface CustomInputProps {
   label?: string;
@@ -40,7 +41,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
       {label && <Text style={styles.label}>{label}</Text>}
       <View style={styles.inputContainer}>
         {iconName && (
-          <Icon type={iconType} name={iconName} size={20} color="#888" />
+          <Icon type={iconType} name={iconName} size={20} color={colors.text.gray} />
         )}
         <TextInput
           value={value}
@@ -49,7 +50,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
           onChangeText={onChangeText}
           keyboardType={keyboardType}
           style={styles.input}
-          placeholderTextColor="#aaa"
+          placeholderTextColor={colors.text.placeholder}
         />
         {rightIconName && (
           <TouchableOpacity onPress={onRightIconPress}>
@@ -57,7 +58,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
               type={rightIconType}
               name={rightIconName}
               size={18}
-              color="#888"
+              color={colors.text.gray}
             />
           </TouchableOpacity>
         )}
@@ -73,10 +74,10 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: '600',
     marginBottom: 5,
-    color: '#333',
+    color: colors.text.secondary,
   },
   inputContainer: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.input.background,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -86,7 +87,7 @@ const styles = StyleSheet.create({
   input: {
     marginLeft: 10,
     flex: 1,
-    color: '#000',
+    color: colors.text.primary,
   },
 });
 

@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, { useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -7,14 +7,15 @@ import {
   Text,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../App'; // Adjust path if needed
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App'; // Adjust path if needed
+import colors from '../utils/colors';
 
 type SplashScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
 };
 
-const SplashScreen: React.FC<SplashScreenProps> = ({navigation}) => {
+const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
@@ -43,14 +44,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({navigation}) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.logoContainer}>
-        <Text style={{fontSize: 45, color: 'white'}}>Kutuku</Text>
-        <Text style={{fontSize: 10, color: 'white'}}>
+        <Text style={{ fontSize: 45, color: colors.text.white }}>Kutuku</Text>
+        <Text style={{ fontSize: 10, color: colors.text.white }}>
           Any shopping just from home
         </Text>
         <ActivityIndicator
           size="large"
-          color="#00BCD4"
-          style={{marginTop: 20}}
+          color={colors.status.success}
+          style={{ marginTop: 20 }}
         />
       </View>
     </SafeAreaView>
@@ -60,7 +61,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'purple',
+    backgroundColor: colors.primary.main,
     justifyContent: 'center',
     alignItems: 'center',
   },

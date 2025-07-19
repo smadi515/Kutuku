@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions } from '@react-navigation/native';
 import Icon from '../components/icon';
+import colors from '../utils/colors';
 
 const SettingsScreen = ({ navigation }: any) => {
   const { t, i18n } = useTranslation();
@@ -35,7 +36,7 @@ const SettingsScreen = ({ navigation }: any) => {
           {
             name: 'info',
             type: 'AntDesign',
-            onPress: () => {},
+            onPress: () => { },
           },
         ]}
       />
@@ -48,7 +49,7 @@ const SettingsScreen = ({ navigation }: any) => {
           <View style={styles.accentBar} />
           <View style={styles.sectionContent}>
             <View style={styles.sectionHeaderRow}>
-              <Icon name="settings" type="Feather" size={22} color="#7B2FF2" style={{ marginRight: 8 }} />
+              <Icon name="settings" type="Feather" size={22} color={colors.primary.main} style={{ marginRight: 8 }} />
               <Text style={styles.sectionTitle}>{t('settings.general')}</Text>
             </View>
             <CustomButton
@@ -86,13 +87,20 @@ const SettingsScreen = ({ navigation }: any) => {
               iconType="MaterialIcons"
               type="ICON_ROW"
             />
+            <CustomButton
+              text={t('settings.currency') || 'Currency'}
+              onPress={() => navigation.navigate('CurrencyScreen')}
+              icon="dollar-sign"
+              iconType="Feather"
+              type="ICON_ROW"
+            />
           </View>
         </View>
         <View style={styles.sectionCard}>
           <View style={styles.accentBar} />
           <View style={styles.sectionContent}>
             <View style={styles.sectionHeaderRow}>
-              <Icon name="star" type="Feather" size={22} color="#F357A8" style={{ marginRight: 8 }} />
+              <Icon name="star" type="Feather" size={22} color={colors.secondary.pink} style={{ marginRight: 8 }} />
               <Text style={styles.sectionTitle}>{t('settings.preferences')}</Text>
             </View>
             <CustomButton
@@ -114,7 +122,7 @@ const SettingsScreen = ({ navigation }: any) => {
         <View style={{ height: 40 }} />
       </ScrollView>
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
-        <Icon name="log-out" type="Feather" size={20} color="#fff" style={{ marginRight: 8 }} />
+        <Icon name="log-out" type="Feather" size={20} color={colors.text.white} style={{ marginRight: 8 }} />
         <Text style={styles.logoutBtnText}>{t('settings.logout') || 'Logout'}</Text>
       </TouchableOpacity>
     </View>
@@ -124,7 +132,7 @@ const SettingsScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7FB',
+    backgroundColor: colors.background.primary,
     paddingTop: 0,
   },
   scrollContent: {
@@ -134,11 +142,11 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: colors.card.background,
     borderRadius: 18,
     marginBottom: 22,
     elevation: 2,
-    shadowColor: '#7B2FF2',
+    shadowColor: colors.shadow.primary,
     shadowOpacity: 0.06,
     shadowRadius: 8,
     alignItems: 'flex-start',
@@ -148,7 +156,7 @@ const styles = StyleSheet.create({
     width: 6,
     borderTopLeftRadius: 18,
     borderBottomLeftRadius: 18,
-    backgroundColor: '#7B2FF2',
+    backgroundColor: colors.primary.main,
     height: '100%',
     minHeight: 120,
   },
@@ -165,25 +173,25 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#7B2FF2',
+    color: colors.primary.main,
     letterSpacing: 0.2,
   },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#7B2FF2',
+    backgroundColor: colors.primary.main,
     borderRadius: 24,
     marginHorizontal: 18,
     marginBottom: 24,
     paddingVertical: 16,
     elevation: 3,
-    shadowColor: '#7B2FF2',
+    shadowColor: colors.shadow.primary,
     shadowOpacity: 0.13,
     shadowRadius: 8,
   },
   logoutBtnText: {
-    color: '#fff',
+    color: colors.text.white,
     fontWeight: '700',
     fontSize: 17,
     letterSpacing: 0.2,
