@@ -20,6 +20,8 @@ import ProductCard from './ProductCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCustomerCart, addItemToCart, updateCartItemQuantity } from '../lib/api';
 import colors from '../utils/colors';
+import LinearGradient from 'react-native-linear-gradient';
+import Icon from './icon';
 
 type ProductDetailsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -85,14 +87,22 @@ const CollectionSection = () => {
 
   const bannerRef = useRef<FlatList>(null);
   const currentBannerIndex = useRef(0);
+
   const renderCategory = ({ item }: { item: Category }) => (
     <TouchableOpacity
-      style={styles.card}
+      style={styles.categoryCard}
       onPress={() => navigation.navigate('StoreScreen', { categoryId: item.id })}>
-      <Image source={{ uri: item.image }} style={styles.image} />
-      <Text style={styles.name}>{item.name}</Text>
+      <View style={styles.categoryImageContainer}>
+        <Image source={{ uri: item.image }} style={styles.categoryImage} />
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.3)']}
+          style={styles.categoryGradient}
+        />
+      </View>
+      <Text style={styles.categoryName}>{item.name}</Text>
     </TouchableOpacity>
   );
+
   useEffect(() => {
     const loadCategories = async () => {
       const data = await getParentCategories();
@@ -253,47 +263,82 @@ const CollectionSection = () => {
   const cardWidth = (windowWidth * 0.9 - cardMargin * 3) / 2;
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background.tertiary }} contentContainerStyle={{ paddingBottom: 24 }}>
-      {/* Banner Section */}
-      <FlatList
-        ref={bannerRef}
-        data={bannerCollections}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        pagingEnabled
-        onScrollToIndexFailed={handleScrollToIndexFailed}
-        keyExtractor={item => item.collection_id.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate('StoreScreen', {
-                collectionId: item.collection_id,
-              })
-            }
-            style={styles.bannerContainer}
-          >
-            <Image
-              source={{ uri: item.image }}
-              style={styles.bannerImage}
-              resizeMode="cover"
-            />
-          </TouchableOpacity>
+    <ScrollView style={{ flex: 1, backgroundColor: '#F8F9FA' }} contentContainerStyle={{ paddingBottom: 24 }}>
+      {/* Enhanced Banner Section */}
+      <View style={styles.bannerSection}>
+        <FlatList
+          ref={bannerRef}
+          data={bannerCollections}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          pagingEnabled
+          onScrollToIndexFailed={handleScrollToIndexFailed}
+          keyExtractor={item => item.collection_id.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate('StoreScreen', {
+                  collectionId: item.collection_id,
+                })
+              }
+              style={styles.bannerContainer}
+            >
+              <Image
+                source={{ uri: item.image }}
+                style={styles.bannerImage}
+                resizeMode="cover"
+              />
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.4)']}
+                style={styles.bannerGradient}
+              />
+              <View style={styles.bannerContent}>
+                <Text style={styles.bannerTitle}>Discover New Trends</Text>
+                <Text style={styles.bannerSubtitle}>Shop the latest collection</Text>
+                <TouchableOpacity style={styles.bannerButton}>
+                  <Text style={styles.bannerButtonText}>Shop Now</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={{ marginTop: 16 }}
+        />
+
+        {/* Banner Pagination Dots */}
+        {bannerCollections.length > 1 && (
+          <View style={styles.paginationContainer}>
+            {bannerCollections.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.paginationDot,
+                  index === currentBannerIndex.current && styles.paginationDotActive
+                ]}
+              />
+            ))}
+          </View>
         )}
-        contentContainerStyle={{ marginTop: 16 }}
-      />
-      <View>
-        <Text style={styles.title}>Categories</Text>
+      </View>
+
+      {/* Enhanced Categories Section */}
+      <View style={styles.categoriesSection}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAllText}>See All</Text>
+          </TouchableOpacity>
+        </View>
         <FlatList
           data={categories}
           keyExtractor={item => item.id.toString()}
           renderItem={renderCategory}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 12 }}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
         />
       </View>
 
-      {/* Other Collections */}
+      {/* Enhanced Collections Section */}
       {collections
         .filter(collection => collection.type !== 'banner')
         .map(collection => {
@@ -302,14 +347,20 @@ const CollectionSection = () => {
             <View
               key={collection.collection_id}
               style={styles.collectionContainer}>
-              <Text style={styles.collectionTitle}>{collection.name}</Text>
+              <View style={styles.collectionHeader}>
+                <Text style={styles.collectionTitle}>{collection.name}</Text>
+                <TouchableOpacity style={styles.collectionButton}>
+                  <Text style={styles.collectionButtonText}>View All</Text>
+                  <Icon name="chevron-right" type="feather" size={16} color="#7B2FF2" />
+                </TouchableOpacity>
+              </View>
               <FlatList
                 data={productPairs}
                 keyExtractor={(_, idx) => idx.toString()}
                 renderItem={({ item: pair }) => (
-                  <View style={{ flexDirection: 'row', width: windowWidth * 0.9, justifyContent: 'flex-start', alignSelf: 'center' }}>
+                  <View style={styles.productRow}>
                     {pair.map((productItem: ProductItem, idx: number) => (
-                      <View key={productItem.product_id} style={{ width: cardWidth, marginRight: idx === 0 && pair.length === 2 ? cardMargin : 0 }}>
+                      <View key={productItem.product_id} style={[styles.productContainer, idx === 0 && pair.length === 2 && styles.productContainerLeft]}>
                         {renderProduct({ item: productItem })}
                       </View>
                     ))}
@@ -328,104 +379,169 @@ const CollectionSection = () => {
 };
 
 const styles = StyleSheet.create({
-  cardContainer: {
-    backgroundColor: colors.card.background,
-    borderRadius: 12,
-    overflow: 'hidden',
-    elevation: 4,
-    shadowColor: colors.shadow.black,
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-  },
-  productInfo: {
-    padding: 10,
-  },
-  collectionContainer: {
-    marginVertical: 16,
-    paddingHorizontal: 12,
-  },
-  image: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginBottom: 6,
-  },
-  card: {
-    alignItems: 'center',
-    marginRight: 12,
-    width: 100,
-  },
-  name: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 12,
-    paddingHorizontal: 12,
-  },
-  collectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  productCard: {
-    marginRight: 12,
-    width: 160,
-  },
-  imageWrapper: {
-    position: 'relative',
-  },
-  productImage: {
-    width: '100%',
-    height: 120,
-    borderRadius: 8,
-  },
-  productName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
-  productPrice: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-  },
-  outOfStock: {
-    fontSize: 12,
-    color: colors.status.error,
-    fontWeight: '500',
-  },
-  productShort: {
-    fontSize: 12,
-    color: colors.text.tertiary,
-    marginTop: 4,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  stockRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
+  bannerSection: {
+    marginBottom: 24,
   },
   bannerContainer: {
-    height: 180,
+    height: 200,
     width: Dimensions.get('window').width,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
-    elevation: 3,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   bannerImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
+  },
+  bannerGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '60%',
+  },
+  bannerContent: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  bannerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  bannerSubtitle: {
+    fontSize: 16,
+    color: '#FFF',
+    marginBottom: 12,
+    opacity: 0.9,
+  },
+  bannerButton: {
+    backgroundColor: '#7B2FF2',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 25,
+    alignSelf: 'flex-start',
+  },
+  bannerButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#DDD',
+    marginHorizontal: 4,
+  },
+  paginationDotActive: {
+    backgroundColor: '#7B2FF2',
+    width: 24,
+  },
+  categoriesSection: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  seeAllText: {
+    fontSize: 14,
+    color: '#7B2FF2',
+    fontWeight: '600',
+  },
+  categoryCard: {
+    alignItems: 'center',
+    marginRight: 16,
+    width: 100,
+  },
+  categoryImageContainer: {
+    position: 'relative',
+    width: 80,
+    height: 80,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 8,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  categoryImage: {
+    width: '100%',
+    height: '100%',
+  },
+  categoryGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '40%',
+  },
+  categoryName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+  collectionContainer: {
+    marginBottom: 24,
+  },
+  collectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  collectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  collectionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  collectionButtonText: {
+    fontSize: 14,
+    color: '#7B2FF2',
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  productRow: {
+    flexDirection: 'row',
+    width: Dimensions.get('window').width * 0.9,
+    justifyContent: 'flex-start',
+    alignSelf: 'center',
+  },
+  productContainer: {
+    width: (Dimensions.get('window').width * 0.9 - 16) / 2,
+  },
+  productContainerLeft: {
+    marginRight: 16,
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -12,13 +12,14 @@ import {
   StatusBar,
   TextInput,
   Dimensions,
+  Animated,
 } from 'react-native';
-import {useNavigation, useRoute, RouteProp, useFocusEffect} from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
 import ProductCard from '../components/ProductCard';
-import type {RootStackParamList} from '../App';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   getProducts,
   getSubcategories,
@@ -30,7 +31,7 @@ import {
 import { useCurrency } from '../contexts/CurrencyContext';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from '../components/icon';
-import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import Toast from 'react-native-toast-message';
 
 type NavigationProp = NativeStackNavigationProp<
@@ -100,12 +101,14 @@ const StoreScreen = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<number|null>(null);
-  const [selectedBrand, setSelectedBrand] = useState<number|null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
   const [filteredProducts, setFilteredProducts] = useState<ExtendedProduct[]>([]);
   const bottomSheetRef = React.useRef<BottomSheet>(null);
   const snapPoints = React.useMemo(() => [500], []); // Increased height
   const [cartCount, setCartCount] = useState(0);
+  const [showFilters, setShowFilters] = useState(true);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const PAGE_SIZE = 10;
 
@@ -120,8 +123,9 @@ const StoreScreen = () => {
   const symbol = currencySymbols[currency] || '';
 
   const screenWidth = Dimensions.get('window').width;
-  const cardMargin = 12;
-  const cardWidth = (screenWidth - cardMargin * 4) / 2; // 2 cards, 3 margins
+  const containerPadding = 32; // 16px on each side
+  const cardSpacing = 12; // Space between cards
+  const cardWidth = (screenWidth - containerPadding - cardSpacing) / 2; // 2 cards with proper spacing
 
   useEffect(() => {
     const fetchSubcategories = async () => {
@@ -162,11 +166,11 @@ const StoreScreen = () => {
             typeof product.description === 'object'
               ? product.description
               : {
-                  name: '',
-                  description: '',
-                  short_description: '',
-                  url_key: '',
-                };
+                name: '',
+                description: '',
+                short_description: '',
+                url_key: '',
+              };
           return {
             ...product,
             image: mainImage?.origin_image || '',
@@ -263,6 +267,15 @@ const StoreScreen = () => {
 
 
 
+  const handleScroll = useCallback((event: any) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    if (offsetY > 50 && showFilters) {
+      setShowFilters(false);
+    } else if (offsetY <= 50 && !showFilters) {
+      setShowFilters(true);
+    }
+  }, [showFilters]);
+
   const handleAddToCart = async (item: Product) => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -298,7 +311,7 @@ const StoreScreen = () => {
         price: item.price,
         quantity: quantity,
         selected: true,
-        image: {uri: item.image},
+        image: { uri: item.image },
         cart_item_id: backendResponse?.cart_item_id || null,
       };
 
@@ -347,11 +360,11 @@ const StoreScreen = () => {
           typeof product.description === 'object'
             ? product.description
             : {
-                name: '',
-                description: '',
-                short_description: '',
-                url_key: '',
-              };
+              name: '',
+              description: '',
+              short_description: '',
+              url_key: '',
+            };
         return {
           ...product,
           image: mainImage?.origin_image || '',
@@ -385,30 +398,30 @@ const StoreScreen = () => {
     }
   };
 
-  const renderProductItem = useCallback(({item, index}: {item: ExtendedProduct; index: number}) => {
+  const renderProductItem = useCallback(({ item, index }: { item: ExtendedProduct; index: number }) => {
     // If odd number of products, last item should not stretch
     const isLastOdd = filteredProducts.length % 2 === 1 && index === filteredProducts.length - 1;
     return (
-        <ProductCard
-          product_id={item.product_id}
-          urlKey={item.urlKey}
-          title={item.name}
-          designer={item.brandName}
-          price={Math.round(item.price * rate)}
-          currencySymbol={symbol}
-          image={item.image ?? ''}
-          description={item.description}
-          stock_availability={item.inventory?.stock_availability ?? false}
-          onPressCart={() => handleAddToCart(item)}
-          cardWidth={cardWidth}
-        />
+      <ProductCard
+        product_id={item.product_id}
+        urlKey={item.urlKey}
+        title={item.name}
+        designer={item.brandName}
+        price={Math.round(item.price * rate)}
+        currencySymbol={symbol}
+        image={item.image ?? ''}
+        description={item.description}
+        stock_availability={item.inventory?.stock_availability ?? false}
+        onPressCart={() => handleAddToCart(item)}
+        cardWidth={cardWidth}
+      />
     );
   }, [filteredProducts, rate, symbol, cardWidth, handleAddToCart]);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#7B2FF2" />
-      <LinearGradient colors={["#7B2FF2", "#F357A8"]} style={[styles.headerGradient, {marginTop: 18}]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <View style={styles.headerContainer}>
         <Header
           title="Store"
           showImage={false}
@@ -417,8 +430,8 @@ const StoreScreen = () => {
             type: 'Ionicons',
             onPress: () => navigation.navigate('CartScreen'),
             render: () => (
-              <View style={{position: 'relative'}}>
-                <Icon name="cart-outline" type="Ionicons" size={24} color="#000" />
+              <View style={{ position: 'relative' }}>
+                <Icon name="cart-outline" type="Ionicons" size={24} color="#333" />
                 {cartCount > 0 && (
                   <View style={styles.cartBadge}>
                     <Text style={styles.cartBadgeText}>{cartCount}</Text>
@@ -428,8 +441,21 @@ const StoreScreen = () => {
             )
           }]}
         />
-      </LinearGradient>
-      <View>
+      </View>
+      <Animated.View style={[
+        styles.filtersContainer,
+        {
+          opacity: showFilters ? 1 : 0,
+          transform: [{
+            translateY: scrollY.interpolate({
+              inputRange: [0, 50],
+              outputRange: [0, -100],
+              extrapolate: 'clamp',
+            })
+          }],
+          height: showFilters ? 'auto' : 0,
+        }
+      ]}>
         {categoryId && subcategories.length > 0 && (
           <ScrollView
             horizontal
@@ -448,14 +474,13 @@ const StoreScreen = () => {
                 style={[styles.pillButton, selectedSubcategoryId === sub.id && styles.pillButtonSelected]}
                 onPress={() => setSelectedSubcategoryId(sub.id)}>
                 <Image
-                  source={{uri: sub.image}}
+                  source={{ uri: sub.image }}
                   style={styles.pillImage}
                 />
                 <Text
                   style={[
                     styles.pillButtonText,
-                    selectedSubcategoryId === sub.id && styles.pillButtonTextSelected,
-                    {maxWidth: 60, flexShrink: 1}
+                    selectedSubcategoryId === sub.id && styles.pillButtonTextSelected
                   ]}
                   numberOfLines={1}
                   ellipsizeMode="tail"
@@ -484,14 +509,13 @@ const StoreScreen = () => {
                 style={[styles.pillButton, selectedCategory === cat.id && styles.pillButtonSelected]}
                 onPress={() => setSelectedCategory(cat.id)}>
                 <Image
-                  source={{uri: cat.image}}
+                  source={{ uri: cat.image }}
                   style={styles.pillImage}
                 />
                 <Text
                   style={[
                     styles.pillButtonText,
-                    selectedCategory === cat.id && styles.pillButtonTextSelected,
-                    {maxWidth: 60, flexShrink: 1}
+                    selectedCategory === cat.id && styles.pillButtonTextSelected
                   ]}
                   numberOfLines={1}
                   ellipsizeMode="tail"
@@ -502,31 +526,36 @@ const StoreScreen = () => {
             ))}
           </ScrollView>
         )}
-        
-        <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 18, zIndex: 1, paddingHorizontal: 8}}>
-          <View style={[styles.searchBar, {flex: 1}]}> 
-            <Icon type="ant" name="search1" size={20} style={{marginRight: 8}} />
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, zIndex: 1, paddingHorizontal: 16 }}>
+          <View style={[styles.searchBar, { flex: 1 }]}>
+            <Icon type="ant" name="search1" size={20} style={{ marginRight: 12, color: '#999' }} />
             <TextInput
-              placeholder={'Search products'}
+              placeholder={'Search products...'}
               style={styles.searchInput}
-              placeholderTextColor="#aaa"
+              placeholderTextColor="#999"
               value={searchText}
               onChangeText={setSearchText}
             />
-            <TouchableOpacity onPress={() => bottomSheetRef.current?.snapToIndex(0)}>
-              <Icon type="ant" name="filter" size={20} />
+            <TouchableOpacity
+              onPress={() => bottomSheetRef.current?.snapToIndex(0)}
+              style={{ padding: 4 }}
+            >
+              <Icon type="ant" name="filter" size={20} color="#333333" />
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </Animated.View>
       {loading ? (
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 200}}>
-          <ActivityIndicator
-            size="large"
-            color="#7B2FF2"
-            style={{marginTop: 20}}
-          />
-          <Text style={{marginTop: 16, color: '#7B2FF2', fontWeight: '600', fontSize: 16}}>Loading products...</Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+          <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#F8F8F8', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+            <ActivityIndicator
+              size="large"
+              color="#333333"
+            />
+          </View>
+          <Text style={{ color: '#333', fontWeight: '700', fontSize: 18, marginBottom: 8 }}>Loading products</Text>
+          <Text style={{ color: '#666', fontSize: 14 }}>Please wait while we fetch the latest items...</Text>
         </View>
       ) : (
         <FlatList
@@ -536,45 +565,85 @@ const StoreScreen = () => {
           numColumns={2}
           keyExtractor={item => item.product_id.toString()}
           columnWrapperStyle={styles.productRow}
-          contentContainerStyle={{padding: 16, paddingBottom: 90, minHeight: 200}}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, minHeight: 200 }}
+          showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           renderItem={renderProductItem}
           ListFooterComponent={
-            loadingMore ? <ActivityIndicator size="small" color="#7B2FF2" /> : null
+            loadingMore ? <ActivityIndicator size="small" color="#333333" /> : null
           }
           ListEmptyComponent={!loading && (
-            <View style={{alignItems: 'center', marginTop: 40}}>
-              <Icon name="search1" type="ant" size={40} color="#bbb" />
-              <Text style={{color: '#888', fontSize: 18, fontWeight: '600', marginTop: 12}}>No products found.</Text>
-              <Text style={{color: '#aaa', fontSize: 14, marginTop: 4, textAlign: 'center', maxWidth: 220}}>
-                Try adjusting your filters or search keywords.
+            <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 32 }}>
+              <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#F8F8F8', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                <Icon name="search1" type="ant" size={32} color="#999" />
+              </View>
+              <Text style={{ color: '#333', fontSize: 20, fontWeight: '700', marginBottom: 8 }}>No products found</Text>
+              <Text style={{ color: '#666', fontSize: 16, textAlign: 'center', lineHeight: 24 }}>
+                Try adjusting your filters or search keywords to find what you're looking for.
               </Text>
             </View>
           )}
         />
       )}
-      
+
       {!filterSheetVisible && (
-        <View style={[styles.paginationRow, {position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#F7F7FB', paddingBottom: 18, zIndex: 10, paddingTop: 16}]}> 
-          <TouchableOpacity
-            style={[styles.paginationBtn, page === 1 && styles.paginationBtnDisabled]}
-            onPress={() => setPage(p => Math.max(p - 1, 1))}
-            disabled={page === 1}
-          >
-            <Icon name="chevron-left" type="Feather" size={22} color={page === 1 ? '#ccc' : '#fff'} />
-            <Text style={styles.paginationBtnText}>Previous</Text>
-          </TouchableOpacity>
-          <Text style={styles.pageNumber}>Page {page}</Text>
-          <TouchableOpacity
-            style={[styles.paginationBtn, !hasMore && styles.paginationBtnDisabled]}
-            onPress={() => setPage(p => p + 1)}
-            disabled={!hasMore}
-          >
-            <Text style={styles.paginationBtnText}>Next</Text>
-            <Icon name="chevron-right" type="Feather" size={22} color={!hasMore ? '#ccc' : '#fff'} />
-          </TouchableOpacity>
+        <View style={[styles.paginationRow, { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#FFFFFF', paddingBottom: 20, zIndex: 10, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F0F0F0' }]}>
+          <View style={styles.paginationContainer}>
+            <TouchableOpacity
+              style={[styles.pageButton, styles.navButton, page === 1 && styles.pageButtonDisabled]}
+              onPress={() => setPage(p => Math.max(p - 1, 1))}
+              disabled={page === 1}
+            >
+              <Icon name="chevron-left" type="Feather" size={16} color={page === 1 ? '#999' : '#333'} />
+            </TouchableOpacity>
+
+            {/* Always show page 1 */}
+            <TouchableOpacity
+              style={[styles.pageButton, page === 1 && styles.pageButtonActive]}
+              onPress={() => setPage(1)}
+            >
+              <Text style={[styles.pageButtonText, page === 1 && styles.pageButtonTextActive]}>1</Text>
+            </TouchableOpacity>
+
+            {/* Show current page if it's not 1 */}
+            {page > 1 && (
+              <TouchableOpacity
+                style={[styles.pageButton, styles.pageButtonActive]}
+                onPress={() => setPage(page)}
+              >
+                <Text style={[styles.pageButtonText, styles.pageButtonTextActive]}>{page}</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Show next page if there are more pages */}
+            {hasMore && page < 2 && (
+              <TouchableOpacity
+                style={styles.pageButton}
+                onPress={() => setPage(page + 1)}
+              >
+                <Text style={styles.pageButtonText}>{page + 1}</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Show ellipsis if there are more pages after current */}
+            {hasMore && (
+              <View style={styles.pageButton}>
+                <Text style={styles.pageButtonText}>...</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[styles.pageButton, styles.navButton, !hasMore && styles.pageButtonDisabled]}
+              onPress={() => setPage(p => p + 1)}
+              disabled={!hasMore}
+            >
+              <Icon name="chevron-right" type="Feather" size={16} color={!hasMore ? '#999' : '#333'} />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
-    
+
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
@@ -582,12 +651,12 @@ const StoreScreen = () => {
         enablePanDownToClose
         onChange={index => setFilterSheetVisible(index !== -1)}
       >
-        <BottomSheetView style={{padding: 20, flex: 1}}>
-          <ScrollView contentContainerStyle={{paddingBottom: 32}} showsVerticalScrollIndicator={false}>
+        <BottomSheetView style={{ padding: 20, flex: 1 }}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
             <Text style={styles.sectionTitle}>Filter Products</Text>
-         
-            <Text style={{marginTop: 16, fontWeight: 'bold'}}>Sort by Price</Text>
-            <View style={{flexDirection: 'row', marginVertical: 8}}>
+
+            <Text style={{ marginTop: 16, fontWeight: 'bold' }}>Sort by Price</Text>
+            <View style={{ flexDirection: 'row', marginVertical: 8 }}>
               <TouchableOpacity onPress={() => setSortOrder('asc')} style={[styles.filterOption, sortOrder === 'asc' && styles.selectedFilterOption]}>
                 <Text>Lowest to Highest</Text>
               </TouchableOpacity>
@@ -595,36 +664,36 @@ const StoreScreen = () => {
                 <Text>Highest to Lowest</Text>
               </TouchableOpacity>
             </View>
-           
-            <Text style={{marginTop: 16, fontWeight: 'bold'}}>Category</Text>
-            <View style={{marginVertical: 8, minHeight: 56, maxHeight: 120, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}} nestedScrollEnabled={true}>
-                <TouchableOpacity onPress={() => setSelectedCategory(selectedCategory === null ? null : null)} style={[styles.filterOption, {marginRight: 10}, selectedCategory === null && styles.selectedFilterOption]}>
+
+            <Text style={{ marginTop: 16, fontWeight: 'bold' }}>Category</Text>
+            <View style={{ marginVertical: 8, minHeight: 56, maxHeight: 120, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center', paddingHorizontal: 6 }} nestedScrollEnabled={true}>
+                <TouchableOpacity onPress={() => setSelectedCategory(selectedCategory === null ? null : null)} style={[styles.filterOption, { marginRight: 10 }, selectedCategory === null && styles.selectedFilterOption]}>
                   <Text>All Categories</Text>
                 </TouchableOpacity>
                 {categories.map(cat => (
-                  <TouchableOpacity key={cat.id} onPress={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)} style={[styles.filterOption, {marginRight: 10}, selectedCategory === cat.id && styles.selectedFilterOption]}>
-                    <Text numberOfLines={1} ellipsizeMode="tail" style={{maxWidth: 80}}>{cat.name}</Text>
+                  <TouchableOpacity key={cat.id} onPress={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)} style={[styles.filterOption, { marginRight: 10 }, selectedCategory === cat.id && styles.selectedFilterOption]}>
+                    <Text numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: 80 }}>{cat.name}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
-           
-            <Text style={{marginTop: 16, fontWeight: 'bold'}}>Brand</Text>
-            <View style={{marginVertical: 8, minHeight: 56, maxHeight: 120, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4}}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{alignItems: 'center', paddingHorizontal: 6}} nestedScrollEnabled={true}>
-                <TouchableOpacity onPress={() => setSelectedBrand(selectedBrand === null ? null : null)} style={[styles.filterOption, {marginRight: 10}, selectedBrand === null && styles.selectedFilterOption]}>
+
+            <Text style={{ marginTop: 16, fontWeight: 'bold' }}>Brand</Text>
+            <View style={{ marginVertical: 8, minHeight: 56, maxHeight: 120, backgroundColor: '#F7F0FF', borderRadius: 12, borderWidth: 1, borderColor: '#E0D7F7', paddingVertical: 6, paddingHorizontal: 4 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center', paddingHorizontal: 6 }} nestedScrollEnabled={true}>
+                <TouchableOpacity onPress={() => setSelectedBrand(selectedBrand === null ? null : null)} style={[styles.filterOption, { marginRight: 10 }, selectedBrand === null && styles.selectedFilterOption]}>
                   <Text>All Brands</Text>
                 </TouchableOpacity>
                 {brands.map(brand => (
-                  <TouchableOpacity key={brand.id} onPress={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)} style={[styles.filterOption, {marginRight: 10}, selectedBrand === brand.id && styles.selectedFilterOption]}>
+                  <TouchableOpacity key={brand.id} onPress={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)} style={[styles.filterOption, { marginRight: 10 }, selectedBrand === brand.id && styles.selectedFilterOption]}>
                     <Text>{brand.name}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
-            <TouchableOpacity onPress={applyFilters} style={[styles.applyButton, {marginTop: 24}]}>
-              <Text style={{color: '#fff', fontWeight: 'bold'}}>Apply</Text>
+            <TouchableOpacity onPress={applyFilters} style={[styles.applyButton, { marginTop: 24 }]}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Apply</Text>
             </TouchableOpacity>
           </ScrollView>
         </BottomSheetView>
@@ -634,64 +703,75 @@ const StoreScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F7F7FB'},
-  headerGradient: {
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  headerContainer: {
     width: '100%',
-    paddingTop: 0,
-    paddingBottom: 18,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    marginBottom: 8,
+    paddingTop: 20,
+    paddingBottom: 8,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    marginBottom: 0,
+  },
+  filtersContainer: {
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
   },
   subcategoryContainer: {
-    paddingHorizontal: 10,
-    paddingTop: 12,
-    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    marginBottom: 6,
+    backgroundColor: '#FFFFFF',
   },
   pillButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 22,
-    minWidth: 80,
-    maxWidth: 140,
-    height: 44,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    minWidth: 60,
+    height: 48,
     justifyContent: 'center',
-    paddingHorizontal: 12,
-    marginRight: 10,
+    paddingHorizontal: 16,
+    marginRight: 12,
     borderWidth: 1.5,
-    borderColor: '#eee',
-    elevation: 2,
-    shadowColor: '#7B2FF2',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    borderColor: '#F0F0F0',
+    elevation: 3,
+    shadowColor: '#333333',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
     overflow: 'hidden',
   },
   pillButtonSelected: {
-    backgroundColor: '#7B2FF2',
-    borderColor: '#7B2FF2',
+    backgroundColor: '#333333',
+    borderColor: '#333333',
+    elevation: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
   },
   pillButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#7B2FF2',
-    marginLeft: 6,
-    flexShrink: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333333',
+    marginLeft: 8,
+    flexShrink: 0,
   },
   pillButtonTextSelected: {
-    color: '#fff',
+    color: '#FFFFFF',
   },
   pillImage: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    marginRight: 6,
-    backgroundColor: '#eee',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 8,
+    backgroundColor: '#F8F8F8',
   },
   productRow: {
     justifyContent: 'space-between',
     marginBottom: 18,
-    paddingHorizontal: 8,
+    paddingHorizontal: 0,
+    width: '100%',
+    gap: 12,
   },
 
   emptyText: {
@@ -702,23 +782,63 @@ const styles = StyleSheet.create({
   },
   paginationRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 18,
     paddingBottom: 18,
     marginTop: 2,
   },
+  paginationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
   paginationBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#7B2FF2',
+    backgroundColor: '#333333',
     borderRadius: 22,
     paddingHorizontal: 22,
     paddingVertical: 10,
     elevation: 2,
-    shadowColor: '#7B2FF2',
+    shadowColor: '#333333',
     shadowOpacity: 0.13,
     shadowRadius: 8,
+  },
+  pageButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  navButton: {
+    width: 40,
+    height: 40,
+  },
+  pageButtonActive: {
+    backgroundColor: '#333333',
+    borderColor: '#333333',
+  },
+  pageButtonDisabled: {
+    backgroundColor: '#F5F5F5',
+    borderColor: '#E0E0E0',
+  },
+  pageButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333333',
+  },
+  pageButtonTextActive: {
+    color: '#FFFFFF',
   },
   paginationBtnDisabled: {
     backgroundColor: '#eee',
@@ -731,34 +851,36 @@ const styles = StyleSheet.create({
   },
   pageNumber: {
     fontSize: 16,
-    color: '#7B2FF2',
+    color: '#333333',
     fontWeight: '700',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#7B2FF2',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 20,
-    width: '90%',
-    backgroundColor: '#fff',
-    elevation: 2,
-    shadowColor: '#7B2FF2',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    borderColor: '#E0E0E0',
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    marginBottom: 16,
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 2 },
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#000',
+    color: '#333',
+    fontWeight: '500',
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#7B2FF2',
+    color: '#333333',
     marginBottom: 8,
     marginTop: 4,
     letterSpacing: 0.2,
@@ -776,18 +898,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selectedFilterOption: {
-    backgroundColor: '#7B2FF2',
-    borderColor: '#7B2FF2',
+    backgroundColor: '#333333',
+    borderColor: '#333333',
   },
   applyButton: {
-    backgroundColor: '#7B2FF2',
+    backgroundColor: '#333333',
     borderRadius: 22,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 0,
     elevation: 2,
-    shadowColor: '#7B2FF2',
+    shadowColor: '#333333',
     shadowOpacity: 0.13,
     shadowRadius: 8,
   },

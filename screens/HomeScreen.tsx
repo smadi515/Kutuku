@@ -28,7 +28,6 @@ import { useTranslation } from 'react-i18next';
 import CollectionSection from '../components/CollectionSection';
 import Toast from 'react-native-toast-message';
 import { useCurrency } from '../contexts/CurrencyContext';
-import LinearGradient from 'react-native-linear-gradient';
 
 type LocalCartItem = {
   id: string;
@@ -155,7 +154,6 @@ const HomeScreen = ({ navigation }: any) => {
   const { t, i18n } = useTranslation();
   // const isRTL = i18n.language === 'ar';
   console.log('products', products);
-
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -365,69 +363,39 @@ const HomeScreen = ({ navigation }: any) => {
   const cardMargin = 8;
   const cardWidth = (screenWidth - cardMargin * 4) / 2; // 2 cards, 3 margins (left, middle, right)
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F7FB' }}>
-      <LinearGradient
-        colors={['#7B2FF2', '#F357A8']}
-        style={styles.headerGradient}>
-        <View style={styles.headerRow}>
-          {/* Left side: Profile, greeting, currency */}
-          <View style={styles.headerLeft}>
-            <Image
-              source={require('../assets/Maskgroup4.png')}
-              style={styles.avatar}
-            />
-            <View style={{ marginLeft: 10 }}>
-              <Text style={styles.topBarHi}>
-                {t('HomeScreen.hi')} {firstName || 'Guest'}
-              </Text>
-              <Text style={styles.subText}>
-                {t('HomeScreen.letsGoShopping')}
-              </Text>
-            </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      {/* Shein-style Header */}
+      <View style={styles.header}>
+        {/* App Logo */}
+        <View style={styles.logoContainer}>
+          <Text style={styles.logoText}>KUTUKU</Text>
+        </View>
 
-          </View>
-          {/* Right side: Search and Cart icons */}
-          <View style={styles.headerRight}>
-            <TouchableOpacity onPress={() => navigation.navigate('SearchScreen')} style={styles.iconButton}>
-              <Icon
-                name="search1"
-                type="ant"
-                size={24}
-                color="#fff"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('CartScreen')} style={styles.iconButton}>
-              <Icon
-                name="cart"
-                type="ionicon"
-                size={24}
-                color="#fff"
-              />
-              {cartCount > 0 && (
-                <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>{cartCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </LinearGradient>
-      <Modal
-        visible={showFirstOpenModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowFirstOpenModal(false)}
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', maxWidth: 320 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>{t('home.welcomeTitle') || 'Welcome to Kutuku!'}</Text>
-            <Text style={{ fontSize: 15, color: '#555', marginBottom: 20, textAlign: 'center' }}>{t('home.welcomeMsg') || 'Here are some notifications or tips for you.'}</Text>
-            <TouchableOpacity onPress={() => setShowFirstOpenModal(false)} style={{ backgroundColor: '#7B2FF2', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 24 }}>
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('home.close') || 'Close'}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        {/* Search Bar */}
+        <TouchableOpacity
+          style={styles.searchContainer}
+          onPress={() => navigation.navigate('SearchScreen')}
+        >
+          <Icon name="search1" type="ant" size={16} color="#999" style={styles.searchIcon} />
+          <Text style={styles.searchPlaceholder}>
+            {t('HomeScreen.searchPlaceholder') || 'Search for products...'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Cart Icon */}
+        <TouchableOpacity
+          style={styles.cartContainer}
+          onPress={() => navigation.navigate('CartScreen')}
+        >
+          <Icon name="shopping-cart" type="feather" size={20} color="#333" />
+          {cartCount > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{cartCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
       {/* Tabs */}
       <View style={styles.tabSwitch}>
         <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('Home')}>
@@ -526,102 +494,96 @@ const HomeScreen = ({ navigation }: any) => {
       ) : (
         <BrandTab />
       )}
+
+      {/* First Open Modal */}
+      <Modal
+        visible={showFirstOpenModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFirstOpenModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', maxWidth: 320 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>{t('home.welcomeTitle') || 'Welcome to Kutuku!'}</Text>
+            <Text style={{ fontSize: 15, color: '#555', marginBottom: 20, textAlign: 'center' }}>{t('home.welcomeMsg') || 'Here are some notifications or tips for you.'}</Text>
+            <TouchableOpacity onPress={() => setShowFirstOpenModal(false)} style={{ backgroundColor: '#7B2FF2', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 24 }}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>{t('home.close') || 'Close'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  headerGradient: {
-    width: '100%',
-    paddingTop: 0,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    marginBottom: 8,
-    minHeight: 90,
-  },
-  headerRow: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    width: '100%',
-    minHeight: 70,
-    marginTop: 18, // Lower the header content
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    minWidth: 0,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconButton: {
-    marginLeft: 16,
-    padding: 6,
-    borderRadius: 20,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 18,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  topBarHi: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-
-  subText: {
-    fontSize: 12,
-    color: '#eee',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#f7f7f7',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 12,
-    paddingHorizontal: 12,
-  },
-  card: {
-    alignItems: 'center',
+  logoContainer: {
     marginRight: 12,
-    width: 100,
   },
-  image: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginBottom: 6,
+  logoText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    letterSpacing: 1,
   },
-  name: {
-    fontSize: 12,
-    textAlign: 'center',
+  searchContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 12,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: 14,
+    color: '#999',
+  },
+  cartContainer: {
+    position: 'relative',
+    padding: 4,
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#FF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    paddingHorizontal: 2,
+  },
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   tabSwitch: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderColor: '#ddd',
+    borderBottomColor: '#E0E0E0',
   },
   tabButton: {
     flex: 1,
@@ -629,17 +591,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   activeTab: {
-    fontWeight: 'bold',
+    fontWeight: '600',
     borderBottomWidth: 2,
-    borderColor: 'purple',
-    paddingBottom: 4,
-    color: '#000',
+    borderColor: '#333',
+    paddingBottom: 8,
+    color: '#333',
     paddingHorizontal: 4,
+    fontSize: 14,
   },
   inactiveTab: {
-    color: '#888',
-    paddingBottom: 4,
+    color: '#999',
+    paddingBottom: 8,
     paddingHorizontal: 4,
+    fontSize: 14,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -651,33 +615,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#333',
   },
   seeAll: {
     fontSize: 12,
-    color: 'purple',
-  },
-  row: {
-    justifyContent: 'space-between',
-    paddingHorizontal: 0,
-    alignItems: 'flex-start',
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: 'red',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-    paddingHorizontal: 3,
-  },
-  cartBadgeText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: 'bold',
+    color: '#666',
+    fontWeight: '500',
   },
 });
 

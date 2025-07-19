@@ -7,14 +7,18 @@
     "home": "Home",
     "brands": "Brands",
     "hi": "hi,",
-    "guest": "Guest"
+    "guest": "Guest",
+    "searchPlaceholder": "search"
   },
   "language_screen": {
     "title": "Language"
   },
-  "CategoryTab": {"search_categories": "Search categories..."},
-  "brandsTab": {"search_Brands": "Search brands..."},
-
+  "CategoryTab": {
+    "search_categories": "Search categories..."
+  },
+  "brandsTab": {
+    "search_Brands": "Search brands..."
+  },
   "TabNavigationScreen": {
     "home": "Home",
     "my_orders": "My Orders",
@@ -23,7 +27,6 @@
     "Settings": "Settings",
     "store": "Store"
   },
-
   "settings": {
     "title": "Settings",
     "general": "General",
@@ -152,7 +155,6 @@
     "confirmPasswordPlaceholder": "Confirm Your New Password",
     "changeNow": "Change Now"
   },
-
   "Onboarding": {
     "screen1": {
       "title1": "Find The Most Suitable",
